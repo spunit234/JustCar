@@ -1,0 +1,89 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.SiteEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+
+/**
+ * The persistent class for the pharmacy_locations database table.
+ * 
+ */
+@Entity
+@Table(name="pharmacy_locations")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PharmacyLocationEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="PHARMACY_LOCATION_ID")
+	private Long pharmacyLocationId;
+
+	@Column(name="CONTACT_PERSON_ALTPHONE")
+	private String contactPersonAltphone;
+
+	@Column(name="CONTACT_PERSON_EMAIL")
+	private String contactPersonEmail;
+
+	@Column(name="CONTACT_PERSON_NAME")
+	private String contactPersonName;
+
+	@Column(name="CONTACT_PERSON_PHONE")
+	private String contactPersonPhone;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	@Column(name="PHARMACY_LOCATION_CODE")
+	private String pharmacyLocationCode;
+
+	@Column(name="PHARMACY_LOCATION_NAME")
+	private String pharmacyLocationName;
+
+	@Column(name="PHARMACY_LOCATION_STATUS")
+	private String pharmacyLocationStatus;
+
+	
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@ManyToOne
+	@JoinColumn(name="SITE_ID")
+	private SiteEntity siteId;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	
+}

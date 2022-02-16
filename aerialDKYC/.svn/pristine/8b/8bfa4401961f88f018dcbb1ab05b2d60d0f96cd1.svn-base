@@ -1,0 +1,61 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.ItemOrderDetailEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemOrderBean extends AbstractBean {
+	
+	private Long itemOrderId;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String indentNo;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	private Date orderDate;
+
+	private String orderPlace;
+
+	private String orderStatus;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	
+	private PharmacyLocationBean ofPharmacyLocation;
+
+	private PharmacyLocationBean otPharmacyLocation;
+
+	private PharmacyStoreBean otPharmacyStore;
+
+	private List<ItemOrderDetailBean> itemOrderDetails;
+	
+	private String previousOrderStatus;
+	
+	private String orderType;
+}

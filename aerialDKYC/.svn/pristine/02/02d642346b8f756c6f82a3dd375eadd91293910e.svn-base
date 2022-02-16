@@ -1,0 +1,90 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.UserEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="item_stock_adjustment")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemStockAdjustmentEntity extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ITEM_STOCK_ADJUSTMENT_ID")
+	private Long itemStockAdjustmentId;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="ADJUSTMENT_DATE")
+	private Date adjustmentDate;
+
+	@Column(name="ADJUSTMENT_NOTES")
+	private String adjustmentNotes;
+
+	@Column(name="ADJUSTMENT_QUANTITY")
+	private Long adjustmentQuantity;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	@Column(name="WITNESS_NAME")
+	private String witnessName;
+
+	//bi-directional many-to-one association to ItemStock
+	@ManyToOne
+	@JoinColumn(name="ITEM_STOCK_ID")
+	private ItemStockEntity itemStock;
+	
+	@ManyToOne
+	@JoinColumn(name="APPROVAL_USER_ID")
+	private UserEntity user;
+	
+	@Column(name="ADJUSTMENT_STATUS")
+	private String adjustmentStatus;
+	
+	
+
+	
+
+}

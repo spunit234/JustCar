@@ -1,0 +1,88 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="classification_items")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ClassificationItemsEntity extends AbstractEntity{
+	private static final long serialVersionUID = 1L;
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="CLASSIFICATION_ID")
+	private Long classificationId;
+	
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+	
+	@Column(name="CLASSIFICATION_NAME")
+	private String classificationName;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CLASSIFICATION_DATE")
+	private Date classificationDate;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="DISPENSED_TO_DATE")
+	private Date dispensedToDate;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="DISPENSED_FROM_DATE")
+	private Date dispensedFromDate;
+	
+	@Column(name="NO_OF_ITEMS")
+	private Long noOfItems;
+	
+	@Column(name="CLASSIFICATION_STATUS")
+	private String classificationStatus;
+	
+	@Column(name="NOTES")
+	private String notes;
+	
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+	
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Integer lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+}

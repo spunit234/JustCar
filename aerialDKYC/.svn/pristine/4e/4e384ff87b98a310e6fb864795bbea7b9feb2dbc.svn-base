@@ -1,0 +1,49 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.common.ApplicationParameterEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="ADHOC_REPORT_SORTING")
+@Setter
+@Getter
+@NoArgsConstructor
+public class AdhocReportSortEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ADHOC_REPORT_SORTING_ID")
+	private Long adhocReportSortingId;
+	
+	@ManyToOne
+	@JoinColumn(name="ADHOC_REPORT_ID")
+	private AdhocReportEntity adhocReport;
+	
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_FIELD_ID")
+	private DataSourceFieldEntity dataSourceField;
+	
+	@Column(name="SORT_CRITERIA")
+	private String sortCriteria;
+	
+	@Column(name="SORT_SEQUENCE")
+	private Long sortSequence;
+
+}

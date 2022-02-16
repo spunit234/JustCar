@@ -1,0 +1,21 @@
+package com.edios.pms.dao;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.entity.security.UserActivityDetailsEntity;
+import com.edios.cdf.util.PayloadBean;
+
+public interface UserActivityDetailsManagerDao  extends BaseDao<UserActivityDetailsEntity> {
+
+	Long insertScreenActivity(UserActivityDetailsEntity userActivityDetailsEntity);
+	
+	Long insertScreenActivity(Long userLoginId,String screenName,String activityName,String searchCriteria,Long searchedRecordCount,
+			String tableName,String pkColName,Long pkColValue,String remarks,String impFieldValue);
+	
+	Long updateEntity(String entityName, String pkColumnName,Long pkColumnValue,String userActivityIdColName,Long userActivityIdColValue);
+	
+	
+	Long updateActivityRow (String searchCriteria,Long searchedRecordCount,Long pkColValue,Long userActivityId);
+
+	Long insertScreenActivityOnStatic(UserActivityDetailsEntity userActivityDetailsEntity);
+
+}

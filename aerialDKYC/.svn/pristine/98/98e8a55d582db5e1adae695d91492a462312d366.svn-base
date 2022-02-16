@@ -1,0 +1,29 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.CycleCountBean;
+import com.edios.pms.dao.CycleCountReportDao;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.manager.CycleCountReportManager;
+
+@Service
+public class CycleCountReportManagerImpl extends AbstractManagerImpl<CycleCountBean,CycleCountEntity > implements CycleCountReportManager {
+
+	@Autowired
+	CycleCountReportDao cycleCountReportDao;
+
+	@Override
+	@Transactional
+	public List<CycleCountEntityTO> fetchCycleCountReport(PayloadBean payloadBean) {
+		return cycleCountReportDao.fetchCycleCountReport(payloadBean);
+	}
+	
+}

@@ -1,0 +1,117 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.PharmacyLocationUserBean;
+import com.edios.pms.bean.UserDashboardBean;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.manager.AssignDashboardNameManager;
+import com.edios.pms.manager.AssignPharmacyLocationManager;
+@RestController
+public class AssignDashboardLocationController extends AbstractController{
+	
+	@Autowired
+	MessageSource messageSource;
+	@Autowired
+	AssignDashboardNameManager assignDashboardNameManager;
+//
+	@PostMapping("/dashboardNames")
+	public ResponseEntity<List<DashboardBean>> dashboardNamesAutolookup(@RequestBody PayloadBean payloadBean){
+		List<DashboardBean> pharmacyLocationNamesToList=null;
+		pharmacyLocationNamesToList=assignDashboardNameManager.dashboardNamesAutolookup(payloadBean);
+		return new ResponseEntity<List<DashboardBean>>(pharmacyLocationNamesToList, HttpStatus.OK);
+}
+
+	@PostMapping("/searchDashboardName")
+	public ResponseEntity<List<PharmacyLocationEntityTO>> searchDashboardName(@RequestBody PayloadBean payloadBean){
+		List<PharmacyLocationEntityTO>pharmacyLocationTo=null;
+	//if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+		pharmacyLocationTo=assignDashboardNameManager.searchDashboardName(payloadBean);
+	//}
+		
+			return new ResponseEntity<List<PharmacyLocationEntityTO>>(pharmacyLocationTo, HttpStatus.OK);
+		
+		}
+	
+		@PostMapping("/searchDashboardCode")
+				public ResponseEntity<List<PharmacyLocationEntityTO>> searchDashboardCode(@RequestBody PayloadBean payloadBean){
+				List<PharmacyLocationEntityTO>pharmacyLocationTo=null;
+	//if	(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{		
+				pharmacyLocationTo=assignDashboardNameManager.searchDashboardCode(payloadBean);
+//}
+	
+			return new ResponseEntity<List<PharmacyLocationEntityTO>>(pharmacyLocationTo, HttpStatus.OK);
+	
+	}
+			
+		@PutMapping("/update-Dashboard-User")
+		public BaseResponse updateDashboardUser(@RequestBody AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+			System.out.println("In update Dashboard location method");
+		try {
+			assignPharmacyLocationScreenBean.setIpAddress(request.getRemoteAddr());	
+		String resultString = assignDashboardNameManager.updateDashboardUser(assignPharmacyLocationScreenBean);
+	if (resultString.equalsIgnoreCase("UPDATED")) {
+		baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+		} 
+				
+		return baseResponse;
+		} catch (Exception e) {
+		e.printStackTrace();
+		return baseResponse;
+			}
+		}
+	
+		@PostMapping("/add-Dashboard-User")
+		public BaseResponse addDashboardUser(@RequestBody AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		assignPharmacyLocationScreenBean.setIpAddress(request.getRemoteAddr());
+		String resultString = assignDashboardNameManager.addDashboardUser(assignPharmacyLocationScreenBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		return baseResponse;
+
+	}
+		
+		@PostMapping("/delete-DashboardUser")
+		public BaseResponse deleteDashboardUser(@RequestBody UserDashboardBean userDashboardBean) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = assignDashboardNameManager.deleteDashboardUser(userDashboardBean);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+				return baseResponse;
+			}
+		}
+	}
+
+

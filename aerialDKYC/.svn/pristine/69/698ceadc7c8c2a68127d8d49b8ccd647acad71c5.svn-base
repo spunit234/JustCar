@@ -1,0 +1,22 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.StockAdjustmentStockItemEntityTO;
+
+public interface ItemStockAdjustmentApprovalManager extends AbstractManager {
+
+
+	List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentRecords(ItemStockAdjustmentBean itemStockAdjustmentBean);
+
+	ItemStockAdjustmentEntityTO fetchItemStockAdjustmentInfo(Long id);
+
+	String UpdateItemStockAdjustmentStockItem(StockAdjustmentStockItemEntityTO stockAdjustmentStockItemEntityTO);
+
+	List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentApprovedRecords(
+			ItemStockAdjustmentBean itemStockAdjustmentBean);
+
+}

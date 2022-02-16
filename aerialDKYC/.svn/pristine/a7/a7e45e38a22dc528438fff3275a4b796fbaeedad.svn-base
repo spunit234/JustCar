@@ -1,0 +1,50 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.bean.ItemReturnBean;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.entity.to.ReturnItemsToStoreEntityTO;
+
+public interface ReturnItemsToStoreManager extends AbstractManager {
+
+	List<ReturnItemsToStoreEntityTO> getReturnItemsDetails(PayloadBean payloadBean);
+	
+	List<ItemStockEntityTO> getItemStockDetailsByIdAndLocation(ItemStockEntityTO payloadBean);
+
+	ItemStockEntityTO editItemStockDetailReturnToStore(ItemStockEntityTO payloadBean);
+	
+	ItemReturnBean savedDraftReturnItemToStore(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request);
+	
+	CreateOrderCompositeBean findItemReturnDetailsById(PayloadBean payloadBean);
+	
+	String deleteReturnItemStockDetailRecord(DeleteRecords deleteRecords);
+	
+	ItemReturnBean updateReturnItemStockDetailRecord(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	String updateItemReturnBeanDetail(ItemReturnBean objItemReturnBean) throws TransactionFailedException;
+	
+	List<ReportsTO> fetchFinalizedreturnItemsDetail(ItemReturnBean objItemReturnBean) ;
+	/*CycleCountBean searchCycleCountById(PayloadBean payloadBean);
+
+	List<CycleCountEntityTO> searchCycleCountItems(PayloadBean payloadBean);
+
+	String addCycleCountAndCountItems(CycleCountBean cycleCountBean) ;//throws TransactionFailedException;
+
+	String updateCycle(CycleCountBean cycleCountBean) throws TransactionFailedException;
+	
+	List<CycleCountEntityTO> fetchItemDetailForNewCycleCount(PayloadBean payloadBean);*/
+
+	//String updateDashboardUser(CycleCountBean cycleCountBean);
+
+}

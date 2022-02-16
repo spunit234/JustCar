@@ -1,0 +1,154 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.dao.ItemStockAdjustmentApprovalDao;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+
+@Repository
+public class ItemStockAdjustmentApprovalDaoImpl extends BaseDaoImpl<ItemStockAdjustmentEntity> implements ItemStockAdjustmentApprovalDao {
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	public List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentRecords(ItemStockAdjustmentBean itemStockAdjustmentBean) {
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select stockAdjustment.itemStockAdjustmentId as itemStockAdjustmentId,stockAdjustment.adjustmentStatus as adjustmentStatus,item.itemName as itemName,item.itemCode as itemCode,stock.lotNo as lotNo,pack.packSize as packSize,"
+				+ "stock.quantityOnHand as quantityOnHand,stockAdjustment.adjustmentQuantity as adjustmentQuantity,stockAdjustment.adjustmentNotes as adjustmentNotes,"
+				+ "item.itemId as itemId,stock.pharmacyLocation.pharmacyLocationId as pharmacyLocationId,stock.unitCost as unitCost,"
+				+ "stock.expiryDate as expiryDate,stockAdjustment.adjustmentDate as adjustmentDate,stockAdjustment.witnessName as witnessName "
+				+ "from ItemStockAdjustmentEntity stockAdjustment left join stockAdjustment.itemStock as stock left join stock.item as item left join stock.itemPackSize as pack where stockAdjustment.recordType<>'D' and "
+				+ " stockAdjustment.user.userID="+itemStockAdjustmentBean.getUser().getUserID()+" and stockAdjustment.adjustmentStatus='"+itemStockAdjustmentBean.getAdjustmentStatus()+"' ";
+		
+		if (itemStockAdjustmentBean.getItemName()!=null) {
+			sqlQuery+="and item.itemName like '%"+itemStockAdjustmentBean.getItemName().trim()+"%'";
+		}
+		if (itemStockAdjustmentBean.getItemCode()!=null) {
+			sqlQuery+="and item.itemCode like '%"+itemStockAdjustmentBean.getItemCode().trim()+"%'";
+		}
+		
+		
+		List<ItemStockAdjustmentEntityTO> itemEntityTOList = (List<ItemStockAdjustmentEntityTO>) session.createQuery(sqlQuery)
+				
+				.setResultTransformer(Transformers.aliasToBean(ItemStockAdjustmentEntityTO.class)).list();
+		
+		return itemEntityTOList;
+	}
+
+	@Override
+	public ItemStockAdjustmentEntityTO fetchItemStockAdjustmentInfo(Long id) {
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select stockAdjustment.witnessName as witnessName,stockAdjustment.adjustmentQuantity as adjustmentQuantity,stockAdjustment.adjustmentDate as adjustmentDate"
+				+ ",stockAdjustment.adjustmentNotes as adjustmentNotes,item.itemName as itemName,item.itemCode as itemCode,stock.lotNo as lotNo,pack.packSize as packSize,stock.quantityInStock as quantityReceived,"
+				+ "stock.quantityOnHand as quantityOnHand,stock.itemStockStatus as itemStockStatus,stockAdjustment.transactionCount as stockAdjustmentTransactionCount,stock.transactionCount as transactionCount,stock.itemStockId as itemStockId"
+				+ ",stock.expiryDate as expiryDate,stock.quantityAdjusted as quantityAdjusted,stockAdjustment.itemStockAdjustmentId as itemStockAdjustmentId,stockAdjustment.adjustmentStatus as adjustmentStatus "
+				+ "from ItemStockAdjustmentEntity stockAdjustment left join stockAdjustment.itemStock as stock left join stock.item as item left join stock.itemPackSize as pack where item.recordType<>'D' and stockAdjustment.itemStockAdjustmentId="+id+"  ";
+	
+		ItemStockAdjustmentEntityTO itemStockAdjustmentEntityTO=(ItemStockAdjustmentEntityTO) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ItemStockAdjustmentEntityTO.class)).getSingleResult();
+		return itemStockAdjustmentEntityTO;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long itemStockTransactionCount, Long itemStockId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemStockEntity table where table.itemStockId=:itemStockId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemStockId", itemStockId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateItemStock(Long itemStockId, Long quantityOnHand, long transactionCount, Long lastModifiedBy) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery="update ItemStockEntity set quantityOnHand="+quantityOnHand+",transactionCount="+transactionCount+",lastModifiedBy="+lastModifiedBy+","
+				+ "lastModifiedDate=:lastModifiedDate where itemStockId="+itemStockId+"";
+			 Long pk = (long) session.createQuery(sqlQuery).setParameter("lastModifiedDate",  new Date(),TemporalType.TIMESTAMP).executeUpdate();
+			 if (pk>0) {
+				return true;
+			}
+			 else {
+				 return false;
+			 }
+}
+
+	@Override
+	public TransactionData fetchStockAdjustmentTransactionDataById(Long itemStockAdjustmentTransactionCount,
+			Long itemStockAdjustmentId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemStockAdjustmentEntity table where table.itemStockAdjustmentId=:itemStockAdjustmentId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemStockAdjustmentId", itemStockAdjustmentId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		return transactionData;
+	}
+
+	@Override
+	public boolean UpdateItemStockAdjustment(Long itemStockAdjustmentId, long itemStockAdjustmentTransactionCount, Long lastModifiedBy, String adjustmentStatus,
+			String approvalRejectionNotes,Date adjustmentStatusDate) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery="update ItemStockAdjustmentEntity set transactionCount="+itemStockAdjustmentTransactionCount+",lastModifiedBy="+lastModifiedBy+","
+				+ "adjustmentStatus='"+adjustmentStatus+"',adjustmentStatusDate=:adjustmentStatusDate,approvalRejectionNotes='"+approvalRejectionNotes+"',"
+				+ "lastModifiedDate=:lastModifiedDate where itemStockAdjustmentId="+itemStockAdjustmentId+"";
+			 Long pk = (long) session.createQuery(sqlQuery).setParameter("lastModifiedDate",  new Date(),TemporalType.TIMESTAMP)
+					 .setParameter("adjustmentStatusDate", adjustmentStatusDate,TemporalType.TIMESTAMP).executeUpdate();
+			 if (pk>0) {
+				return true;
+			}
+			 else {
+				 return false;
+			 }
+	}
+
+	@Override
+	public List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentApprovedRecords(
+			ItemStockAdjustmentBean itemStockAdjustmentBean) {
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+	   	String fromDate= formatter.format(itemStockAdjustmentBean.getFromDate())+" 00:00:00";  
+	   	String toDate= formatter.format(itemStockAdjustmentBean.getToDate())+" 23:59:59";
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select stockAdjustment.itemStockAdjustmentId as itemStockAdjustmentId,stockAdjustment.adjustmentStatus as adjustmentStatus,item.itemName as itemName,item.itemCode as itemCode,stock.lotNo as lotNo,pack.packSize as packSize,"
+				+ "stock.quantityOnHand as quantityOnHand,stockAdjustment.adjustmentQuantity as adjustmentQuantity,stockAdjustment.adjustmentNotes as adjustmentNotes,"
+				+ "stock.expiryDate as expiryDate,stockAdjustment.adjustmentDate as adjustmentDate,stockAdjustment.witnessName as witnessName "
+				+ "from ItemStockAdjustmentEntity stockAdjustment left join stockAdjustment.itemStock as stock left join stock.item as item left join stock.itemPackSize as pack where stockAdjustment.recordType<>'D' and "
+				+ " stockAdjustment.user.userID="+itemStockAdjustmentBean.getUser().getUserID()+" and stockAdjustment.adjustmentStatus='Approved' and "
+				+ "stockAdjustment.adjustmentDate>='"+fromDate+"' and stockAdjustment.adjustmentDate<='"+toDate+"'";
+		
+		
+		List<ItemStockAdjustmentEntityTO> itemEntityTOList = (List<ItemStockAdjustmentEntityTO>) session.createQuery(sqlQuery)
+				
+				.setResultTransformer(Transformers.aliasToBean(ItemStockAdjustmentEntityTO.class)).list();
+		
+		return itemEntityTOList;
+	}
+}

@@ -1,0 +1,230 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.FinalizeClassificationItemBean;
+import com.edios.pms.dao.ClassificationItemsDao;
+import com.edios.pms.entity.ClassificationItemDetailsEntity;
+import com.edios.pms.entity.ClassificationItemsEntity;
+import com.edios.pms.entity.ItemInventorySettingEntity;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.to.ClassificationItemDetailsEntityTO;
+import com.edios.pms.entity.to.ClassificationItemsEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+@Repository
+@SuppressWarnings({ "unchecked", "deprecation" })
+public class ClassificationItemsDaoImpl extends BaseDaoImpl<ClassificationItemsEntity> implements ClassificationItemsDao {
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public List<ClassificationItemsEntityTO> fetchClassificationItems(PayloadBean payloadBean) {
+		List<ClassificationItemsEntityTO> classificationItemsEntityTOList=null;
+		String sqlQuery="";
+		Session session=(Session) entityManager.getDelegate();
+		String fromDate = null;
+		String toDate = null;
+		if((payloadBean.getFromDate()!=null)) {
+	    	 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+	    	 fromDate= formatter.format(payloadBean.getFromDate())+" 00:00:00";  
+			 toDate= formatter.format(payloadBean.getToDate())+" 23:59:59";
+		}		
+		try {
+			sqlQuery="SELECT classification.classificationId AS classificationId,classification.transactionCount AS transactionCount, classification.classificationName AS classificationName,classification.classificationDate AS classificationDate,"
+			+ "classification.dispensedToDate AS dispensedToDate,classification.dispensedFromDate AS dispensedFromDate,classification.noOfItems AS noOfItems,CONCAT(user.firstName,' ',coalesce(user.lastName,' ')) AS classifiedBy, "
+			+ "classification.classificationStatus AS classificationStatus FROM ClassificationItemsEntity classification "
+			+ "inner join PharmacyLocationUserEntity pharmacyLocationUser on classification.pharmacyLocation= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId LEFT JOIN pharmacyLocationUser.userId user "
+			+ " WHERE classification.classificationDate >='"+fromDate+"' AND classification.classificationDate <='"+toDate+"' AND pharmacyLocationUser.userId.userID="+payloadBean.getId()+ " "
+			+ " Order By classification.classificationName";
+			classificationItemsEntityTOList = (List<ClassificationItemsEntityTO>) session.createQuery(sqlQuery.toString()).setResultTransformer(Transformers.aliasToBean(ClassificationItemsEntityTO.class)).list();	
+		}catch(Exception ex) {
+			ex.printStackTrace();
+			return null;
+			}
+		return classificationItemsEntityTOList;
+	}
+
+	@Override
+	public boolean isClassificationNameExist(Long classificationId, String classificationName) {
+		try {
+			return entityManager.createQuery(
+					"select table.classificationName as classificationName from ClassificationItemsEntity table where "
+							+ " table.classificationName='"+classificationName+"' and table.classificationId!="+classificationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	}
+
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public boolean addClassificationItem(ClassificationItemsEntity classificationItemsEntity) {
+		boolean resultFlag=false;
+		String sqlQuery="";
+		List<PharmacyLocationEntityTO> pharmacyLocationId=null;
+		Session session=(Session) entityManager.getDelegate();
+			//get Location ID
+			sqlQuery="SELECT pharmacyLocation.pharmacyLocationId AS pharmacyLocationId FROM PharmacyLocationUserEntity pharmacy "
+					+ "LEFT JOIN pharmacy.pharmacyLocation pharmacyLocation WHERE pharmacy.userId="+classificationItemsEntity.getCreatedBy()+" ";
+			pharmacyLocationId = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery.toString()).setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();	
+			PharmacyLocationEntity  pharmacyLocationEntity=new PharmacyLocationEntity();
+			pharmacyLocationEntity.setPharmacyLocationId(pharmacyLocationId.get(0).getPharmacyLocationId());
+			System.out.println("-----------------------------"+pharmacyLocationId.get(0).getPharmacyLocationId());
+			classificationItemsEntity.setPharmacyLocation(pharmacyLocationEntity);
+			
+//			get No of Items if null then wht?
+			sqlQuery="SELECT count(itemInv.item.itemId) FROM ItemStockEntity itemInv WHERE "
+					+ " itemInv.pharmacyLocation.pharmacyLocationId="+classificationItemsEntity.getPharmacyLocation().getPharmacyLocationId()+" AND item.itemStatus='Active' group by  itemInv.item.itemId";
+			
+			List<Object> noOfItemsList=(List<Object>)session.createQuery(sqlQuery).list();
+			System.out.println(noOfItemsList.size() +"**************** ");
+			classificationItemsEntity.setNoOfItems(new Integer(noOfItemsList.size()).longValue());
+//			persist classification data into table 
+			entityManager.persist(classificationItemsEntity);
+			 return resultFlag=true;
+	}
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public List<ClassificationItemDetailsEntityTO> getItem(ClassificationItemsEntity classificationItemsEntity) {
+		List<ClassificationItemDetailsEntityTO> classificationItemsEntityTOList=null;
+		String sqlQuery="";
+		Session session=(Session) entityManager.getDelegate();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+		String fromDate = null;
+		String toDate = null;
+ 		fromDate= formatter.format(classificationItemsEntity.getDispensedFromDate())+" 00:00:00";  
+ 		toDate= formatter.format(classificationItemsEntity.getDispensedToDate())+" 23:59:59";
+		try {
+		sqlQuery=" SELECT coalesce(sum(p.dispensedQuantity),0) AS dispensedQuantity,iss.item.itemId AS itemId,iss.item.itemName AS itemName,iss.item.itemCode AS itemCode,"
+				+ " round(((coalesce(sum(p.dispensedQuantity),0)/cast(ips.packSize as float))*iss.unitCost),2) as dispensedCost "
+				+ " FROM PatientDispensedItemEntity p "
+				+ "RIGHT JOIN p.itemStock iss with (p.dispensedDateTime >='"+fromDate+"' AND p.dispensedDateTime <='"+toDate+"') "
+				+ " LEFT JOIN iss.itemPackSize ips"
+				+ " WHERE iss.pharmacyLocation.pharmacyLocationId="+classificationItemsEntity.getPharmacyLocation().getPharmacyLocationId()+" AND iss.item.itemStatus='Active' "
+				+ " GROUP BY iss.itemStockId,iss.item.itemId,iss.item.itemName,iss.item.itemCode,ips.packSize,iss.unitCost ";
+		classificationItemsEntityTOList = (List<ClassificationItemDetailsEntityTO>) session.createQuery(sqlQuery.toString()).setResultTransformer(Transformers.aliasToBean(ClassificationItemDetailsEntityTO.class)).list();
+		}catch(Exception ex) {
+			ex.printStackTrace();
+			return classificationItemsEntityTOList;	 		
+		}
+		return classificationItemsEntityTOList;
+		
+	}
+
+	@Override
+	public ClassificationItemDetailsEntity insertClassificationItemDetails(ClassificationItemDetailsEntity classificationItemDetailsEntity) {
+		String sqlQuery="";
+		Session session=(Session) entityManager.getDelegate();
+		sqlQuery="From ItemInventorySettingEntity ise WHERE ise.item="+classificationItemDetailsEntity.getItem().getItemId()+" and ise.pharmacyLocation="+classificationItemDetailsEntity.getClassificationItems().getPharmacyLocation().getPharmacyLocationId()+"";
+		ItemInventorySettingEntity itemInventorySettingEntity=(ItemInventorySettingEntity) session.createQuery(sqlQuery).getSingleResult();
+		classificationItemDetailsEntity.setOldItemClass(itemInventorySettingEntity.getItemClass());
+		entityManager.persist(classificationItemDetailsEntity);
+		return classificationItemDetailsEntity;
+	}
+
+	@Override
+	public ClassificationItemsEntity getClassificationItem(PayloadBean payloadBean) {
+		ClassificationItemsEntity classificationItemsEntity=null;
+		Session session= (Session) entityManager.getDelegate();
+		try {
+			classificationItemsEntity=(ClassificationItemsEntity) session.createQuery("From ClassificationItemsEntity cte WHERE cte.classificationId="+payloadBean.getId()+"").getSingleResult();
+		}catch(Exception e) {
+			e.printStackTrace();
+			return classificationItemsEntity;
+		}
+		return classificationItemsEntity;
+	}
+
+	
+	@Override
+	public List<ClassificationItemDetailsEntityTO> getClassificationListItem(PayloadBean payloadBean) {
+		List<ClassificationItemDetailsEntityTO> classificationItemList=null;
+		Session session =(Session) entityManager.getDelegate();
+		String sqlQuery="";
+		try {
+			sqlQuery="SELECT cid.dispensedQuantity AS dispensedQuantity,cid.dispensedCost AS dispensedCost,cid.classificationPercentage AS classificationPercentage,"
+					+ "cid.newItemClass AS newItemClass,cid.oldItemClass AS oldItemClass,item.itemName AS itemName,item.itemCode AS itemCode,item.itemId AS itemId "
+					+ "FROM ClassificationItemDetailsEntity cid LEFT JOIN cid.item item WHERE cid.classificationItems.classificationId="+payloadBean.getId()+"";
+			classificationItemList=(List<ClassificationItemDetailsEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ClassificationItemDetailsEntityTO.class))
+					.getResultList();
+			}catch(Exception ex)
+		{ex.printStackTrace();
+		return classificationItemList;
+		}				
+		return classificationItemList;
+	}
+
+	@Override
+	public boolean discardClassification(PayloadBean payloadBean) {
+		boolean resultFlag=false;
+		Session session =(Session) entityManager.getDelegate();
+		try {
+		String sqlQuery="DELETE ClassificationItemDetailsEntity cid WHERE cid.classificationItems.classificationId="+payloadBean.getId()+"";
+		session.createQuery(sqlQuery).executeUpdate();
+		sqlQuery="DELETE ClassificationItemsEntity ci WHERE ci.classificationId="+payloadBean.getId()+"";
+		session.createQuery(sqlQuery).executeUpdate();
+		resultFlag=true;
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return resultFlag;
+		}
+		return resultFlag;
+	}
+
+	@Override
+	public boolean finalizeClassification(FinalizeClassificationItemBean finalizeClassificationItemBean) {
+		boolean resultFlag=false;
+		Session session =(Session) entityManager.getDelegate();
+		String sqlQuery="";
+			System.out.println("-------"+finalizeClassificationItemBean.getClassificationItemDetailEntity().get(0).getClassificationItems().getClassificationId());
+			sqlQuery="UPDATE ClassificationItemsEntity  ci SET ci.classificationStatus='Finalized'";
+			try {
+					if(finalizeClassificationItemBean.getClassificationItemBean().getNotes()!=null) {
+						sqlQuery+=",ci.notes='"+finalizeClassificationItemBean.getClassificationItemBean().getNotes()+"'";
+				}
+			}catch(Exception e) {}
+			sqlQuery+= " WHERE ci.classificationId="+finalizeClassificationItemBean.getClassificationItemDetailEntity().get(0).getClassificationItems().getClassificationId()+" ";
+			session.createQuery(sqlQuery).executeUpdate();
+			Long pharmacyLocationID=finalizeClassificationItemBean.getClassificationItemDetailEntity().get(0).getLocationID();
+			for(ClassificationItemDetailsEntity classificationItemDetailsEntity:finalizeClassificationItemBean.getClassificationItemDetailEntity()) {
+		        
+				sqlQuery="UPDATE ItemInventorySettingEntity ins set ins.itemClass='"+classificationItemDetailsEntity.getNewItemClass()+"'"
+						+ " WHERE ins.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" AND ins.item.itemId="+classificationItemDetailsEntity.getItemId()+" ";
+				session.createQuery(sqlQuery).executeUpdate();
+			}
+			resultFlag=true;
+		return resultFlag;
+	}
+
+	@Override
+	public boolean saveToDraft(PayloadBean payloadBean) {
+		Session session =(Session) entityManager.getDelegate();
+		String sqlQuery="UPDATE ClassificationItemsEntity  ci SET ci.notes='"+payloadBean.getCustomParameter()+"' WHERE ci.classificationId="+payloadBean.getId()+"";
+		session.createQuery(sqlQuery).executeUpdate();
+		return true;
+	}
+
+
+
+}

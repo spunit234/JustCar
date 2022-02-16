@@ -1,0 +1,64 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.ItemOrderDetailEntity;
+import com.edios.pms.entity.ItemReturnDetailEntity;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemReturnBean extends AbstractBean {
+	
+	private Long itemReturnId;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String itemReturnNo;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	private Date returnDate;
+
+	private String returnStatus;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	private PharmacyLocationBean rfPharmacyLocation;
+
+	private PharmacyStoreBean rtPharmacyStore;
+	
+	private List<ItemReturnDetailBean> itemReturnDetails;
+	
+	private String previousReturnStatus;
+}

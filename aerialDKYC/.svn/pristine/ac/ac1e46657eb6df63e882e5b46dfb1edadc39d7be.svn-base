@@ -1,0 +1,55 @@
+package com.edios.pms.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.manager.UserActivityDetailsManager;
+
+@RestController
+public class UserActivityDetailsController extends AbstractController {
+
+	@Autowired
+	UserActivityDetailsManager userActivityDetailsManager;
+	
+	@PostMapping("/insert_screen_activity")
+	public BaseResponse insertScreenActivity(@RequestBody PayloadBean payloadBean) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = userActivityDetailsManager.insertScreenActivity(payloadBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			return  new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong. Please try again.");
+		}
+		
+		return baseResponse;
+	}
+	
+	@PostMapping("/insert_screen_activity_On_Static")
+	public BaseResponse insertScreenActivityOnStatic(@RequestBody PayloadBean payloadBean) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = userActivityDetailsManager.insertScreenActivityOnStatic(payloadBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			return  new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong. Please try again.");
+		}
+		
+		return baseResponse;
+	}
+	
+	
+}

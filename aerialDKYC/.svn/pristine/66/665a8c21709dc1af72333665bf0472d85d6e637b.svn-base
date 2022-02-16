@@ -1,0 +1,37 @@
+package com.edios.pms.entity.to;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.bean.common.ApplicationParameterBean;
+import com.edios.pms.bean.DataSourceBean;
+import com.edios.pms.bean.DataSourceFieldBean;
+import com.edios.pms.entity.AdhocReportEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class AdhocReportParameterTO {
+	private Long adhocReportParameterId;
+	
+	private String parameterName;
+	
+	private String parameterType;
+	
+	private Long parameterSequence;
+	
+	private String displaySize;
+	
+	private String mandatory;
+	
+	private String listName;
+	
+	private String appParaCode;;
+	
+}

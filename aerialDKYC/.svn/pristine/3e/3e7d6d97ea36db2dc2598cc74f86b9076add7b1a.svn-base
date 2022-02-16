@@ -1,0 +1,380 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.ItemOrderBean;
+import com.edios.pms.bean.ItemOrderDetailBean;
+import com.edios.pms.bean.ItemOrderProcessingBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.dao.CreateOrderDao;
+import com.edios.pms.dao.DistributeOrderDao;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.ItemOrderProcessingEntity;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemOrderProcessingTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.manager.DistributeOrderManager;
+
+@Service("distributeOrderManagerImpl")
+public class DistributeOrderManagerImpl extends AbstractManagerImpl<ItemOrderBean,ItemOrderEntity > implements DistributeOrderManager {
+
+	@Autowired
+	DistributeOrderDao distributeOrderDao;
+	
+	@Autowired
+	CreateOrderDao createOrderDao;
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	@Transactional
+	public List<ItemOrderEntityTO> getItemDistributeOrderDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return distributeOrderDao.getItemDistributeOrderDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<ItemStockEntityTO> getInStockItemDetails(ItemStockEntityTO payloadBean) {
+		// TODO Auto-generated method stub
+		return distributeOrderDao.getInStockItemDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String addDistributeItemOrder(List<ItemStockEntityTO> payloadBeanList, HttpServletRequest request) throws TransactionFailedException {
+		// TODO Auto-generated method stub
+		boolean resultFlag=false;
+		String resultString=null;
+		for(ItemStockEntityTO payloadBean:payloadBeanList) {
+			ItemOrderDetailBean objItemOrderDetailBean= new ItemOrderDetailBean();
+			objItemOrderDetailBean.setItemOrderDetailId(payloadBean.getItemOrderDetailId());
+			ItemStockBean objItemStockBean=new ItemStockBean();
+			objItemStockBean.setItemStockId(payloadBean.getItemStockId());
+			ItemPackSizeBean objItemPackSizeBean=new ItemPackSizeBean();
+			objItemPackSizeBean.setPackSizeId(payloadBean.getPackSizeId());
+			
+			ItemOrderProcessingBean objItemOrderProcessingBean=new ItemOrderProcessingBean();
+			objItemOrderProcessingBean.setItemOrderDetail(objItemOrderDetailBean);
+			objItemOrderProcessingBean.setItemStock(objItemStockBean);
+			objItemOrderProcessingBean.setLotNo(payloadBean.getLotNo());
+			objItemOrderProcessingBean.setExpiryDate(new Date(payloadBean.getExpiryDate()));
+			objItemOrderProcessingBean.setItemPackSize(objItemPackSizeBean);
+			objItemOrderProcessingBean.setDistributedQuantity(payloadBean.getDistributeQuantity());
+			objItemOrderProcessingBean.setDqUnitCost(payloadBean.getUnitCost());
+			objItemOrderProcessingBean.setDqTotalCost(payloadBean.getTotalCost());
+			objItemOrderProcessingBean.setCreatedBy(payloadBean.getUserID());
+			objItemOrderProcessingBean.setIpAddress(request.getRemoteAddr());
+			setAuditInfoOfItemOrderProcessingBean(objItemOrderProcessingBean,"newFlag");
+			ItemOrderProcessingEntity objItemOrderProcessingEntity=mapper.map(objItemOrderProcessingBean, ItemOrderProcessingEntity.class);
+			resultFlag=distributeOrderDao.addItemOrderProcessingDetails(objItemOrderProcessingEntity);
+			if(resultFlag) {
+				resultString="ADDED";
+				
+				//Ftech Transaction Count
+				TransactionData latestData=distributeOrderDao.fetchTransactionDataById(payloadBean.getItemStockId());
+				if (latestData.getTransactionCount() > (payloadBean.getItemStockTransactionCount())) {
+					throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+				}
+				if (latestData.getRecordType() == 'D') {
+					throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+				}
+				
+				
+				ItemStockBean updateItemStockBean=mapper.map(distributeOrderDao.fetchItemStockEntityById(payloadBean.getItemStockId()), ItemStockBean.class);
+				updateItemStockBean.setIpAddress(request.getRemoteAddr());
+				updateItemStockBean.setLastModifiedBy(payloadBean.getUserID());
+				setAuditInfoOfItemStockBean(updateItemStockBean, "editFlag");
+				if(updateItemStockBean.getQuantityBlocked()==null) {
+					updateItemStockBean.setQuantityBlocked(payloadBean.getDistributeQuantity());
+				}
+				else {
+					updateItemStockBean.setQuantityBlocked(updateItemStockBean.getQuantityBlocked()+payloadBean.getDistributeQuantity());
+				}
+				resultFlag=distributeOrderDao.updateItemStockEnitity(mapper.map(updateItemStockBean, ItemStockEntity.class));
+				if(resultFlag) {
+					resultString="UPDATED";
+				}
+			}
+		}
+		if(resultString.equals("UPDATED")) {
+			ItemOrderBean updateItemOrderBean=mapper.map(createOrderDao.findItemOrderById(payloadBeanList.get(0).getItemOrderId()),ItemOrderBean.class);
+			updateItemOrderBean.setOrderStatus("Fulfilled (Saved Draft)");
+			
+			//TransactionData latestData=createOrderDao.fetchTransactionDataById(payloadBeanList.get(0).getItemOrderId());
+			
+			if (updateItemOrderBean.getTransactionCount() > (payloadBeanList.get(0).getItemOrderTransactionCount())) {
+				throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			}
+			if (updateItemOrderBean.getRecordType() == 'D') {
+				throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			updateItemOrderBean.setIpAddress(request.getRemoteAddr());
+			updateItemOrderBean.setLastModifiedBy(payloadBeanList.get(0).getUserID());
+			updateItemOrderBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			updateItemOrderBean.setLastModifiedDate(new Date());
+			//setAuditInfoOfItemOrderBean(updateItemOrderBean, "editFlag");
+			resultFlag=distributeOrderDao.updateItemOrder(mapper.map(updateItemOrderBean, ItemOrderEntity.class));
+			if(resultFlag) {
+				resultString="UPDATED";
+			}
+		}
+		return resultString;
+	}
+	
+	private void setAuditInfoOfItemOrderProcessingBean(ItemOrderProcessingBean ItemOrderProcessingBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemOrderProcessingBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemOrderProcessingBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemOrderProcessingBean.setCreatedDate(new Date());
+		} else {
+			ItemOrderProcessingBean.setTransactionCount(ItemOrderProcessingBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemOrderProcessingBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemOrderProcessingBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	private void setAuditInfoOfItemStockBean(ItemStockBean ItemStockBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemStockBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemStockBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemStockBean.setCreatedDate(new Date());
+		} else {
+			ItemStockBean.setTransactionCount(ItemStockBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemStockBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemStockBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	private void setAuditInfoOfItemOrderBean(ItemOrderBean ItemOrderBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemOrderBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemOrderBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemOrderBean.setCreatedDate(new Date());
+		} else {
+			ItemOrderBean.setTransactionCount(ItemOrderBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemOrderBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemOrderBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	@Override
+	@Transactional
+	public String updateDistributeItemOrder(List<ItemStockEntityTO> payloadBeanList, HttpServletRequest request) throws TransactionFailedException {
+
+		// TODO Auto-generated method stub
+		boolean resultFlag=false;
+		String resultString="";
+		for(ItemStockEntityTO payloadBean:payloadBeanList) {
+			ItemStockBean updateItemStockBean=mapper.map(distributeOrderDao.fetchItemStockEntityById(payloadBean.getItemStockId()), ItemStockBean.class);
+			//New Addtion while updating
+			if(payloadBean.getItemOrderProcessingId()==null) {
+				ItemOrderDetailBean objItemOrderDetailBean= new ItemOrderDetailBean();
+				objItemOrderDetailBean.setItemOrderDetailId(payloadBean.getItemOrderDetailId());
+				ItemStockBean objItemStockBean=new ItemStockBean();
+				objItemStockBean.setItemStockId(payloadBean.getItemStockId());
+				ItemPackSizeBean objItemPackSizeBean=new ItemPackSizeBean();
+				objItemPackSizeBean.setPackSizeId(payloadBean.getPackSizeId());
+				
+				ItemOrderProcessingBean objItemOrderProcessingBean=new ItemOrderProcessingBean();
+				objItemOrderProcessingBean.setItemOrderDetail(objItemOrderDetailBean);
+				objItemOrderProcessingBean.setItemStock(objItemStockBean);
+				objItemOrderProcessingBean.setLotNo(payloadBean.getLotNo());
+				objItemOrderProcessingBean.setExpiryDate(new Date(payloadBean.getExpiryDate()));
+				objItemOrderProcessingBean.setItemPackSize(objItemPackSizeBean);
+				objItemOrderProcessingBean.setDistributedQuantity(payloadBean.getDistributeQuantity());
+				objItemOrderProcessingBean.setDqUnitCost(payloadBean.getUnitCost());
+				objItemOrderProcessingBean.setDqTotalCost(payloadBean.getTotalCost());
+				objItemOrderProcessingBean.setCreatedBy(payloadBean.getUserID());
+				objItemOrderProcessingBean.setIpAddress(request.getRemoteAddr());
+				setAuditInfoOfItemOrderProcessingBean(objItemOrderProcessingBean,"newFlag");
+				ItemOrderProcessingEntity objItemOrderProcessingEntity=mapper.map(objItemOrderProcessingBean, ItemOrderProcessingEntity.class);
+				resultFlag=distributeOrderDao.addItemOrderProcessingDetails(objItemOrderProcessingEntity);
+				if(resultFlag) {
+					resultString="ADDED";
+					if(updateItemStockBean.getQuantityBlocked()==null) {
+						updateItemStockBean.setQuantityBlocked(payloadBean.getDistributeQuantity());
+					}
+					else {
+						updateItemStockBean.setQuantityBlocked(updateItemStockBean.getQuantityBlocked()+payloadBean.getDistributeQuantity());
+					}
+				}
+			}
+			else {
+				//Update previous order
+				ItemOrderProcessingBean updateItemOrderProcessingBean=mapper.map(distributeOrderDao.fetchItemOrderProcessingEntityById(payloadBean.getItemOrderProcessingId()),ItemOrderProcessingBean.class);
+				
+				if(updateItemOrderProcessingBean.getDistributedQuantity()!=payloadBean.getDistributeQuantity()) {
+					if (updateItemOrderProcessingBean.getTransactionCount()>payloadBean.getProcessingTransactionCount()) {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+					}
+					if (updateItemOrderProcessingBean.getRecordType() == 'D') {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+					}
+					
+					updateItemStockBean.setQuantityBlocked((updateItemStockBean.getQuantityBlocked()-updateItemOrderProcessingBean.getDistributedQuantity())+payloadBean.getDistributeQuantity());
+					
+					updateItemOrderProcessingBean.setDistributedQuantity(payloadBean.getDistributeQuantity());
+					updateItemOrderProcessingBean.setDqUnitCost(payloadBean.getUnitCost());
+					updateItemOrderProcessingBean.setDqTotalCost(payloadBean.getTotalCost());
+					updateItemOrderProcessingBean.setIpAddress(request.getRemoteAddr());
+					updateItemOrderProcessingBean.setLastModifiedBy(payloadBean.getUserID());
+					setAuditInfoOfItemOrderProcessingBean(updateItemOrderProcessingBean, "editFlag");
+					resultFlag=distributeOrderDao.updateItemOrderProcessingDetails(mapper.map(updateItemOrderProcessingBean, ItemOrderProcessingEntity.class));
+					if(resultFlag) {
+						resultString="UPDATED";
+						
+					}
+				}
+				
+				
+			}
+			
+			
+			if(resultFlag) {
+				
+				//Ftech Transaction Count
+				TransactionData latestData=distributeOrderDao.fetchTransactionDataById(payloadBean.getItemStockId());
+				if (latestData.getTransactionCount() > (payloadBean.getItemStockTransactionCount())) {
+					throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+				}
+				if (latestData.getRecordType() == 'D') {
+					throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+				}
+				
+				
+				updateItemStockBean.setIpAddress(request.getRemoteAddr());
+				updateItemStockBean.setLastModifiedBy(payloadBean.getUserID());
+				setAuditInfoOfItemStockBean(updateItemStockBean, "editFlag");
+				
+				resultFlag=distributeOrderDao.updateItemStockEnitity(mapper.map(updateItemStockBean, ItemStockEntity.class));
+				if(resultFlag) {
+					resultString="UPDATED";
+				}
+			}
+		}
+		System.out.println(resultString);
+		return resultString;
+	
+	}
+
+	@Override
+	@Transactional
+	public String deleteItemOrderProcessingRecord(DeleteRecords deleteRecords,HttpServletRequest request) {
+		// TODO Auto-generated method stub
+		String resultString="";
+		ItemOrderProcessingTO objItemOrderProcessingTO=distributeOrderDao.fetchItemOrderProcessingEntityDetails(deleteRecords.getId());
+		
+		ItemStockBean objItemStockBean=mapper.map(distributeOrderDao.fetchItemStockEntityById(objItemOrderProcessingTO.getItemStockId()),ItemStockBean.class);
+		
+		if(objItemStockBean.getTransactionCount()>deleteRecords.getTransactionCount()) {
+			return "TransactionFailed";
+		}
+		objItemStockBean.setQuantityBlocked(objItemStockBean.getQuantityBlocked()-objItemOrderProcessingTO.getDistributeQuantity());
+		
+		if(distributeOrderDao.updateItemStockEnitity(mapper.map(objItemStockBean,ItemStockEntity.class))) {
+			
+			if(distributeOrderDao.deleteItemOrderProcessingById(deleteRecords.getId()))
+				resultString="DELETED";
+		}
+		//objItemStockBean.setLastModifiedBy(deleteRecords.getModifiedBy().longValue());
+		//objItemStockBean.setIpAddress("");
+		//setAuditInfoOfItemStockBean(objItemStockBean, "editFlag");
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String updateItemOrderDetails(ItemOrderBean ItemOrderBean) {
+		String resultString = null;
+		// Optimistic Locking for Hibernate
+				TransactionData latestData = createOrderDao.fetchTransactionDataById(ItemOrderBean.getItemOrderId());
+				if (latestData.getTransactionCount() > (ItemOrderBean.getTransactionCount())) {
+					return "TransactionFailed";
+				}
+				if (latestData.getRecordType() == 'D') {
+					return "recordDeleted";
+				}
+				setAuditInfoOfItemOrderBean(ItemOrderBean,"editFlag");
+				ItemOrderEntity objItemOrderEntity=mapper.map(ItemOrderBean, ItemOrderEntity.class);
+				
+				//resultFlag=;
+				if(createOrderDao.updateItemOrder(objItemOrderEntity))
+					resultString="UPDATED";
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String validateDistributeOrderBeforeFinalize(List<ItemOrderDetailBean> objItemOrderDetailBeanList,Long userID) {
+		// TODO Auto-generated method stub
+		String resultString="";
+		List<Long> itemOrderDetailIdList=new ArrayList<>();
+		for(ItemOrderDetailBean objItemOrderDetailBean:objItemOrderDetailBeanList) {
+			itemOrderDetailIdList.add(objItemOrderDetailBean.getItemOrderDetailId());
+		}
+		for(ReportsTO reportsTO:distributeOrderDao.checkItemOrderDetailsCompletedOrNot(itemOrderDetailIdList)) {
+			if(reportsTO.getDistributeQuantity()==null || reportsTO.getDistributeQuantity()!=reportsTO.getOrderQuantity()) {
+				resultString="OrderNotCompleted";
+				break;
+			}
+			else {
+				resultString="OrderCompleted";
+			}
+		}
+		/*loop1: for(ItemOrderDetailBean objItemOrderDetailBean:objItemOrderDetailBeanList) {
+			ItemStockEntityTO objItemStockEntityTO=new ItemStockEntityTO();
+			objItemStockEntityTO.setUserID(userID);
+			objItemStockEntityTO.setItemId(objItemOrderDetailBean.getItem().getItemId());
+			objItemStockEntityTO.setPackSizeId(objItemOrderDetailBean.getItemPackSize().getPackSizeId());
+			objItemStockEntityTO.setItemOrderDetailId(objItemOrderDetailBean.getItemOrderDetailId());
+			
+			 List<ItemStockEntityTO> objobjItemStockEntityTO= distributeOrderDao.getInStockItemDetails(objItemStockEntityTO);
+			 Long distributedQuantity=0L;
+			 loop2 :for(ItemStockEntityTO fetchItemStockEntityTO:objobjItemStockEntityTO) {
+				 if(fetchItemStockEntityTO.getItemOrderProcessingId()==null) {
+					 resultString="OrderNotCompleted";
+					 break loop1;
+				 }
+				 else {
+					 distributedQuantity+=fetchItemStockEntityTO.getDistributeQuantity();
+					 if(distributedQuantity==objItemOrderDetailBean.getOrderQuantity()) {
+						 resultString="OrderCompleted";
+					 }
+					 else {
+						 resultString="OrderNotCompleted";
+					 }
+				 }
+			 }
+			 if(resultString.equals("OrderNotCompleted")) {
+				 break;
+			 }
+		}*/
+		return resultString;
+	}
+
+	
+}

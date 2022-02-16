@@ -1,0 +1,705 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.NoResultException;
+
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.dao.PhysicalCountDao;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.CycleCountItemsEntity;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.InventoryCountItemsEntity;
+import com.edios.pms.entity.InventoryCountMismatchEntity;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+
+@Repository
+public class PhysicalCountDaoImpl extends BaseDaoImpl<InventoryCountEntity> implements PhysicalCountDao{
+	@Autowired
+	MessageSource message;
+
+	@Override
+	public List<PhysicalCountEntityTo> fetchPhysicalCountItems(PayloadBean payloadBean,Long pharmacyLocationId) {
+		String sqlQuery = "";
+		List<PhysicalCountEntityTo> physicalCountEntityToList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode,SUM(itemStock.quantityOnHand)  AS quantityOnHand,"
+					+ "itemStock.pharmacyLocation.pharmacyLocationId as pharmacyLocationId"
+					+ " from ItemStockEntity as itemStock  left join itemStock.item item "
+					+ " WHERE item.itemStatus=:itemStatus  and item.recordType<>'D' and"
+					//+ " itemStock.itemStockStatus='InStock' and"
+					+ "  itemStock.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and "
+					+ "itemStock.recordType<>'D' group by item.itemId, item.itemName,item.itemCode,itemStock.pharmacyLocation.pharmacyLocationId having COALESCE(SUM(itemStock.quantityOnHand),0)>0  ORDER BY  item.itemName ";
+			
+			physicalCountEntityToList = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+						.setParameter("itemStatus", "Active").setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+			// physicalCountEntityToList.get(0).setNoOfItems(new Long(physicalCountEntityToList.size()));
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return physicalCountEntityToList;
+	}
+	
+	
+	@Override
+	public Long fetchItemCount(Long locationID) {
+		String sqlQuery = "";
+		List<PhysicalCountEntityTo> physicalCountEntityToList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId "
+					+ " from ItemStockEntity as itemStock  left join itemStock.item item "
+					+ " WHERE item.itemStatus=:itemStatus  and item.recordType<>'D' and"
+					//+ " itemStock.itemStockStatus='InStock' and "
+					+ " itemStock.pharmacyLocation.pharmacyLocationId="+locationID+" and "
+					+ "itemStock.recordType<>'D' group by item.itemId having COALESCE(SUM(itemStock.quantityOnHand),0)>0  ";
+			
+			physicalCountEntityToList = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+						.setParameter("itemStatus", "Active").setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+			 return (long) physicalCountEntityToList.size();
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		//return physicalCountEntityToList;
+	}
+
+	@Override
+	public Long fetchPharmacyLocationID(Long id) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery ="select locationUser.pharmacyLocation.pharmacyLocationId FROM PharmacyLocationUserEntity locationUser where locationUser.userId.userID="+id+" "
+				+ "and locationUser.recordType<>'D'";
+		return (Long) session.createQuery(sqlQuery).getSingleResult();
+	}
+	
+	
+	@Override
+	public Long fetchInvCountItemsPk(PhysicalCountEntityTo physicalCountEntityTo) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery ="select invCountItem.invCountItemId from InventoryCountItemsEntity invCountItem where "
+					   + "invCountItem.item.itemId="+physicalCountEntityTo.getItemId()+" and invCountItem.invCount.invCountId="+physicalCountEntityTo.getInvCountId()+" "
+					   + " and invCountItem.recordType<>'D'";
+		return (Long) session.createQuery(sqlQuery).getSingleResult();
+	}
+
+	@Override
+	public Long addPhysicalCountAndCountItems(InventoryCountEntity inventoryCountEntity) {
+		Long pkOfUser=null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			 pkOfUser = (Long) session.save(inventoryCountEntity);
+			if (pkOfUser != null) {
+				return pkOfUser;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+
+		return pkOfUser;
+	}
+	
+	
+	@Override
+	public Long checkExistingRecord(Long itemId, Long invCountId) {
+		Session session = (Session) entityManager.getDelegate();
+		try {
+		String sqlQuery ="select invCountItem.invCountItemId FROM InventoryCountItemsEntity invCountItem where"
+				+ " invCountItem.item.itemId="+itemId+" "
+				+ "and invCountItem.invCount.invCountId="+invCountId+" and invCountItem.recordType<>'D'";
+		return (Long) session.createQuery(sqlQuery).getSingleResult();
+		}
+	catch(NoResultException e) {
+		return 0L;
+	}
+		
+	}
+	
+	
+	@Override
+	public Long insertPhysicalCountItems(InventoryCountItemsEntity inventoryCountItemsEntity) {
+		Long pkOfUser=null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			 pkOfUser = (Long) session.save(inventoryCountItemsEntity);
+			if (pkOfUser != null) {
+				return pkOfUser;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+
+		return pkOfUser;
+	}
+	
+	@Override
+	public Long deletePhysicalCountItemsById(Long itemId, Long invCountId) {
+		String sqlQuery="";
+		Long count=0L;
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="delete from InventoryCountItemsEntity invCountItem"
+				+ " where invCountItem.item.itemId="+itemId+" and invCountItem.invCount.invCountId="+invCountId+" ";
+		  count=(long) session.createQuery(sqlQuery).executeUpdate();
+		  return count;
+//		 if(count>0)
+//			 return true;
+//		 else
+//			 return false;
+	}
+	
+	@Override
+	public Long checkExistingRecordInCountItemMismacth(Long invCountItemPK) {
+		try {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery ="select count(invCountMismatch.invCountMismatchId) FROM InventoryCountMismatchEntity invCountMismatch where"
+				+ " invCountMismatch.invCountItem.invCountItemId="+invCountItemPK+" and "
+				+ " invCountItem.recordType<>'D'";
+		return (Long) session.createQuery(sqlQuery).getSingleResult();
+		}
+		catch(NoResultException e) {
+			return 0L;
+		}
+	}
+
+
+	@Override
+	public Long deletePhysicalCountMisMatchItemsById(Long invCountItemPK) {
+		String sqlQuery="";
+		 Long count=0L;
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="delete from InventoryCountMismatchEntity invCountMismatch"
+				+ " where invCountMismatch.invCountItem.invCountItemId="+invCountItemPK+" ";
+		 count=(long) session.createQuery(sqlQuery).executeUpdate();
+		 return count;
+	}
+	
+	@Override
+	public Long insertPhysicalCountMismatchItems(InventoryCountMismatchEntity inventoryCountMismatchEntity) {
+		Long pkOfUser=null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			 pkOfUser = (Long) session.save(inventoryCountMismatchEntity);
+			if (pkOfUser != null) {
+				return pkOfUser;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+
+		return pkOfUser;
+	}
+	
+	
+	@Override
+	public List<Long> checkAllExistingRecordsInInventoryCountItems(Long invCountId) {
+		String sqlQuery = "";
+		List<Long> inventoryCountItemsPKList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select invCountItem.invCountItemId as invCountItemId from InventoryCountItemsEntity invCountItem where"
+					+ " invCountItem.invCount.invCountId="+invCountId+" and invCountItem.recordType<>'D'";
+
+			inventoryCountItemsPKList = (List<Long>) session.createQuery(sqlQuery).list();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return inventoryCountItemsPKList;
+	}
+	
+	
+	@Override
+	public List<Long> checkAllExistingRecordsInInventoryCountMisMacthItems(List<Long> invCountItemsPkList) {
+		String sqlQuery = "";
+		List<Long> inventoryCountItemsPKList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select invCountMimatchItem.invCountMismatchId as invCountMismatchId from InventoryCountMismatchEntity invCountMimatchItem where"
+					+ " invCountMimatchItem.invCountItem.invCountItemId in (:ids) and invCountMimatchItem.recordType<>'D'";
+
+			inventoryCountItemsPKList = (List<Long>) session.createQuery(sqlQuery).setParameterList("ids", invCountItemsPkList).list();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return inventoryCountItemsPKList;
+	}
+	
+	
+	@Override
+	public void deleteAllExistingRecordsInInventoryCountMisMacthItems(List<Long> invCountItemsMismatchPkList) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="delete from InventoryCountMismatchEntity invCountMimatchItem where"
+					+ " invCountMimatchItem.invCountMismatchId in (:ids) ";
+
+		 session.createQuery(sqlQuery).setParameterList("ids", invCountItemsMismatchPkList).executeUpdate();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void deleteAllExistingRecordsInInventoryCountItems(List<Long> invCountItemsPkList) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="delete from InventoryCountItemsEntity invCountItem where"
+					+ " invCountItem.invCountItemId in (:ids) ";
+
+		 session.createQuery(sqlQuery).setParameterList("ids", invCountItemsPkList).executeUpdate();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+		}
+	}
+	
+	@Override
+	public List<Long> fetchItemIdByInvCount(Long id) {
+		String sqlQuery = "";
+		List<Long> itemIdList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select invCountItem.item.itemId from InventoryCountItemsEntity invCountItem  where"
+					+ " invCountItem.invCount.invCountId="+id+" and invCountItem.recordType<>'D'";
+
+			itemIdList = (List<Long>) session.createQuery(sqlQuery).list();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return itemIdList;
+	}
+
+
+	@Override
+	public boolean addPhysicalCountItems(InventoryCountItemsEntity inventoryCountItemsEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		 session.persist(inventoryCountItemsEntity);
+	return true;
+	}
+
+	@Override
+	public List<PhysicalCountEntityTo> searchPhysicalCount(PayloadBean payloadBean, Long locationID) {
+		List<PhysicalCountEntityTo> physicalCountEntityToList = new ArrayList<>();
+		
+		String sqlQuery = "";
+		try {
+			 String datefrom = null;
+			  String dateto = null;
+			  if(payloadBean.getFromDate() != null && payloadBean.getToDate() != null ){
+			     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+			     datefrom= formatter.format(payloadBean.getFromDate())+" 00:00:00";  	     
+			     dateto= formatter.format(payloadBean.getToDate())+" 23:59:59";
+			  }
+			
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select invCount.invCountId as invCountId,invCount.invCountName as invCountName,invCount.invCountDate as invCountDate,"
+					+ "invCount.transactionCount as transactionCount,invCount.noOfItems as noOfItems,invCount.countMatched as countMatched,"
+					+ "invCount.countStatus as countStatus, "
+					+ "invCount.countedBy as countedBy,invCount.checkedBy as checkedBy "
+					+ "from InventoryCountEntity invCount WHERE invCount.invCountDate >= '"+datefrom+"' AND  invCount.invCountDate <= '"+dateto+"' and "
+					+ "invCount.recordType<>'D' and invCount.pharmacyLocation.pharmacyLocationId="+locationID+" and invCount.invCountType='Physical Count' "
+					+ "and invCount.countStatus='"+payloadBean.getCustomParameter()+"'"
+					+ " ORDER BY  invCount.invCountName";
+				physicalCountEntityToList = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+			 }
+
+		catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return physicalCountEntityToList;
+	}
+
+	@Override
+	public InventoryCountEntity searchPhysicalCountById(Long id) {
+		InventoryCountEntity inventoryCountEntity = null;
+		String sqlQuery = "";
+		try {
+			sqlQuery = "from  InventoryCountEntity as ee  where ee.invCountId="+id+" and ee.recordType<>'D'";
+			inventoryCountEntity = (InventoryCountEntity) entityManager.createQuery(sqlQuery)
+				.getSingleResult();
+		} catch (NoResultException noResultException) {
+			return null;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return inventoryCountEntity;
+	}
+
+	@Override
+	public List<PhysicalCountEntityTo> searchPhysicalCountItemsById(List<Long> itemIdList,Long invCountId,Long locationID) {
+		List<PhysicalCountEntityTo> physicalCountListfromInvCountItems = new ArrayList<>();
+		List<PhysicalCountEntityTo> physicalCountListfromItemStock = new ArrayList<>();
+		
+		String sqlQuery = "";
+				
+			Session session = (Session) entityManager.getDelegate();
+			
+			
+			if (itemIdList.size()>0) {
+					sqlQuery ="select item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode,invCountItem.quantityOnHand as quantityOnHand,"
+							+ "invCountItem.quantityMatched as quantityMatched,invCountItem.countedQuantity as countedQuantity,"
+							+ "invCountItem.invCountItemId as invCountItemId,invCountItem.transactionCount as transactionCount,pharmacyLocation.pharmacyLocationId"
+							+ " as pharmacyLocationId from "
+							+ "InventoryCountItemsEntity invCountItem left join invCountItem.invCount invCount"
+							+ " left join invCount.pharmacyLocation  as pharmacyLocation left join invCountItem.item as item "
+							+ "where invCountItem.recordType<>'D' and invCountItem.invCount.invCountId="+invCountId+"  ";
+					
+					physicalCountListfromInvCountItems = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+							.setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+			
+					sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode,SUM(itemStock.quantityOnHand)  AS quantityOnHand,"
+							+ "itemStock.pharmacyLocation.pharmacyLocationId as pharmacyLocationId"
+							+ " from ItemStockEntity as itemStock  left join itemStock.item item "
+							+ " WHERE item.itemStatus=:itemStatus  and item.recordType<>'D' and"
+							//+ " itemStock.itemStockStatus='InStock' and "
+							+ " itemStock.pharmacyLocation.pharmacyLocationId="+locationID+" and "
+							+ "itemStock.recordType<>'D' and item.itemId not in (:id) group by item.itemId, item.itemName,item.itemCode,itemStock.pharmacyLocation.pharmacyLocationId having COALESCE(SUM(itemStock.quantityOnHand),0)>0  ORDER BY  item.itemName ";
+					
+					physicalCountListfromItemStock = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+								.setParameter("itemStatus", "Active").setParameterList("id", itemIdList).setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+					
+					physicalCountListfromInvCountItems.addAll(physicalCountListfromItemStock);
+				}
+				else {
+					sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode,SUM(itemStock.quantityOnHand)  AS quantityOnHand,"
+							+ "itemStock.pharmacyLocation.pharmacyLocationId as pharmacyLocationId"
+							+ " from ItemStockEntity as itemStock  left join itemStock.item item "
+							+ " WHERE item.itemStatus=:itemStatus  and item.recordType<>'D' and"
+							//+ " itemStock.itemStockStatus='InStock' "
+							+ " and itemStock.pharmacyLocation.pharmacyLocationId="+locationID+" and "
+							+ "itemStock.recordType<>'D' group by item.itemId, item.itemName,item.itemCode,itemStock.pharmacyLocation.pharmacyLocationId having COALESCE(SUM(itemStock.quantityOnHand),0)>0  ORDER BY  item.itemName ";
+					
+					physicalCountListfromItemStock = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+							.setParameter("itemStatus", "Active").setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+					
+					physicalCountListfromInvCountItems.addAll(physicalCountListfromItemStock);
+				}				
+		
+		return physicalCountListfromInvCountItems;
+	}
+	
+	@Override
+	public List<PhysicalCountEntityTo> searchPhysicalCountItems(Long id) {
+		String sqlQuery = "";
+		
+		Session session = (Session) entityManager.getDelegate();
+		
+		sqlQuery ="select item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode,invCountItem.quantityOnHand as quantityOnHand,"
+				+ "invCountItem.quantityMatched as quantityMatched,invCountItem.countedQuantity as countedQuantity,"
+				+ "invCountItem.invCountItemId as invCountItemId,invCountItem.transactionCount as transactionCount,pharmacyLocation.pharmacyLocationId"
+				+ " as pharmacyLocationId from "
+				+ "InventoryCountItemsEntity invCountItem left join invCountItem.invCount invCount"
+				+ " left join invCount.pharmacyLocation  as pharmacyLocation left join invCountItem.item as item "
+				+ "where invCountItem.recordType<>'D' and invCountItem.invCount.invCountId="+id+"  ";
+		return (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long invCountId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.invCountId as primaryKey,table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  InventoryCountEntity table where table.invCountId=:invCountId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("invCountId", invCountId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateCycleCount(InventoryCountEntity inventoryCountEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(inventoryCountEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public InventoryCountItemsEntity fetchPhysicalCountItemsEntityById(Long invCountItemId) {
+		return entityManager.find(InventoryCountItemsEntity.class, invCountItemId);
+	}
+
+	@Override
+	public boolean updatePhysicalCountItems(InventoryCountItemsEntity inventoryCountItemsEntity) {
+		
+		Session session = (Session) entityManager.getDelegate();
+		session.update(inventoryCountItemsEntity);
+		return true;
+	}
+
+
+	@Override
+	public List<PhysicalCountEntityTo> fetchStockItems(Long itemId, Long pharmacyLocationId) {
+		String sqlQuery = "";
+		List<PhysicalCountEntityTo> physicalCountEntityToList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+					+ "itemStock.quantityOnHand as quantityOnHand,itemStock.itemStockId as itemStockId"
+					+ " from ItemStockEntity itemStock left join itemStock.item as item "
+					+ "left join itemStock.itemPackSize as packSize where item.itemId="+itemId+" "
+					+ "and itemStock.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and itemStock.recordType<>'D'";
+			
+			physicalCountEntityToList = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+			
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return physicalCountEntityToList;
+	}
+	
+	@Override
+	public List<PhysicalCountEntityTo> fetchStockItemsOnEdit(Long itemId, Long pharmacyLocationId, Long invCountPK, List<Long> itemStockList) {
+		String sqlQuery = "";
+		List<PhysicalCountEntityTo> physicalCountListFromItemStock = new ArrayList<>();
+		List<PhysicalCountEntityTo> physicalCountListFromInvCountMismatch = new ArrayList<>();
+		Session session = (Session) entityManager.getDelegate();
+		
+		sqlQuery ="select item.itemId as itemId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+				+ "invCountMismatch.quantityOnHand as quantityOnHand,invCountMismatch.countedQuantity as countedQuantity,"
+				+ "itemStock.itemStockId as itemStockId,invCountMismatch.notes as notes"
+				+ " from InventoryCountMismatchEntity invCountMismatch left join invCountMismatch.itemStock as itemStock left join itemStock.item as item "
+				+ " where  item.itemId="+itemId+" and  invCountMismatch.invCountItem.invCountItemId="+invCountPK+"";
+		physicalCountListFromInvCountMismatch=(List<PhysicalCountEntityTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+		
+		if (itemStockList.size()>0) {
+			sqlQuery ="select item.itemId as itemId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+					+ "itemStock.quantityOnHand as quantityOnHand,itemStock.itemStockId as itemStockId"
+					+ " from ItemStockEntity itemStock left join itemStock.item as item "
+					+ "left join itemStock.itemPackSize as packSize where item.itemId="+itemId+" "
+					+ "and itemStock.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and itemStock.recordType<>'D' and itemStock.itemStockId "
+					+ "not in (:ids)";
+			
+			physicalCountListFromItemStock = (List<PhysicalCountEntityTo>) session.createQuery(sqlQuery).setParameterList("ids", itemStockList)
+					.setResultTransformer(Transformers.aliasToBean(PhysicalCountEntityTo.class)).list();
+			physicalCountListFromInvCountMismatch.addAll(physicalCountListFromItemStock);
+		}
+		return physicalCountListFromInvCountMismatch;
+	}
+
+
+	@Override
+	public List<Long> fetchItemStockIdFromInvCountMismatch(Long invCountItemsPK) {
+		String sqlQuery = "";
+		List<Long> itemIdList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select invCountMismatchItem.itemStock.itemStockId from InventoryCountMismatchEntity invCountMismatchItem  where"
+					+ " invCountMismatchItem.invCountItem.invCountItemId="+invCountItemsPK+" and invCountMismatchItem.recordType<>'D'";
+
+			itemIdList = (List<Long>) session.createQuery(sqlQuery).list();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return itemIdList;
+	}
+
+
+	@Override
+	public List<InventoryCountMismatchEntity> fetchInventoryMismatchItemsByIds(List<Long> invCountItemsPKList) {
+		try {
+		Session session = (Session) entityManager.getDelegate();
+		
+	return  session.createQuery("SELECT invMismatchItems FROM InventoryCountMismatchEntity invMismatchItems WHERE invMismatchItems.invCountItem.invCountItemId IN (:ids)")
+		.setParameter("ids", invCountItemsPKList).getResultList();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
+
+	@Override
+	public Long insertStockAdjustment(ItemStockAdjustmentEntity itemStockAdjustmentEntity) {
+		Long pkOfUser=null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			 pkOfUser = (Long) session.save(itemStockAdjustmentEntity);
+			if (pkOfUser != null) {
+				return pkOfUser;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+
+		return pkOfUser;
+	}
+
+
+	@Override
+	public void deleteExisingInventoryMismacthedItems(Long invCountId) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+
+			sqlQuery="DELETE icm FROM inv_count_mismatch icm LEFT JOIN inv_count_items ici ON icm.inv_count_item_id=ici.inv_count_item_id"
+					+ " LEFT JOIN inv_counts ic on ic.inv_count_id=ici.inv_count_id  WHERE ic.inv_count_id="+invCountId+"";
+
+		 session.createNativeQuery(sqlQuery).executeUpdate();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+		}
+	}
+
+
+	@Override
+	public void deleteExisingInventoryCountItems(Long invCountId) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+
+			sqlQuery="DELETE ici FROM  inv_count_items ici  LEFT JOIN inv_counts ic on ic.inv_count_id=ici.inv_count_id  WHERE ic.inv_count_id="+invCountId+"";
+	
+
+		 session.createNativeQuery(sqlQuery).executeUpdate();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+		}
+	}
+
+
+	@Override
+	public List<InventoryCountMismatchEntity> fetchInventoryMismatchItem(Long invCountId) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		return  session.createQuery("SELECT invMismatchItems FROM InventoryCountMismatchEntity invMismatchItems left join "
+				+ "invMismatchItems.invCountItem as invCountItem left join invCountItem.invCount as invCount WHERE invCount.invCountId=:id")
+			.setParameter("id", invCountId).getResultList();
+	}
+	
+	@Override
+	public void deleteExisingInventoryMismacthedItemsForInvCountItem(Long invCountItemId) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+
+			sqlQuery="DELETE icm FROM inv_count_mismatch icm LEFT JOIN inv_count_items ici ON icm.inv_count_item_id=ici.inv_count_item_id"
+					+ "  WHERE ici.inv_count_item_id="+invCountItemId+"";
+
+		 session.createNativeQuery(sqlQuery).executeUpdate();
+			
+		}catch (Exception exception) {
+			exception.printStackTrace();
+		}
+	}
+		
+		@Override
+		public void deleteExisingInventoryrInvCountItem(Long invCountItemId) {
+			String sqlQuery = "";
+			try {
+				Session session = (Session) entityManager.getDelegate();
+
+				sqlQuery="DELETE icm FROM inv_count_items icm "
+						+ "  WHERE icm.inv_count_item_id="+invCountItemId+"";
+
+			 session.createNativeQuery(sqlQuery).executeUpdate();
+				
+			}catch (Exception exception) {
+				exception.printStackTrace();
+			}
+		}
+		
+
+
+//	@Override
+//	public void insertPhysicalCountItemsBulk(InventoryCountBean inventoryCountBean) {
+//		Long pkOfUser=null;
+//		
+//			Session session = (Session) entityManager.getDelegate();
+//			
+//			int i =0;
+//			
+//			 for (PhysicalCountEntityTo physicalCountEntityTo : inventoryCountBean.getInventoryCountItemTOList()) {
+//					InventoryCountItemsEntity inventoryCountItemsEntity = new InventoryCountItemsEntity();
+//					inventoryCountItemsEntity.setItemCountDate(new Date());
+//					inventoryCountItemsEntity.setQuantityOnHand(physicalCountEntityTo.getQuantityOnHand());
+//					inventoryCountItemsEntity.setCountedQuantity(physicalCountEntityTo.getCountedQuantity());
+//					inventoryCountItemsEntity.setQuantityMatched(physicalCountEntityTo.getQuantityMatched());
+//					inventoryCountItemsEntity.setIpAddress(inventoryCountBean.getIpAddress());
+//					ItemEntity item = new ItemEntity();
+//					item.setItemId(physicalCountEntityTo.getItemId());
+//					inventoryCountItemsEntity.setItem(item);
+//					InventoryCountEntity inventoryCountEntity = new InventoryCountEntity();
+//					inventoryCountEntity.setInvCountId(inventoryCountBean.getInvCountId());
+//					inventoryCountItemsEntity.setInvCount(inventoryCountEntity);
+//					inventoryCountItemsEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+//					inventoryCountItemsEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+//					inventoryCountItemsEntity.setCreatedDate(new Date());
+//					inventoryCountItemsEntity.setCreatedBy(inventoryCountBean.getCreatedBy());
+//					session.persist(inventoryCountItemsEntity);
+//					 
+//					 if(i>0 && i % 5 == 0 ) { // Same as the JDBC batch size
+//					      //flush a batch of inserts and release memory:
+//						 entityManager.flush();
+//						 entityManager.clear();
+//					      
+//					   }
+//					 i++;
+//				}
+//		
+//
+//		System.out.println();
+//	}
+
+
+
+
+	
+		
+	}

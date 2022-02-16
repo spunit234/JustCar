@@ -1,0 +1,275 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.entity.security.UserActivityDetailsEntity;
+import com.edios.cdf.entity.to.UserActivityLogEntityTO;
+import com.edios.cdf.entity.to.UserLoginLogDetailRespEntityTO;
+import com.edios.cdf.entity.to.UserLoginLogResponseEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AdminReportSearchParameterBean;
+import com.edios.pms.dao.AdminReportDao;
+
+@Repository
+@SuppressWarnings({ "deprecation", "unchecked" })
+public class AdminReportDaoImpl extends BaseDaoImpl<UserActivityDetailsEntity> implements AdminReportDao {
+
+	@Override
+	public List<UserActivityLogEntityTO> fetchUserActivityLog(
+			AdminReportSearchParameterBean adminReportSearchParameterBean) {
+		List<UserActivityLogEntityTO> userActivityLogList = null;
+		Session session = (Session) entityManager.getDelegate();
+		StringBuilder sqlQuery = new StringBuilder();
+		String fromDate = null;
+		String toDate = null;
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.UK);
+		SimpleDateFormat formatter1 = new SimpleDateFormat("yyyy-MM-dd");
+		fromDate = formatter1.format(adminReportSearchParameterBean.getFromDateTime()) + " 00:00:00";
+		toDate = formatter.format(adminReportSearchParameterBean.getToDateTime());
+
+		try {
+			sqlQuery.append(
+					"SELECT userActivity.userActivityId AS userActivityId,role.roleName AS roleName,userActivity.activityName AS activityName,userActivity.screenName AS screenName,"
+							+ " userActivity.activityDateTime AS activityDateTime,CONCAT(user.firstName,' ',COALESCE(user.lastName,'')) AS userName,userActivity.remarks AS remarks "
+							+ "FROM  UserActivityDetailsEntity userActivity "
+							+ "LEFT JOIN userActivity.userLoginDetails userLogin " + "LEFT JOIN userLogin.role role "
+							+ "LEFT JOIN  userLogin.user user WHERE   userActivity.activityDateTime >= '" + fromDate
+							+ "' AND  userActivity.activityDateTime <='" + toDate + "'");
+			if (adminReportSearchParameterBean.getUserName() != null
+					&& !adminReportSearchParameterBean.getUserName().trim().equals("")) {
+				sqlQuery.append(" AND user.firstName LIKE '%" + adminReportSearchParameterBean.getUserName() + "%'"
+						+ " OR user.lastName LIKE '%" + adminReportSearchParameterBean.getUserName() + "%' ");
+			}
+			if (adminReportSearchParameterBean.getScreenName() != null
+					&& !adminReportSearchParameterBean.getScreenName().trim().equals("")) {
+				sqlQuery.append(
+						" AND userActivity.screenName LIKE '%" + adminReportSearchParameterBean.getScreenName() + "%'");
+			}
+			if (adminReportSearchParameterBean.getActivityName() != null
+					&& !adminReportSearchParameterBean.getActivityName().trim().equals("")) {
+				sqlQuery.append(
+						" AND userActivity.activityName='" + adminReportSearchParameterBean.getActivityName() + "'");
+			}
+			userActivityLogList = session.createQuery(sqlQuery.toString())
+					.setResultTransformer(Transformers.aliasToBean(UserActivityLogEntityTO.class)).list();
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return userActivityLogList;
+	}
+
+	@Override
+	public List<UserActivityLogEntityTO> fetchSavedClickedUserActivityLog(PayloadBean payloadBean) {
+		List<UserActivityLogEntityTO> userActivityLogList = null;
+		Session session = (Session) entityManager.getDelegate();
+		StringBuilder sqlQuery = new StringBuilder();
+
+		try {
+			sqlQuery.append(
+					"SELECT  role.roleName AS roleName,userActivity.screenName AS screenName,CONCAT(user.firstName,' ',COALESCE(user.lastName,'')) AS userName,"
+							+ "auditRow.auditDateTime AS auditDateTime,auditRow.tableName AS tableName,auditCol.columnName AS columnName,"
+							+ "auditCol.oldValue AS oldValue,auditCol.newValue AS newValue,"
+							+ "CASE WHEN auditRow.rowAction = 'I' THEN 'Insert'"
+							+ "    WHEN auditRow.rowAction = 'U' THEN 'Update'" + "END AS rowAction "
+
+							+ "FROM  UserActivityDetailsEntity userActivity "
+							+ "LEFT JOIN userActivity.userLoginDetails userLogin " + "LEFT JOIN userLogin.role role "
+							+ "LEFT JOIN  userLogin.user user "
+							+ "LEFT JOIN AuditRowDetailsEntity auditRow on auditRow.userActivityID =userActivity.userActivityId "
+							+ " LEFT JOIN AuditColumnDetailsEntity auditCol on auditCol.auditRowDetail = auditRow.auditRowID "
+							+ " WHERE userActivity.userActivityId=" + payloadBean.getId()
+							+ " AND (auditRow.rowAction ='I' OR auditRow.rowAction ='U') ");
+			userActivityLogList = session.createQuery(sqlQuery.toString())
+					.setResultTransformer(Transformers.aliasToBean(UserActivityLogEntityTO.class)).list();
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+
+		return userActivityLogList;
+	}
+
+	@Override
+	public UserActivityLogEntityTO fetchSearchedUserActivityLog(PayloadBean payloadBean) {
+		UserActivityLogEntityTO searchedActivityLog = null;
+		Session session = (Session) entityManager.getDelegate();
+		StringBuilder sqlQuery = new StringBuilder();
+		try {
+			sqlQuery.append(
+					"SELECT userActivity.tableName AS tableName,userActivity.searchCriteria AS searchCriteria,userActivity.searchedRecordCount"
+							+ " AS searchedRecordCount,userActivity.remarks AS remarks "
+							+ "FROM  UserActivityDetailsEntity userActivity " + "WHERE userActivity.userActivityId="
+							+ payloadBean.getId() + "");
+			searchedActivityLog = (UserActivityLogEntityTO) session.createQuery(sqlQuery.toString())
+					.setResultTransformer(Transformers.aliasToBean(UserActivityLogEntityTO.class)).getSingleResult();
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return searchedActivityLog;
+	}
+
+	@Override
+	public List<UserActivityLogEntityTO> fetchUserAuditLog(
+			AdminReportSearchParameterBean adminReportSearchParameterBean) {
+		List<UserActivityLogEntityTO> userAuditLogList = null;
+		Session session = (Session) entityManager.getDelegate();
+		StringBuilder sqlQuery = new StringBuilder();
+		String fromDate = null;
+		String toDate = null;
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.UK);
+		SimpleDateFormat formatter1 = new SimpleDateFormat("yyyy-MM-dd");
+		fromDate = formatter1.format(adminReportSearchParameterBean.getFromDateTime()) + " 00:00:00";
+		toDate = formatter.format(adminReportSearchParameterBean.getToDateTime());
+		try {
+			sqlQuery.append(
+					"SELECT CONCAT(user.firstName,' ',COALESCE(user.lastName,'')) AS userName,role.roleName AS roleName,userActivity.screenName AS screenName,"
+							+ " auditRow.auditDateTime AS auditDateTime,auditRow.tableName AS tableName,auditRow.tablePkColName AS tablePkColName,auditRow.tablePkColValue AS "
+							+ "tablePkColValue,auditCol.columnName AS columnName,auditCol.oldValue AS oldValue,auditCol.newValue AS newValue,"
+							+ " CASE WHEN auditRow.rowAction = 'I' THEN 'Inserted' "
+							+ " WHEN  auditRow.rowAction = 'U' THEN 'Updated' "
+							+ " WHEN  auditRow.rowAction = 'D' THEN 'Deleted'" + " END AS rowAction "
+							+ " FROM AuditRowDetailsEntity auditRow "
+							+ "LEFT JOIN UserActivityDetailsEntity userActivity ON userActivity.userActivityId = auditRow.userActivityID   "
+							+ "LEFT JOIN userActivity.userLoginDetails userLoginDetails "
+							+ "LEFT JOIN userLoginDetails.role role " + "LEFT JOIN auditRow.user user "
+							+ "LEFT JOIN AuditColumnDetailsEntity auditCol on auditCol.auditRowDetail = auditRow.auditRowID "
+							+ " WHERE auditRow.auditDateTime>= '" + fromDate + "' AND auditRow.auditDateTime<= '"
+							+ toDate + "' ");
+			if (adminReportSearchParameterBean.getUserName() != null
+					&& !adminReportSearchParameterBean.getUserName().trim().equals("")) {
+				sqlQuery.append(" AND (user.firstName LIKE '%" + adminReportSearchParameterBean.getUserName() + "%'"
+						+ " OR user.lastName LIKE '%" + adminReportSearchParameterBean.getUserName() + "%') ");
+			}
+			if (adminReportSearchParameterBean.getScreenName() != null
+					&& !adminReportSearchParameterBean.getScreenName().trim().equals("")) {
+				sqlQuery.append(
+						" AND userActivity.screenName LIKE '%" + adminReportSearchParameterBean.getScreenName() + "%'");
+			}
+			if (adminReportSearchParameterBean.getActionType() != null) {
+				sqlQuery.append(" AND auditRow.rowAction = '" + adminReportSearchParameterBean.getActionType() + "'");
+			}
+			if (adminReportSearchParameterBean.getTableName() != null
+					&& !adminReportSearchParameterBean.getTableName().trim().equals("")) {
+				sqlQuery.append(
+						" AND auditRow.tableName LIKE '%" + adminReportSearchParameterBean.getTableName() + "%'");
+			}
+			if (adminReportSearchParameterBean.getColumnName() != null
+					&& !adminReportSearchParameterBean.getColumnName().trim().equals("")) {
+				sqlQuery.append(
+						" AND auditCol.columnName LIKE '%" + adminReportSearchParameterBean.getColumnName() + "%'");
+			}
+			if (adminReportSearchParameterBean.getOldValue() != null
+					&& !adminReportSearchParameterBean.getOldValue().trim().equals("")) {
+				sqlQuery.append(" AND auditCol.oldValue LIKE '%" + adminReportSearchParameterBean.getOldValue() + "%'");
+			}
+			if (adminReportSearchParameterBean.getNewValue() != null
+					&& !adminReportSearchParameterBean.getNewValue().trim().equals("")) {
+				sqlQuery.append(
+						" AND auditCol.newValue  LIKE '%" + adminReportSearchParameterBean.getNewValue() + "%' ");
+			}
+			userAuditLogList = session.createQuery(sqlQuery.toString())
+					.setResultTransformer(Transformers.aliasToBean(UserActivityLogEntityTO.class)).list();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return userAuditLogList;
+	}
+	
+	@Override
+	public List<UserLoginLogResponseEntityTO> getUserLoginLogs(AdminReportSearchParameterBean payload) {
+		List<UserLoginLogResponseEntityTO> userLoginLogs = new ArrayList<>();
+		try {
+
+			Session session = (Session) entityManager.getDelegate();
+			String sqlQquery = "SELECT userLoginDetail.userLoginId AS userLoginId, CONCAT(user.firstName,' ',COALESCE(user.lastName,'')) AS userName,"
+					+ " role.roleName AS roleName, userLoginDetail.ipAddress AS ipAddress, userLoginDetail.hostName AS hostName,"
+					+ " userLoginDetail.deviceType AS deviceType, userLoginDetail.osName AS osName, userLoginDetail.browserName AS "
+					+ " browserName, userLoginDetail.browserVersion AS browserVersion, userLoginDetail.loginDateTime AS loginDateTime,"
+					+ " (SELECT activityDetails.activityDateTime FROM UserActivityDetailsEntity AS activityDetails WHERE "
+					+ " activityDetails.userLoginDetails.userLoginId = userLoginDetail.userLoginId AND userActivityId = (SELECT MAX(activity.userActivityId) FROM "
+					+ " UserActivityDetailsEntity AS activity WHERE activity.userLoginDetails.userLoginId = userLoginDetail.userLoginId))"
+					+ " AS lastActivityDateTime, userLoginDetail.logoutDateTime AS logoutDateTime, userLoginDetail.logoutReason AS "
+					+ " logoutReason FROM UserLoginDetailsEntity AS userLoginDetail INNER JOIN userLoginDetail.user AS user INNER JOIN "
+					+ " userLoginDetail.role AS role WHERE ";
+
+			if (payload.getLoginFromDate() != null && payload.getLoginToDate() != null) {
+				sqlQquery = sqlQquery.concat(" userLoginDetail.loginDateTime >= '"
+						+ formatDate(payload.getLoginFromDate(), "From") + "' AND userLoginDetail.loginDateTime < '"
+						+ formatDate(payload.getLoginToDate(), "To") + "'");
+			}
+
+			if (payload.getUserName() != null && payload.getUserName().length() > 0) {
+				sqlQquery = sqlQquery
+						.concat(" AND CONCAT(user.firstName,' ',COALESCE(user.lastName,'')) LIKE '%" + payload.getUserName() + "%'");
+			}
+
+			if (payload.getIpAddress() != null && payload.getIpAddress().length() > 0) {
+				sqlQquery = sqlQquery.concat(" AND userLoginDetail.ipAddress LIKE '%" + payload.getIpAddress() + "%'");
+			}
+			
+
+			if (payload.getHostName() != null && payload.getHostName().length() > 0) {
+				sqlQquery = sqlQquery.concat(" AND userLoginDetail.hostName LIKE '%" + payload.getHostName() + "%'");
+			}
+
+			if (payload.getLogoutFromDate() != null && payload.getLogoutToDate() != null) {
+				sqlQquery = sqlQquery.concat(" AND userLoginDetail.logoutDateTime >= '"
+						+ formatDate(payload.getLogoutFromDate(), "From") + "' AND userLoginDetail.logoutDateTime < '"
+						+ formatDate(payload.getLogoutToDate(), "To") + "'");
+			}
+			
+			if (payload.getLogoutReason() != null && payload.getLogoutReason().length() > 0) {
+				sqlQquery = sqlQquery.concat(" AND userLoginDetail.logoutReason = '" + payload.getLogoutReason() + "'");
+			}
+
+			userLoginLogs = (List<UserLoginLogResponseEntityTO>) session.createQuery(sqlQquery)
+					.setResultTransformer(Transformers.aliasToBean(UserLoginLogResponseEntityTO.class)).list();
+			return userLoginLogs;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return userLoginLogs;
+		}
+
+	}
+
+	private String formatDate(Date date, String whichDate) {
+		return whichDate.equalsIgnoreCase("To") ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.UK).format(date)
+				: whichDate.equalsIgnoreCase("From") ? new SimpleDateFormat("yyyy-MM-dd").format(date) + " 00:00:00"
+						: "";
+	}
+
+	@Override
+	public List<UserLoginLogDetailRespEntityTO> getUserLoginLogDetails(PayloadBean payload) {
+		List<UserLoginLogDetailRespEntityTO> loginLogDetails = new ArrayList();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String sqlQquery = "SELECT userLoginDetail.userLoginId AS userLoginId, CONCAT(user.firstName,' ',COALESCE(user.lastName,'')) AS userName, "
+					+ " role.roleName AS roleName, activityDetails.screenName AS screenName, activityDetails.activityName AS activityName, "
+					+ " activityDetails.activityDateTime AS activityDateTime FROM UserLoginDetailsEntity AS userLoginDetail "
+					+ " INNER JOIN userLoginDetail.user AS user INNER JOIN userLoginDetail.role AS role RIGHT JOIN UserActivityDetailsEntity "
+					+ " AS activityDetails ON activityDetails.userLoginDetails=userLoginDetail WHERE userLoginDetail.userLoginId=:userLoginId";
+
+			loginLogDetails = (List<UserLoginLogDetailRespEntityTO>) session.createQuery(sqlQquery)
+					.setParameter("userLoginId", payload.getId())
+					.setResultTransformer(Transformers.aliasToBean(UserLoginLogDetailRespEntityTO.class)).list();
+
+			return loginLogDetails;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return loginLogDetails;
+		}
+	}
+
+}

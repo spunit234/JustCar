@@ -1,0 +1,84 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.ItemEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CycleCountItemsBean extends AbstractBean{
+	
+	@Override
+	public String toString() {
+		return "CycleCountItemsBean [cycleCountItemID=" + cycleCountItemID + ", cycleCountID=" + cycleCountID
+				+ ", itemId=" + itemId + ", quantityOnHand=" + quantityOnHand + ", countedQuantity=" + countedQuantity
+				+ ", quantityMatched=" + quantityMatched + ", notes=" + notes + ", ipAddress=" + ipAddress
+				+ ", lastModifiedBy=" + lastModifiedBy + ", createdDate=" + createdDate + ", lastModifiedDate="
+				+ lastModifiedDate + ", createdBy=" + createdBy + ", recordType=" + recordType + ", transactionCount="
+				+ transactionCount + ", userActivityId=" + userActivityId + "]";
+	}
+
+	private Long cycleCountItemID;
+	
+	
+	private Long cycleCountID;
+
+	
+	private Long itemId;
+	
+	
+	private Long quantityOnHand;
+	
+
+	private Long countedQuantity;
+	
+	
+	private String quantityMatched;
+
+	
+	
+	private String notes;
+	
+
+	private String ipAddress;
+
+	
+	private Long lastModifiedBy;
+
+	private Date createdDate;
+
+	
+	private Date lastModifiedDate;
+	
+	
+	private Long createdBy;
+	
+	
+	
+	private Character recordType;
+
+	
+	private Long transactionCount;
+
+	
+	private Long userActivityId;
+
+	
+}

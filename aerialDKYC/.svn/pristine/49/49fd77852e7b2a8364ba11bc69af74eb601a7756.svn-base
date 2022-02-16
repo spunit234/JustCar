@@ -1,0 +1,36 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.entity.to.SiteEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.edios.pms.entity.to.WorksStationAssignmentTO;
+
+public interface WorksStationAssignmentDao extends BaseDao<WorksStationAssignmentEntity> {
+	List<WorksStationAssignmentTO> getWorkStationAssigmentDetails(PayloadBean payloadBean);
+	
+	List<SiteEntityTO> fetchSiteDetails();
+	
+	List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails( Long siteID);
+	
+	boolean isAssignWorkStationNameExist(Long workStationID,String workStationName,Long siteID,Long pharmacyLocationID);
+	
+	boolean isAssignWorkStationCodeExist(Long workStationID,String workStationCode,Long siteID,Long pharmacyLocationID);
+	
+	boolean addAssignWorkStation(WorksStationAssignmentEntity objWorksStationAssignmentEntity);
+	
+	WorksStationAssignmentEntity findWorkStationById(Long workStationID);
+	
+	TransactionData fetchTransactionDataById(Long workStationID);
+	
+	boolean updateAssignWorkStation(WorksStationAssignmentEntity WorksStationAssignmentEntity);
+	
+	boolean deleteAssignWorkStation(Long workStationID);
+	
+	List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id);
+}

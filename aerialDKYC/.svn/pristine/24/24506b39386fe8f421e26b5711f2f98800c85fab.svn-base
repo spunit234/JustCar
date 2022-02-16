@@ -1,0 +1,109 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.bean.common.ApplicationParameterListBean;
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemCodeLinkageBean;
+import com.edios.pms.bean.ItemDrugSubstitutionBean;
+import com.edios.pms.bean.ItemInventorySettingBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.entity.ItemCodeLinkageEntity;
+import com.edios.pms.entity.ItemDrugSubstitutionEntity;
+import com.edios.pms.entity.ItemInventorySettingEntity;
+import com.edios.pms.entity.ItemPackSizeEntity;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.ItemsEntity;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+
+public interface ItemsDao extends BaseDao<ItemsEntity>{
+
+	boolean addItemConfiguration(ItemsEntity itemsEntity, ItemsBean itemsBean);
+
+	List<ItemsEnityTO> fetchItems(PayloadBean payloadBean);
+
+	ItemsEntity findItemById(PayloadBean payloadBean);
+
+	TransactionData fetchTransactionDataById(Long itemId);
+
+	boolean updateItem(ItemsEntity itemsEntity, ItemsBean itemsBean);
+
+	boolean deleteItem(DeleteRecords deleteRecords);
+	List<ItemEntityTO> fetchParameterList(String searchParameter);
+	
+	
+	//-----Second Tab----------//
+
+	
+	List<ItemInventorySettingsTo> fetchPharmacyLocationNameAuto(Long userID);
+
+	List<ItemInventorySettingsTo> fetchPharmacyLocationCodeAuto();
+
+	boolean addInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity, ItemInventorySettingBean itemInventorySettingBean);
+
+	List<ItemInventorySettingsTo> fetchInventorySettings(PayloadBean payloadbean);
+
+	ItemInventorySettingEntity editInventorySettings(PayloadBean payloadbean);
+
+	boolean updateInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity, ItemInventorySettingBean itemInventorySettingBean);
+
+	TransactionData fetchInventoryTransactionDataById(Long inventorySettingId);
+
+	boolean addPackSize(ItemPackSizeEntity itemPackSizeEntity, ItemPackSizeBean itemPackSizeBean);
+
+	List<ItemPackSizeEntityTO> fetchItemPackSize(PayloadBean payloadbean);
+
+	ItemPackSizeEntity editItemPackSize(PayloadBean payloadbean);
+
+	TransactionData fetchPackSizeTransactionDataById(Long packSizeId);
+
+	boolean updateItemPackSize(ItemPackSizeEntity itemPackSizeEntity, ItemPackSizeBean itemPackSizeBean);
+
+	Boolean checkItemsRecord(Long itemId, Long pharmacyLocationId);
+
+	List<ItemEntityTO> fetchDrugSubstitutionAutoLookUpList(Long itemId);
+
+	boolean addDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity, ItemDrugSubstitutionBean itemDrugSubstitutionBean);
+
+	List<ItemDrugSubstitutionEntityTO> fetchDrugSubstitution(PayloadBean payloadbean);
+
+	ItemDrugSubstitutionEntity editDrugSubstitution(PayloadBean payloadbean);
+
+	TransactionData fetchDrugSubstitutionTransactionDataById(Long drugSubstitutionId);
+
+	boolean updateDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity, ItemDrugSubstitutionBean itemDrugSubstitutionBean);
+
+	boolean addItemCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity, ItemCodeLinkageBean itemCodeLinkageBean);
+
+	List<ItemCodeLinkageEntityTO> fetchCodeLinkage(PayloadBean payloadbean);
+
+	ItemCodeLinkageEntity editCodeLinkage(PayloadBean payloadbean);
+
+	TransactionData fetchCodeLinkageTransactionDataById(Long codeLinkageId);
+
+	boolean updateCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity, ItemCodeLinkageBean itemCodeLinkageBean);
+
+	boolean checkExistingDrugSubstitutes(Long substituteItemId, Long itemId);
+
+	boolean checkExistingPackSizes(Long packSize, Long itemId);
+
+	Boolean checkItemsInventoryRecord(Long itemId, Long pharmacyLocationId, Long inventorySettingId);
+
+	Long checkItemUsageInItemStockAndItemOrderDetails(Long id);
+
+	Long addItemTransaction(ItemTransactionEntity itemTransactionEntity);
+
+	
+
+
+
+}

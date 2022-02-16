@@ -1,0 +1,134 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.ConfigureDashBoardBean;
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.entity.to.WidgetEntityTO;
+import com.edios.pms.manager.ConfigureDashboardManager;
+
+
+@RestController
+public class ConfigureDashboardController extends AbstractController{
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	ConfigureDashboardManager  configureDashboardManager;
+	
+	@PostMapping("/get-dashboard-list")
+	public ResponseEntity<List<DashboardTO>> getDashboardList(@RequestBody PayloadBean payloadBean) {
+		List<DashboardTO> dashboardList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+		dashboardList=configureDashboardManager.getDashboardList(payloadBean.getCustomParameter());
+		return new ResponseEntity<List<DashboardTO>>(dashboardList, HttpStatus.OK);
+		}
+		return new ResponseEntity<List<DashboardTO>>(dashboardList, HttpStatus.UNAUTHORIZED);
+	}
+	
+	@PostMapping("/get-config-dashboard")
+	public ResponseEntity<ConfigureDashBoardBean> getDataByID(@RequestBody PayloadBean payloadBean) {
+		ConfigureDashBoardBean configureDashBoardBean=null;
+		configureDashBoardBean=configureDashboardManager.getDataByID(payloadBean);
+		
+		return new ResponseEntity<ConfigureDashBoardBean>(configureDashBoardBean, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/delete-widget-target")
+	public BaseResponse deleteProductCustomField(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = configureDashboardManager.deleteDashboardWidget(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+
+	@GetMapping("/get-all-widget")
+	public ResponseEntity<List<WidgetEntityTO>> getAllWidget() {
+		List<WidgetEntityTO> widgetEntityTOList=null;
+		widgetEntityTOList=configureDashboardManager.getAllWidget();
+		return new ResponseEntity<List<WidgetEntityTO>>(widgetEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/unique-check")
+	public BaseResponse uniqueCheck(@RequestBody PayloadBean payloadBean) {
+		BaseResponse baseResponse = null;
+		String messaage="";
+		messaage=configureDashboardManager.uniqueCheck(payloadBean);
+		baseResponse = new BaseResponse(HttpStatus.OK,"", messaage);
+		return baseResponse;
+		
+	}
+	
+	@PostMapping("/add-config-dashboard")
+	public BaseResponse addConfigDashboard(@RequestBody ConfigureDashBoardBean configureDashBoardBean,HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String messaage="";
+		messaage=configureDashboardManager.addConfigDashboard(configureDashBoardBean,request);
+		baseResponse = new BaseResponse(HttpStatus.OK,messaage, "");
+		return baseResponse ;
+	}
+	@PostMapping("/update-config-dashboard")
+	public BaseResponse upDateConfigDashboard(@RequestBody ConfigureDashBoardBean configureDashBoardBean,HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String messaage="";
+		messaage=configureDashboardManager.updateConfigDashboard(configureDashBoardBean,request);
+		baseResponse = new BaseResponse(HttpStatus.OK,messaage, "");
+		return baseResponse ;
+	}
+	
+	@PostMapping("/delete-dashboard")
+	public BaseResponse deleteDashboard(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = configureDashboardManager.deleteDashboard(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	
+}

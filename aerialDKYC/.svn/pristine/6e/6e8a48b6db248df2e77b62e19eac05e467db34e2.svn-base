@@ -1,0 +1,22 @@
+package com.edios.pms.bean;
+
+import java.util.List;
+
+import com.edios.pms.entity.DashboardEntity;
+import com.edios.pms.entity.to.DashboardWidgetTO;
+import com.edios.pms.entity.to.WidgetEntityTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ConfigureDashBoardBean {
+	DashboardEntity dashboardEntity;
+	List<DashboardWidgetTO> dashboardWidgetTO;
+	List<WidgetEntityTO> widgetEntityTO;
+}

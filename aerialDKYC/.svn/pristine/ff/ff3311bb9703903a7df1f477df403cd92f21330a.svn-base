@@ -1,0 +1,265 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.CycleCountDao;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.CycleCountItemsEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+@RestController
+public class CycleCountDaoImpl extends BaseDaoImpl<CycleCountEntity> implements CycleCountDao{
+	@Autowired
+	MessageSource message;
+
+
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	
+	@Override
+	public List<CycleCountEntityTO> searchCycleCount(PayloadBean payloadBean) {
+			List<CycleCountEntityTO> cycleCountEntityTOsList = new ArrayList<>();
+		
+		String sqlQuery = "";
+		try {
+			String datformat=message.getMessage("dateFormat", null,"",Locale.US);
+			 String datefrom = null;
+			  String dateto = null;
+			  if(payloadBean.getFromDate() != null && payloadBean.getToDate() != null ){
+			     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+			     datefrom= formatter.format(payloadBean.getFromDate())+" 00:00:00";  	     
+			     dateto= formatter.format(payloadBean.getToDate())+" 23:59:59";
+			  
+			  }
+			
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select cycleCount.cycleCountID as cycleCountID, cycleCount.cycleCountName As cycleCountName ,cycleCount.checkedBy as checkedBy ,cycleCount.transactionCount as transactionCount, "
+					+ "cycleCount.itemClass AS itemClass, cycleCount.noOfItems AS noOfItems,cycleCount.cycleCountMatched as cycleCountMatched,cycleCount.countedBy as countedBy "
+					+ "from CycleCountEntity cycleCount  ";
+			 if(payloadBean.getItemClass()==null || payloadBean.getItemClass()=="")
+			{
+				sqlQuery+=" WHERE cycleCount.cycleCountDate >= '"+datefrom+"' AND  cycleCount.cycleCountDate <= '"+dateto+"' and cycleCount.recordType<>'D' ORDER BY  cycleCount.cycleCountName ";
+		
+				cycleCountEntityTOsList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+			  }
+			 else {
+				 sqlQuery+="  WHERE cycleCount.cycleCountDate >= '"+datefrom+"' AND  cycleCount.cycleCountDate <= '"+dateto+"'  and cycleCount.itemClass=:itemClass and cycleCount.recordType<>'D'  ORDER BY "
+				 		+ " cycleCount.cycleCountName "; 
+				 cycleCountEntityTOsList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery).setParameter("itemClass", payloadBean.getItemClass())
+							.setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+			 }
+			  
+			  
+		
+			  
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntityTOsList;
+	}
+
+
+	@Override
+	public CycleCountEntity searchCycleCountById(Long id) {
+		CycleCountEntity cycleCountEntity = null;
+		String sqlQuery = "";
+		try {
+			sqlQuery = "from  CycleCountEntity as ee  where ee.cycleCountID=:cycleCountID ";
+			cycleCountEntity = (CycleCountEntity) entityManager.createQuery(sqlQuery)
+				.setParameter("cycleCountID", id).getSingleResult();
+		} catch (NoResultException noResultException) {
+			return null;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntity;
+	}
+
+
+	@Override
+	public List<CycleCountEntityTO> searchCycleCountItems(PayloadBean payloadBean) {
+List<CycleCountEntityTO> cycleCountEntityTOsList = new ArrayList<>();
+		
+		String sqlQuery = "";
+		try {
+			String datformat=message.getMessage("dateFormat", null,"",Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode ,cycleCountItem.cycleCountItemID as cycleCountItemID,"
+					+ "COALESCE(SUM(itemStock.quantityOnHand),0)  AS quantityOnHand , cycleCountItem.quantityMatched AS quantityMatched,"
+					+ "cycleCountItem.countedQuantity as countedQuantity,cycleCountItem.notes as notes,cycleCountItem.transactionCount as transactionCount "
+					+ "from CycleCountItemsEntity as cycleCountItem  Right join cycleCountItem.itemId as item "
+					+ "left join ItemStockEntity as itemStock on item.itemId=itemStock.item.itemId"
+					+ " WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D' and (cycleCountItem.cycleCountID.cycleCountID=:cycleCountID or cycleCountItem.cycleCountID.cycleCountID is null) and itemStock.itemStockStatus='InStock'  and itemStock.recordType<>'D' group by item.itemId having COALESCE(SUM(itemStock.quantityOnHand),0)>0 ORDER BY  item.itemName ";
+			
+				cycleCountEntityTOsList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").setParameter("cycleCountID", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+				
+			String	sqlquery2="select count(item.itemId) as noOfItems from ItemEntity as item WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D'";
+				Object obj=(Object)	session.createQuery(sqlquery2).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").getSingleResult();
+			  
+				cycleCountEntityTOsList.get(0).setNoOfItems(Long.parseLong(obj.toString()));
+			  
+			  
+		
+			  
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntityTOsList;
+	}
+
+	@Override
+	public List<CycleCountEntityTO> fetchItemDetailForNewCycleCount(PayloadBean payloadBean) {
+List<CycleCountEntityTO> cycleCountEntityTOsList = new ArrayList<>();
+		
+		String sqlQuery = "";
+		try {
+			String datformat=message.getMessage("dateFormat", null,"",Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode,"
+					+ "SUM(itemStock.quantityOnHand)  AS quantityOnHand"
+					+ " from ItemStockEntity as itemStock  right join itemStock.item item "
+					+ " WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D' and itemStock.itemStockStatus='InStock'  and itemStock.recordType<>'D' group by item.itemId having COALESCE(SUM(itemStock.quantityOnHand),0)>0  ORDER BY  item.itemName ";
+			
+				cycleCountEntityTOsList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+				
+			String	sqlquery2="select count(item.itemId) as noOfItems from ItemEntity as item WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D'";
+				Object obj=(Object)	session.createQuery(sqlquery2).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").getSingleResult();
+			  if(obj!=null && !cycleCountEntityTOsList.isEmpty())
+				cycleCountEntityTOsList.get(0).setNoOfItems(Long.parseLong(obj.toString()));
+			  
+			  
+		
+			  
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntityTOsList;
+	}
+	@Override
+	public Long addCycleCountAndCountItems(CycleCountEntity cycleCountEntity) {
+		//boolean result = true;
+		Long pkOfUser=null;
+		try {
+			// entityManager.persist(pharmacyLocationUserEntity);
+			Session session = (Session) entityManager.getDelegate();
+			 pkOfUser = (Long) session.save(cycleCountEntity);
+			if (pkOfUser != null) {
+				return pkOfUser;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+
+		return pkOfUser;
+	}
+
+
+	@Override
+	public boolean addCycleCountItems(CycleCountItemsEntity cycleCountItemsEntity) {
+				Session session = (Session) entityManager.getDelegate();
+					 session.persist(cycleCountItemsEntity);
+				return true;
+	}
+
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long cycleCountID) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  CycleCountEntity table where table.cycleCountID=:cycleCountID";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("cycleCountID", cycleCountID)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+	@Override
+	public boolean updateCycleCount(CycleCountEntity cycleCountEntity) {
+		boolean result = true;
+		try {
+			
+			Session session = (Session) entityManager.getDelegate();
+			session.update(cycleCountEntity);
+			
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+
+	@Override
+	public boolean updateCycleCountItems(CycleCountItemsEntity cycleCountItemsEntity) {
+		boolean result = true;
+		
+			
+			Session session = (Session) entityManager.getDelegate();
+			session.update(cycleCountItemsEntity);
+			return true;
+	}
+
+		
+		
+		
+
+
+	@Override
+	public TransactionData fetchTransactionDataById2(Long cycleCountItemID) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  CycleCountItemsEntity table where table.cycleCountItemID=:cycleCountItemID";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("cycleCountItemID", cycleCountItemID)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+	@Override
+	public CycleCountItemsEntity fetchCycleCountItemsEntityById(Long id) {
+		// TODO Auto-generated method stub
+		return entityManager.find(CycleCountItemsEntity.class, id);
+	}
+
+
+
+}

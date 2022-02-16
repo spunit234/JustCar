@@ -1,0 +1,49 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.bean.InventoryCountItemsBean;
+import com.edios.pms.entity.InventoryCountItemsEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+
+public interface PhysicalCountManager  extends AbstractManager {
+
+	List<PhysicalCountEntityTo> fetchPhysicalCountItems(PayloadBean payloadBean);
+
+	//Long addPhysicalCountItems(InventoryCountBean inventoryCountBean);
+
+	List<PhysicalCountEntityTo> searchPhysicalCount(PayloadBean payloadBean);
+
+	InventoryCountBean searchPhysicalCountById(PayloadBean payloadBean);
+
+	String updatePhysicalCount(InventoryCountBean inventoryCountBean) throws TransactionFailedException;
+
+	String finalizePhysicalCount(InventoryCountBean inventoryCountBean) throws TransactionFailedException;
+
+	PhysicalCountEntityTo fetchPhysicalCountItemsAndLocation(PayloadBean payloadBean);
+
+	List<PhysicalCountEntityTo> fetchStockItems(PhysicalCountEntityTo physicalCountEntityTo);
+
+	Long addPhysicalCount(InventoryCountBean inventoryCountBean);
+
+	Long addPhysicalCountItems(InventoryCountItemsBean inventoryCountItemsBean);
+
+	Long deletePhysicalCountItems(PhysicalCountEntityTo physicalCountEntityTo);
+
+	String addInventoryItemAndMimacthItem(InventoryCountItemsBean inventoryCountItemsBean);
+
+	String addAllInventoryCountItems(InventoryCountBean inventoryCountBean);
+
+	String deleteAllInventoryCountItems(PayloadBean payloadBean);
+
+	List<PhysicalCountEntityTo> fetchStockItemsOnEdit(PhysicalCountEntityTo physicalCountEntityTo);
+
+	InventoryCountBean fetchCycleCount(PayloadBean payloadBean);
+
+}

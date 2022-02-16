@@ -1,0 +1,64 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemStockAdjustmentEntityTO   implements Serializable{
+
+	private static final long serialVersionUID = 1L;
+	private String itemName;
+	private String itemCode;
+	private String adjustmentDate;
+	private Long adjustmentQuantity;
+	private String adjustmentBy;
+	private String witnessName;
+	private String adjustmentNotes;
+	private Long transactionCount;
+	
+	
+	private Long packSize;
+	private Long itemId;
+	private Long pharmacyLocationId;
+	private Double unitCost;
+	
+	private String lotNo;
+	private String expiryDate;
+	private Long quantityOnHand;
+	
+	private String dateRange;
+	private String itemNameReport;
+	
+	private String label;
+	private String value;
+	private Long itemStockAdjustmentId;
+	private String adjustmentStatus;
+	private Long quantityReceived;
+	private String itemStockStatus;
+	private Long quantityAdjusted;
+	private Long stockAdjustmentTransactionCount;
+	private Long itemStockId;
+	
+	private String approvedBy;
+	private String adjustementBy;
+	
+	DateFormatter formatter = new DateFormatter();
+
+	public void setAdjustmentDate(Date adjustmentDate) {
+		this.adjustmentDate=formatter.formaDate(adjustmentDate);
+	}
+	
+	public void setExpiryDate(Date expiryDate) {
+		this.expiryDate=formatter.formaDate(expiryDate);
+	}
+}

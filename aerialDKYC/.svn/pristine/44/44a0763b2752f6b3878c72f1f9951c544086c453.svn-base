@@ -1,0 +1,550 @@
+package com.edios.pms.controller;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.lucene.search.payloads.PayloadFunction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemConsumptionReportBean;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.manager.BatchRecallManager;
+import com.edios.pms.manager.CycleCountReportManager;
+import com.edios.pms.manager.ItemsConsumptionReportManager;
+import com.edios.pms.manager.ReportManager;
+import com.edios.pms.manager.SlowMovingMedicationsManager;
+import com.edios.pms.manager.StockAdjustmentReportManager;
+import com.edios.pms.manager.StockReportManager;
+
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+
+@RestController
+public class ExportReportsController {
+	
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	ReportManager reportManager;
+	
+	@Autowired 
+	SlowMovingMedicationsManager slowMovingMedicationsManager;
+	
+	@Autowired
+	StockAdjustmentReportManager stockAdjustmentReportManager;
+	
+	@Autowired
+	CycleCountReportManager cycleCountReportManager;
+	
+	@Autowired
+	StockReportManager stockReportManager;
+	
+
+	@Autowired
+	ItemsConsumptionReportManager itemsConsumptionReportManager;
+	
+	@Autowired
+	BatchRecallManager  batchRecallManager;
+	
+	@GetMapping("/export_report_outOfStock_Item_Details/{payloadDetails}")
+	public void exportOutOfStockItemDetails(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails")String payloadDetails) {
+	try {
+		List<ReportsTO> assetCategoryTOList = null;
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setId(Long.parseLong(details[0]));
+		payloadBean.setDaysCount(Long.parseLong(details[1]));
+		assetCategoryTOList = reportManager.fetchOutOfStockItemDetails(payloadBean);
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+	
+
+	JasperPrint jasperPrint = null;
+	JRBeanCollectionDataSource beanCollectionDataSource = null;
+	beanCollectionDataSource = new JRBeanCollectionDataSource(assetCategoryTOList);
+	String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//OutOfStockMedication.jasper");
+	jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+	httpServletResponse.addHeader("Content-disposition","attachment; filename=OutOfStockMedication.pdf");
+	ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+	JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	@GetMapping("/export_report_expiredMedications/{payloadDetails}")
+	public void exportExpiredMedicatons(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setSearchParameter(details[0]);
+		payloadBean.setId(Long.parseLong(details[3]));
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {	 
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchExpiredItemDetails(payloadBean);
+		String dateRange="";
+		if (details[0].equals("Date Range")) {
+			DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+			dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+			assetCategoryTOList.get(0).setDateRange(dateRange);
+		}
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(assetCategoryTOList);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//ExpiredMedications.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=ExpiredMedications.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	@GetMapping("/export_report_nearExpiry_Medications/{payloadDetails}")
+	public void exportNearExpiryMedicatons(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setSearchParameter(details[0]);
+		payloadBean.setId(Long.parseLong(details[3]));
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchExpiredItemDetails(payloadBean);
+		String dateRange="";
+		if (details[0].equals("Date Range")) {
+			DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+			dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+			assetCategoryTOList.get(0).setDateRange(dateRange);
+		}
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(assetCategoryTOList);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//NearExpiryMedications.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=NearExpiryMedications.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	@GetMapping("/export_report_slow_moving_Medications/{payloadDetails}")
+	public void exportSlowMovingMedicatons(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setSearchParameter(details[0]);
+		payloadBean.setDaysCount(Long.parseLong(details[3]));
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		payloadBean.setId(Long.parseLong(details[5]));
+		
+		List<PatientDispensedItemsTO> patientDispensedItemsTO=null;
+		patientDispensedItemsTO =slowMovingMedicationsManager.getSlowMovingMedication(payloadBean);
+		String dateRange="";
+		DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+		dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+		patientDispensedItemsTO.get(0).setDateRange(dateRange);
+		patientDispensedItemsTO.get(0).setAverageDailyUsage("Average Daily Usage Quantity: "+Long.parseLong(details[4]));
+		
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(patientDispensedItemsTO);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//SlowMovingMedications.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=SlowMovingMedications.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	@GetMapping("/export_report_minimum_Quantity_Medications/{id}")
+	public void exportMinimumQuantityMedications(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("id") Long id) {
+	try {
+		List<ReportsTO> assetCategoryTOList = null;
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setId(id);
+		assetCategoryTOList = reportManager.fetchMinimumQuantityItemDetails(payloadBean);
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+	
+
+	JasperPrint jasperPrint = null;
+	JRBeanCollectionDataSource beanCollectionDataSource = null;
+	beanCollectionDataSource = new JRBeanCollectionDataSource(assetCategoryTOList);
+	String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//MinimumQuantityMedications.jasper");
+	jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+	httpServletResponse.addHeader("Content-disposition","attachment; filename=MinimumQuantityMedications.pdf");
+	ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+	JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	
+	@GetMapping("/export_report_processed_orders/{payloadDetails}")
+	public void exportProcessedOrders(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setSearchParameter(details[0]);
+		payloadBean.setId(Long.parseLong(details[3]));
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchProcessedOrderDetails(payloadBean);
+		PayloadBean payload = new PayloadBean();
+		for(ReportsTO reportsTo:assetCategoryTOList) {
+			payload.setId(reportsTo.getItemOrderId());
+			List<ReportsTO> processedOrderItemDetailList = reportManager.fetchProcessedOrderItemDetails(payload);
+			reportsTo.getProcessedOrderItemDetailList().addAll(processedOrderItemDetailList);
+		}
+		String dateRange="";
+		if (details[0].equals("Date Range")) {
+		DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+		dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+		assetCategoryTOList.get(0).setDateRange(dateRange);
+		}
+		
+		
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(assetCategoryTOList);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//ProcessedOrders.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=ProcessedOrders.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	
+	@GetMapping("/export_report_stock_adjustment/{payloadDetails}")
+	public void stockAdjustmentReport(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		
+		System.out.println("Hello amigo");
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setSearchParameter(details[3]);
+		if (!details[0].equals("NULL")) {
+			payloadBean.setItemName(details[0]);	
+		}
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		
+		List<ItemStockAdjustmentEntityTO>itemStockAdjustmentEntityTO=null;
+		
+		itemStockAdjustmentEntityTO= (List<ItemStockAdjustmentEntityTO>) stockAdjustmentReportManager.searchStockAdjustmentReport(payloadBean);
+		
+		String dateRange="";
+		DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+		dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+		if (itemStockAdjustmentEntityTO.size()>0) {
+			itemStockAdjustmentEntityTO.get(0).setDateRange(dateRange);
+			
+//			if (!details[0].equals("NULL")) {
+//			itemStockAdjustmentEntityTO.get(0).setItemNameReport("Item Name: "+itemStockAdjustmentEntityTO.get(0).getItemName());
+//			}
+		}
+		
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(itemStockAdjustmentEntityTO);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//StockAdjustment.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=StockAdjustment.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+
+	@GetMapping("/export_report_stock/{payloadDetails}")
+	public void exportStockReport(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		
+		if (!details[0].equals("NULL")) {
+			payloadBean.setItemName(details[0]);	
+		}
+		payloadBean.setId(Long.parseLong(details[1]));
+		List<PhysicalCountReportTO>physicalCountReportTO=null;
+		
+		physicalCountReportTO= (List<PhysicalCountReportTO>) stockReportManager.fetchStockReport(payloadBean);
+		
+//		if (physicalCountReportTO.size()>0 && !details[0].equals("NULL")) {
+//				physicalCountReportTO.get(0).setItemNameReport("Item Name: "+physicalCountReportTO.get(0).getItemName());
+//		}
+		
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(physicalCountReportTO);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//StockReport.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=StockReport.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	@GetMapping("/export_report_received_vs_consumed/{payloadDetails}")
+	public void exportReceivedVsConsumedReport(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setId(Long.parseLong(details[3]));
+		if (!details[0].equals("NULL")) {
+			System.out.println();
+			payloadBean.setCustomParameter(details[0]);	
+		}
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		List<ItemStockEntityTO> itemStockEntityTOList=null;
+			itemStockEntityTOList = reportManager.getRecevicedConsumed(payloadBean);
+		
+		String dateRange="";
+		DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+		dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+		if (itemStockEntityTOList.size()>0) {
+			itemStockEntityTOList.get(0).setDateRange(dateRange);
+			
+//			if (!details[0].equals("NULL")) {
+//				itemStockEntityTOList.get(0).setItemNameReport("Item Name: "+itemStockEntityTOList.get(0).getItemName());
+//			}
+		}
+		
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(itemStockEntityTOList);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//ReceivedVsConsumed.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=ReceivedVsConsumed.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	
+	
+	@GetMapping("/export_report_item_consumption/{payloadDetails}")
+	public void export_itemConsumptionReport(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("payloadDetails") String payloadDetails) {
+	try {
+		String[] details = payloadDetails.split(",", -1);
+		PayloadBean payloadBean= new PayloadBean();
+		
+		if (!details[0].equals("NULL")) {
+			payloadBean.setSearchParameter(details[0]);	
+		}
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		if (details[1]!=null ) {
+			 payloadBean.setFromDate(formatter.parse(details[1]));	
+		}
+		if (details[2]!=null ) {
+			 payloadBean.setToDate(formatter.parse(details[2]));
+		}
+		payloadBean.setId(Long.parseLong(details[3]));
+		
+		List<ItemConsumptionReportBean> itemConsumptionReportBeanList=null;
+			itemConsumptionReportBeanList = itemsConsumptionReportManager.fetchItemsConsumptionReport(payloadBean);
+		
+		String dateRange="";
+		DateFormat dateFormat = new SimpleDateFormat("dd-MMMM-yyyy");  
+		dateRange="From Date: "+dateFormat.format(payloadBean.getFromDate())+" & To Date: "+dateFormat.format(payloadBean.getToDate())+"";
+		if (itemConsumptionReportBeanList.size()>0) {
+			itemConsumptionReportBeanList.get(0).setDateRange(dateRange);
+			
+//			if (!details[0].equals("NULL")) {
+//				itemConsumptionReportBeanList.get(0).setItemNameReport("Item Name: "+itemConsumptionReportBeanList.get(0).getItemName());
+//			}
+
+		}
+		
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(itemConsumptionReportBeanList);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//ItemConsumption.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=ItemConsumption.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	
+	@GetMapping("/export_report_quantity_on_hand_medications/{id}")
+	public void exportQuantityOnHandMedications(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+	@PathVariable("id") Long id) {
+	try {
+		List<ReportsTO> assetCategoryTOList = null;
+		PayloadBean payloadBean= new PayloadBean();
+		payloadBean.setId(id);
+		assetCategoryTOList = reportManager.fetchQuantityOnHandDetails(payloadBean);
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+	
+
+	JasperPrint jasperPrint = null;
+	JRBeanCollectionDataSource beanCollectionDataSource = null;
+	beanCollectionDataSource = new JRBeanCollectionDataSource(assetCategoryTOList);
+	String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//QuantityOnHandMedications.jasper");
+	jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+	httpServletResponse.addHeader("Content-disposition","attachment; filename=QuantityOnHandMedications.pdf");
+	ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+	JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+	@GetMapping("/export_report_batch_recall/{payloadDetails}")
+	public void export_batchRecall(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+			@PathVariable("payloadDetails") String payloadDetails) {
+			try {
+				String[] details = payloadDetails.split(",", -1);
+				ItemStockEntityTO itemStockEntityTO= new ItemStockEntityTO();
+				
+				if (!details[0].equals("NULL")) {
+					itemStockEntityTO.setItemName(details[0]);	
+				}
+				
+				
+				if (!details[1].equals("NULL") ) {
+					itemStockEntityTO.setItemCode(details[1]);	
+				}
+				
+				itemStockEntityTO.setItemStockStatus(details[2]);
+				itemStockEntityTO.setUserID(Long.parseLong(details[3]));
+				List<ItemStockEntityTO> itemStockEntityTOList= batchRecallManager.fetchItemStock(itemStockEntityTO);
+				PayloadBean payloadBean = new PayloadBean();
+					for(ItemStockEntityTO itemStockTO :itemStockEntityTOList) {
+						payloadBean.setId(itemStockTO.getItemStockId());
+						List<PatientEntityTO> patientEntityTOList = batchRecallManager.fetchPatientList(payloadBean);
+						itemStockTO.getPatientList().addAll(patientEntityTOList);
+					}
+				
+				HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+				JasperPrint jasperPrint = null;
+				JRBeanCollectionDataSource beanCollectionDataSource = null;
+				beanCollectionDataSource = new JRBeanCollectionDataSource(itemStockEntityTOList);
+				String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//Batch_Recall.jasper");
+				jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+				httpServletResponse.addHeader("Content-disposition","attachment; filename=Batch_Recall.pdf");
+				ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+				JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+			}
+			catch(Exception e) {
+			e.printStackTrace();
+			}
+			}
+
+
+}

@@ -1,0 +1,70 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.UserEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+
+
+/**
+ * The persistent class for the ` pharmacy_location_users` database table.
+ * 
+ */
+@Entity
+@Table(name="pharmacy_location_users")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PharmacyLocationUserEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="PHARMACY_LOCATION_USER_ID")
+	private Long pharmacyLocationUserId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	@ManyToOne
+	@JoinColumn(name="USER_ID")
+	private UserEntity userId;
+
+	//bi-directional many-to-one association to PharmacyLocation
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+
+	
+
+}

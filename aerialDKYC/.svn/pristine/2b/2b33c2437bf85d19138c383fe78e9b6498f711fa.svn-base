@@ -1,0 +1,43 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.cdf.bean.security.SiteBean;
+import com.edios.pms.entity.AdhocReportEntity;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class AdhocReportFieldBean extends AbstractBean {
+	private static final long serialVersionUID = 1L;
+
+	private Long adhocReportFieldId;
+
+	private AdhocReportBean adhocReport;
+	
+	private DataSourceBean dataSource;
+	
+	private DataSourceFieldBean dataSourceField;
+	
+	private Long fieldSequence;
+	
+
+}

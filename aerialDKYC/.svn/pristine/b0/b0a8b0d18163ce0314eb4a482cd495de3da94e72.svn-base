@@ -1,0 +1,39 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CycleCountBean extends AbstractBean {
+
+	private static final long serialVersionUID = -8619729682840925584L;
+	
+	private Long cycleCountID;
+	private String checkedBy;
+	private String countedBy;
+	private Long createdBy;
+	private Date createdDate;
+	private Date cycleCountDate;
+	private String cycleCountMatched;
+	private String cycleCountName;
+	private String ipAddress;
+	private String itemClass;
+	private Long lastModifiedBy;
+	private Date lastModifiedDate;
+	private Long noOfItems;
+	private String notes;
+	private Character recordType;
+	private Long transactionCount;
+	private Long userActivityId;
+	//private List<CycleCountItemBean> cycleCountItems;
+	private List<CycleCountEntityTO>cycleCountItemBean2; 
+}

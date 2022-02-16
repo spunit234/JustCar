@@ -1,0 +1,75 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+
+import org.hibernate.Session;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.entity.security.UserActivityDetailsEntity;
+import com.edios.cdf.entity.security.UserLoginDetailsEntity;
+import com.edios.pms.dao.UserActivityDetailsManagerDao;
+
+@Repository
+public class UserActivityDetailsManagerDaoImpl extends BaseDaoImpl<UserActivityDetailsEntity> implements UserActivityDetailsManagerDao {
+
+	@Override
+	public Long insertScreenActivity(UserActivityDetailsEntity userActivityDetailsEntity) {
+		Session session=(Session) entityManager.getDelegate();
+		return (Long) session.save(userActivityDetailsEntity);
+		
+	}
+
+	@Override
+	public Long insertScreenActivity(Long userLoginId, String screenName, String activityName, String searchCriteria,
+			Long searchedRecordCount, String tableName, String pkColName, Long pkColValue, String remarks,String impFieldValue) {
+		
+		UserActivityDetailsEntity userActivityDetailsEntity = new UserActivityDetailsEntity();
+		UserLoginDetailsEntity userLoginDetailsEntity = new UserLoginDetailsEntity();
+		
+		userLoginDetailsEntity.setUserLoginId(userLoginId);
+		userActivityDetailsEntity.setUserLoginDetails(userLoginDetailsEntity);
+		userActivityDetailsEntity.setScreenName(screenName);
+		userActivityDetailsEntity.setActivityDateTime(new Date());
+		userActivityDetailsEntity.setSearchCriteria(searchCriteria);
+		userActivityDetailsEntity.setActivityName(activityName);
+		userActivityDetailsEntity.setSearchedRecordCount(searchedRecordCount);
+		userActivityDetailsEntity.setTableName(tableName);
+		userActivityDetailsEntity.setPkColName(pkColName);
+		userActivityDetailsEntity.setPkColValue(pkColValue);
+		userActivityDetailsEntity.setRemarks(remarks);
+		userActivityDetailsEntity.setImpFieldValue(impFieldValue);
+		
+		
+		Session session=(Session) entityManager.getDelegate();
+		return (Long) session.save(userActivityDetailsEntity);
+	}
+
+	@Override
+	public Long updateEntity(String entityName, String pkColumnName,Long pkColumnValue,String userActivityIdColName,Long userActivityIdColValue) {
+		Session session=(Session) entityManager.getDelegate();
+		
+		String sqlQuery = "";
+		sqlQuery="UPDATE "+entityName+" set "+userActivityIdColName+"=:userActivityIdColValue"+" where "+pkColumnName+"=:pkColumnValue";
+		
+		Long count = (long) session.createQuery(sqlQuery).setParameter("userActivityIdColValue", userActivityIdColValue).
+				 setParameter("pkColumnValue", pkColumnValue).executeUpdate();
+		
+		return count;
+	}
+
+	@Override
+	public Long updateActivityRow(String searchCriteria, Long searchedRecordCount, Long pkColValue,Long userActivityId) {
+		Session session=(Session) entityManager.getDelegate();
+		String sqlQuery = "";
+		sqlQuery+="update UserActivityDetailsEntity set searchCriteria=:searchCriteria,searchedRecordCount=:searchedRecordCount,pkColValue=:pkColValue"
+				+ " where userActivityId=:userActivityId";
+		Long count = (long) session.createQuery(sqlQuery).setParameter("searchCriteria", searchCriteria).
+				 setParameter("searchedRecordCount", searchedRecordCount).setParameter("pkColValue", pkColValue)
+				 .setParameter("userActivityId", userActivityId).executeUpdate();
+		return count;
+	}
+
+	
+
+}

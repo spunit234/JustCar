@@ -1,0 +1,38 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyLocationUserEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+public interface AssignPharmacyLocationDao extends BaseDao<PharmacyLocationEntity>{
+
+	List<PharmacyLocationBean> PharmacyLocationNames(PayloadBean payloadBean);
+
+	List<PharmacyLocationEntityTO> searchLocationNames(PayloadBean payloadBean);
+
+	List<PharmacyLocationEntityTO> searchLocationCode(PayloadBean payloadBean);
+
+	TransactionData fetchTransactionDataById(Long pharmacyLocationUserId);
+
+	boolean updatePharmacyLocation(PharmacyLocationUserEntity pharmacyLocationUserEntity, AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean);
+
+	boolean addPharmacyLocation(PharmacyLocationUserEntity pharmacyLocationUserEntity, AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean);
+
+	
+
+	boolean deletePharmacyUser(PharmacyLocationUserEntity pharmacyLocationUserEntity);
+	
+	List<PharmacyLocationEntityTO> isPharmacyLocationAssignedToUser(String username);
+
+	
+
+}

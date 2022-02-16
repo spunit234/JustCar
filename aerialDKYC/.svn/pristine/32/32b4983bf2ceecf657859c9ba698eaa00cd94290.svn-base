@@ -1,0 +1,49 @@
+package com.edios.pms.entity.to;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.pms.bean.DataSourceBean;
+import com.edios.pms.bean.DataSourceFieldBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class AdhocReportFieldTO {
+	
+	private Long adhocReportFieldId;
+	
+	private Long adhocReportId;
+	
+	private Long dataSourceId;
+	
+	private Long dataSourceFieldId;
+	
+	private String fieldActualName;
+	
+	private Long searchParameter;
+	
+	private Long dataSourceId1;
+	
+	private Long dataSourceId2;
+	
+	private Long adhocReportSortingId;
+	
+	private String sortCriteria;
+	
+	private Long roleID;
+	
+	private Long userId;
+	
+	private String viewTableName1;
+	
+	private String viewTableName2;
+	
+	private String fieldDataType;
+}

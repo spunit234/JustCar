@@ -1,0 +1,30 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.dao.StockReportDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+import com.edios.pms.manager.StockReportManager;
+
+@Service
+public class StockReportManagerImpl extends AbstractManagerImpl<ItemStockBean, ItemStockEntity> implements StockReportManager {
+
+	@Autowired
+	StockReportDao stockReportDao;
+	
+	@Override
+	@Transactional
+	public List<PhysicalCountReportTO> fetchStockReport(PayloadBean payloadBean) {
+		Long locationID = stockReportDao.fetchPharmacyLocationID(payloadBean.getId());
+		return stockReportDao.fetchStockReport(payloadBean,locationID);
+	}
+
+}

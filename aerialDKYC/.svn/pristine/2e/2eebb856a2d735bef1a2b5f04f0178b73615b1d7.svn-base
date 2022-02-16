@@ -1,0 +1,254 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.bean.InventoryCountItemsBean;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+import com.edios.pms.manager.PhysicalCountManager;
+
+@RestController
+public class PhysicalCountController  extends AbstractController{
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	PhysicalCountManager physicalCountManager;
+	
+	 @PostMapping("/fetch-physical-count-items")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchPhysicalCountItems(@RequestBody PayloadBean payloadBean){
+		 List<PhysicalCountEntityTo> PhysicalCountEntityToList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			PhysicalCountEntityToList=physicalCountManager.fetchPhysicalCountItems(payloadBean);
+			}
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(PhysicalCountEntityToList, HttpStatus.OK);
+	 }
+	 
+	 
+	 @PostMapping("/fetch-item-count-and-location")
+	 public ResponseEntity<PhysicalCountEntityTo> fetchPhysicalCountItemsAndLocation(@RequestBody PayloadBean payloadBean){
+		 PhysicalCountEntityTo physicalCountEntityTo=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			physicalCountEntityTo=physicalCountManager.fetchPhysicalCountItemsAndLocation(payloadBean);
+			}
+		return new ResponseEntity<PhysicalCountEntityTo>(physicalCountEntityTo, HttpStatus.OK);
+	 }
+	 
+	 
+	 @PostMapping("/add-physical-Count")
+		public Long addPhysicalCount(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		//BaseResponse baseResponse = null;
+		inventoryCountBean.setIpAddress(request.getRemoteAddr());
+		try {
+			Long pkId = physicalCountManager.addPhysicalCount(inventoryCountBean);
+//			if (resultString.equalsIgnoreCase("ADDED")) {
+//				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+//			} 
+			return pkId;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return 0L;
+			//return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	 
+	 
+	 @PostMapping("/fetch-stock-item")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchStockItems(@RequestBody PhysicalCountEntityTo physicalCountEntityTo){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=physicalCountManager.fetchStockItems(physicalCountEntityTo);	
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	 
+	 @PostMapping("/fetch-stock-item-on-edit")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchStockItemsOnEdit(@RequestBody PhysicalCountEntityTo physicalCountEntityTo){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=physicalCountManager.fetchStockItemsOnEdit(physicalCountEntityTo);	
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	 
+	 
+	 
+	 @PostMapping("/add-physical-count-item-row")
+		public BaseResponse addPhysicalCountItems(@RequestBody InventoryCountItemsBean inventoryCountItemsBean, HttpServletRequest request) {
+		 String resultString="";
+		BaseResponse baseResponse = null;
+		inventoryCountItemsBean.setIpAddress(request.getRemoteAddr());
+		try {
+			Long pkId = physicalCountManager.addPhysicalCountItems(inventoryCountItemsBean);
+			if (pkId>0) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			} 
+			return baseResponse;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	 
+	 @PostMapping("/delete-physical-count-item-row")
+		public BaseResponse deletePhysicalCountItems(@RequestBody PhysicalCountEntityTo physicalCountEntityTo, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			Long pkId = physicalCountManager.deletePhysicalCountItems(physicalCountEntityTo);
+			if (pkId>0) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} 
+			else {
+				baseResponse = new BaseResponse(HttpStatus.OK, "NOT DELETED", "Record Doesn't Exist");
+			}
+			return baseResponse;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	 
+	 @PostMapping("/add-inventoryItem-and-mimacthItem")
+		public BaseResponse addInventoryItemAndMimacthItem(@RequestBody InventoryCountItemsBean inventoryCountItemsBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		inventoryCountItemsBean.setIpAddress(request.getRemoteAddr());
+		try {
+			String status = physicalCountManager.addInventoryItemAndMimacthItem(inventoryCountItemsBean);
+			if (status.equals("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			} 
+			return baseResponse;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	 
+	 @PostMapping("/add-all-imventoryCountItems")
+		public BaseResponse addAllInventoryCountItems(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		inventoryCountBean.setIpAddress(request.getRemoteAddr());
+		try {
+			String status = physicalCountManager.addAllInventoryCountItems(inventoryCountBean);
+			if (status.equals("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			} 
+			return baseResponse;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	 
+	 @PostMapping("/delete-all-imventoryCountItems")
+		public BaseResponse deleteAllInventoryCountItems(@RequestBody PayloadBean payloadBean) {
+		BaseResponse baseResponse = null;
+		try {
+			String status = physicalCountManager.deleteAllInventoryCountItems(payloadBean);
+			if (status.equals("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} 
+			return baseResponse;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	 
+	 @PostMapping("/search-physical-count")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> searchPhysicalCount(@RequestBody PayloadBean payloadBean){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			physicalCountEntityToList=physicalCountManager.searchPhysicalCount(payloadBean);
+			
+			}
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	 
+	 @PostMapping("/search-physical-count-by-ID")
+	 public ResponseEntity<InventoryCountBean> searchPhysicalCountById(@RequestBody PayloadBean payloadBean){
+
+		 InventoryCountBean inventoryCountBean=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			inventoryCountBean=physicalCountManager.searchPhysicalCountById(payloadBean);
+			return new ResponseEntity <InventoryCountBean>(inventoryCountBean, HttpStatus.OK);
+			}
+		
+		else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	 }
+	 
+	 @PostMapping("/update-physical-count")
+		public BaseResponse updatePhysicalCount(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			inventoryCountBean.setIpAddress(request.getRemoteAddr());	
+		String resultString = physicalCountManager.updatePhysicalCount(inventoryCountBean);
+		if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+		}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		return baseResponse;
+	}catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+		}
+	 
+	 @PostMapping("/finalize-physical-Counts")
+		public BaseResponse finalizePhysicalCount(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			inventoryCountBean.setIpAddress(request.getRemoteAddr());	
+		String resultString = physicalCountManager.finalizePhysicalCount(inventoryCountBean);
+		if (resultString.equalsIgnoreCase("ADDED")||resultString.equalsIgnoreCase("")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		else {
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+		return baseResponse;
+	}catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+		}
+	 
+	 @PostMapping("/fetch-physical-count")
+	 public ResponseEntity<InventoryCountBean> fetchCycleCount(@RequestBody PayloadBean payloadBean){
+			InventoryCountBean inventoryCountBean=physicalCountManager.fetchCycleCount(payloadBean);
+		return new ResponseEntity<InventoryCountBean>(inventoryCountBean, HttpStatus.OK);
+	 }
+
+}

@@ -1,0 +1,161 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "items")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemsEntity extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "ITEM_ID")
+	private Long itemId;
+	
+	
+	@Column(name = "ITEM_CODE")
+	private String itemCode;
+	
+//	@Column(name = "ITEM_CLASS")
+//	private String itemClass;
+	
+	@Column(name = "ITEM_NAME")
+	private String itemName;
+	
+	@Column(name = "DIN")
+	private String din;
+	
+	@Column(name = "GTIN")
+	private String gtin;
+	
+	
+	@Column(name = "DUMMY_CODE")
+	private String dummyCode;
+	
+	@Column(name = "ITEM_GENERIC_NAME")
+	private String itemGenericName;
+	
+	@Column(name = "STRENGTH")
+	private String strength;
+	
+	@Column(name = "STRENGTH_UNIT")
+	private String strengthUnit;
+	
+	@Column(name = "VOLUME")
+	private String volume;
+	
+	@Column(name = "VOLUME_UNIT")
+	private String volumeUnit;
+	
+	@Column(name = "TOTAL_VOLUME")
+	private String totalVolume;
+	
+	@Column(name = "MEASUREMENT_UNIT")
+	private String measurementUnit;
+	
+	@Column(name = "FORM")
+	private String form;
+	
+	@Column(name = "ROUTE")
+	private String route;
+	
+	@Column(name = "COMBINATION")
+	private String combination;
+	
+	@Column(name = "ITEM_STATUS")
+	private String itemStatus;
+	
+	@Column(name = "DEFAULT_SIG")
+	private String defaultSig;
+
+	@Column(name = "HANDLING_INSTRUCTIONS")
+	private String handlingInstructions;
+
+	@Column(name = "RX_COMMENTS")
+	private String rxComments;
+
+	@Column(name = "DRUG_COMMENTS")
+	private String drugComments;
+
+	@Column(name = "DRUG_GROUP")
+	private String drugGroup;
+
+	@Column(name = "INACTIVATED_DATE")
+	private Date inactivatedDate;
+
+	@Column(name = "REFRIGERATED")
+	private String refrigerated;
+
+	@Column(name = "NARCOTIC")
+	private String narcotic;
+	
+	@Column(name = "REPORTABLE")
+	private String reportable;
+
+	@Column(name = "CONTROLLED")
+	private String controlled;
+
+	
+	@Column(name = "IMMUNIZATION")
+	private String immunization;
+
+	@Column(name = "DISPENSE_AS_PACK")
+	private String dispenseAsPack;
+
+	@Column(name = "DISABLE_INVENTORY_ADJUST")
+	private String disableInventoryAdjust;
+
+	@Column(name = "ORDER_AS_PACK")
+	private String orderAsPack;
+	
+	@Column(name = "TRACK_LOT_NUMBER")
+	private String trackLotNumber;
+	
+	@Column(name = "TRACK_EXPIRY")
+	private String trackExpiry;
+
+	
+	@Column(name = "TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	
+	@Column(name = "USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	@Column(name = "IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name = "RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name = "CREATED_BY")
+	private Integer createdBy;
+
+	@Column(name = "CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name = "LAST_MODIFIED_BY")
+	private Integer lastModifiedBy;
+
+	@Column(name = "LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+	
+	
+	
+}

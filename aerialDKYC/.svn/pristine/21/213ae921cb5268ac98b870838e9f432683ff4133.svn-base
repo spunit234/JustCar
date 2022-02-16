@@ -1,0 +1,14 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.to.GeneralLedgerTo;
+
+public interface GeneralLedgerDao extends BaseDao<ItemTransactionEntity>{
+
+	List<GeneralLedgerTo> getGeneralLedgerReport(PayloadBean payloadBean);
+
+}

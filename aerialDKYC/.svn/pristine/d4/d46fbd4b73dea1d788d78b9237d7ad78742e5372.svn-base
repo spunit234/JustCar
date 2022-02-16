@@ -1,0 +1,86 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.pms.dao.ExportNonDashboardReportDao;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PatientPrescriptionEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+
+@Repository
+public class ExportNonDashboardReportDaoImpl extends BaseDaoImpl<InventoryCountEntity> implements ExportNonDashboardReportDao{
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	public List<ReportsTO> fetchInvMimatchedItems(Long invCountId) {
+	//	List<ReportsTO> invCountMisMatchList = new ArrayList<>();
+		
+			String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemName as itemName,item.itemCode as itemCode,itemStock.lotNo as lotNo,invCountMismatch.quantityOnHand as quantityOnHand,"
+					+ "invCountMismatch.countedQuantity as countedQuantity,invCountMismatch.notes as notes "
+					+ "from InventoryCountMismatchEntity invCountMismatch left join invCountMismatch.invCountItem as invCountItem left join "
+					+ "invCountMismatch.itemStock as itemStock left join invCountItem.item as item left join invCountItem.invCount as invCount where "
+					+ "invCount.invCountId=:invCountId and  invCountMismatch.recordType<>'D'";
+
+			return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("invCountId", invCountId)
+					.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+
+		 
+	}
+
+	@Override
+	public List<PatientDispensedItemsTO> exportDispensedMedicationToPatient(PatientDispensedItemsTO objPatientDispensedItemsTO) {
+		SimpleDateFormat objSimpleDateFormat= new SimpleDateFormat("yyyy-MM-dd");
+		List<PatientDispensedItemsTO> objPatientDispensedItemsTOList = null;
+		String sqlQuery = "",whereClasue="";;
+		Session session = (Session) entityManager.getDelegate();
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		sqlQuery = "select item.itemName as itemName,item.itemCode as itemCode,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+				+ " patientDispensedItem.dispensedQuantity as dispensedQuantity,robot.robotName as itemLocationName"
+				+ " from PatientDispensedItemEntity patientDispensedItem"
+				+ " left join patientDispensedItem.itemStock itemStock"
+				+ " left join itemStock.item item "
+				+ " left join itemStock.robot robot"
+				+ " left join patientDispensedItem.patientPrescribedItem patientPrescribedItem"
+				+ " left join patientPrescribedItem.patientPrescription patPres "
+				+ "where patPres.patientPrescriptionId=:patientPrescriptionId ";
+				objPatientDispensedItemsTOList = (List<PatientDispensedItemsTO>) session.createQuery(sqlQuery).setParameter("patientPrescriptionId", objPatientDispensedItemsTO.getPatientPrescriptionId())
+			.setResultTransformer(Transformers.aliasToBean(PatientDispensedItemsTO.class)).list();
+	
+		
+		return objPatientDispensedItemsTOList;
+	
+	}
+
+	@Override
+	public PatientEntityTO getPatientAndPrescribedDetails(Long patientPrescriptionId) {
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		PatientEntityTO objPatientEntityTO = null;
+		String sqlQuery="";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="select patientDetail.patientNo as patientNo,concat(patientDetail.firstName,' ',coalesce(patientDetail.lastName,'')) as patientName"
+				+ ",patientPrescriptionDetail.prescriptionNo as prescriptionNo,patientPrescriptionDetail.prescriptionDateTime as prescriptionDateTime"
+				+ " from PatientPrescriptionEntity patientPrescriptionDetail"
+				+ " left join patientPrescriptionDetail.patientEncounter patientEncounterDetail"
+				+ " left join patientEncounterDetail.patient patientDetail"
+				+ " where patientPrescriptionDetail.patientPrescriptionId=:patientPrescriptionId";
+		objPatientEntityTO = (PatientEntityTO) session.createQuery(sqlQuery).setParameter("patientPrescriptionId", patientPrescriptionId)
+				.setResultTransformer(Transformers.aliasToBean(PatientEntityTO.class)).getSingleResult();
+
+		return objPatientEntityTO;
+	}
+}

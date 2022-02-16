@@ -1,0 +1,114 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+/**
+ * The persistent class for the item_transactions database table.
+ * 
+ */
+@Entity
+@Table(name="item_transactions")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemTransactionEntity extends AbstractEntity {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ITEM_TRANSACTION_ID")
+	private Long itemTransactionId;
+
+	@Column(name="BALANCE_QUANTITY")
+	private Long balanceQuantity;
+
+	@Column(name="BALANCE_QUANTITY_COST")
+	private Double balanceQuantityCost;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="TRANSACTION_DATE")
+	private Date transactionDate;
+
+	@Column(name="TRANSACTION_NOTES")
+	private String transactionNotes;
+
+	@Column(name="TRANSACTION_QUANTITY")
+	private Long transactionQuantity;
+
+	@Column(name="TRANSACTION_QUANTITY_COST")
+	private Double transactionQuantityCost;
+
+	@Column(name="TRANSACTION_TYPE")
+	private String transactionType;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to PharmacyLocation
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+
+	//bi-directional many-to-one association to Item
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity item;
+	
+	
+	@ManyToOne
+	@JoinColumn(name="ITEM_ORDER_PROCESSING_ID")
+	private ItemOrderProcessingEntity itemProcessingDetail;
+	
+	@ManyToOne
+	@JoinColumn(name="ITEM_STOCK_ADJUSTMENT_ID")
+	private ItemStockAdjustmentEntity itemStockAdjustmentDetail;
+	
+//	@ManyToOne
+//	@JoinColumn(name="ITEM_STOCK_ADJUSTMENT_ID")
+//	private ItemStockAdjustmentEntity itemStockAdjustmentDetail;
+
+	
+
+}

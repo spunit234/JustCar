@@ -1,0 +1,127 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.ItemOrderProcessingTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.manager.ReportManager;
+
+@RestController
+public class ReportController extends AbstractController {
+
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	ReportManager reportManager;
+
+	@PostMapping("/fetch-expired-item-details-for-reports")
+	public ResponseEntity<List<ReportsTO>> fetchExpiredItemDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchExpiredItemDetails(payloadBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+	
+	@PostMapping("/fetch-out-of-stock-item-details-for-reports")
+	public ResponseEntity<List<ReportsTO>> fetchOutOfStockItemDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchOutOfStockItemDetails(payloadBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+	
+	@PostMapping("/fetch-minimum-quantity-item-details-for-reports")
+	public ResponseEntity<List<ReportsTO>> fetchMinimumQuantityItemDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchMinimumQuantityItemDetails(payloadBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+	
+	@PostMapping("/fetch-user-site-and-location")
+	public ResponseEntity<PharmacyLocationEntityTO> getUserPharmacyLocation(@RequestBody PayloadBean payloadBean) {
+		PharmacyLocationEntityTO objPharmacyLocationEntityTO = null;
+		objPharmacyLocationEntityTO = reportManager.getUserPharmacyLocation(payloadBean.getId());
+		return new ResponseEntity<PharmacyLocationEntityTO>(objPharmacyLocationEntityTO, HttpStatus.OK);
+	}
+	
+	@PostMapping("/fetch-processed-orders-for-reports")
+	public ResponseEntity<List<ReportsTO>> fetchProcessedOrderDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchProcessedOrderDetails(payloadBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+	
+	@PostMapping("/fetch-processed-orders-items-detail-for-reports")
+	public ResponseEntity<List<ReportsTO>> fetchProcessedOrderItemDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchProcessedOrderItemDetails(payloadBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+	
+	@PostMapping("/received-vs-consumed-report")
+	public ResponseEntity<List<ItemStockEntityTO>> getRecevicedConsumed(@RequestBody PayloadBean payloadBean) {
+		List<ItemStockEntityTO> itemStockEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemStockEntityTOList = reportManager.getRecevicedConsumed(payloadBean);
+			return new  ResponseEntity<List<ItemStockEntityTO>> (itemStockEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-quantity-on-hand-details-for-reports")
+	public ResponseEntity<List<ReportsTO>> fetchQuantityOnHandDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = reportManager.fetchQuantityOnHandDetails(payloadBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+//////new methods for patient,order,adjustment information
+	
+	@PostMapping("/get-adjusted-list")
+	public ResponseEntity<List<ItemStockAdjustmentEntityTO>> getAdjustedList(@RequestBody PayloadBean payloadBean) {
+		List<ItemStockAdjustmentEntityTO> itemStockAdjustmentEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemStockAdjustmentEntityTO = reportManager.getAdjustedList(payloadBean);
+			return new  ResponseEntity<List<ItemStockAdjustmentEntityTO>> (itemStockAdjustmentEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/get-patient-list")
+	public ResponseEntity<List<PatientEntityTO>> getpatientList(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> patientEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			patientEntityTO = reportManager.getPatientList(payloadBean);
+			return new  ResponseEntity<List<PatientEntityTO>> (patientEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/get-order-list")
+	public ResponseEntity<List<ItemOrderProcessingTO>> getOrderList(@RequestBody PayloadBean payloadBean) {
+		List<ItemOrderProcessingTO> itemOrderProcessingTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemOrderProcessingTOList = reportManager.getOrderList(payloadBean);
+			return new  ResponseEntity<List<ItemOrderProcessingTO>> (itemOrderProcessingTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	 
+}

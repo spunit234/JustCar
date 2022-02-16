@@ -1,0 +1,50 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CompoundItemDetailBean extends AbstractBean {
+
+	private Long compoundItemDetailId;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private Double mixedQuantity;
+
+	private String notes;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	private ItemBean item;
+
+	private CompoundItemBean compoundItem;
+	
+	private String itemName;
+	
+	private String itemCode;
+	
+	private String 	previousItemName;
+
+}

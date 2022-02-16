@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report1" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="35" bottomMargin="20" uuid="1ad81e00-1187-4e7e-9159-29fc1954aa3d">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<field name="bankName" class="java.lang.String"/>
+	<field name="location" class="java.lang.String"/>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="registrationNo" class="java.lang.String"/>
+	<field name="makeandmodel" class="java.lang.String"/>
+	<field name="manufacturingYear" class="java.lang.String"/>
+	<field name="amount" class="java.lang.String"/>
+	<field name="refNo" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="22" splitType="Stretch">
+			<textField>
+				<reportElement x="493" y="0" width="283" height="20" uuid="0bbfdd6c-2b43-4152-9912-704af84f8219"/>
+				<textElement markup="html"/>
+				<textFieldExpression><![CDATA["Date -<b>"+new SimpleDateFormat("dd-MMMM-yyyy").format(new Date())+"</b>"]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="200" height="20" uuid="acf59793-0046-406d-a4b8-579990a0ffab"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Ref. No. :-  "+$F{refNo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="393" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="23" height="17" uuid="d6fb07d0-9e91-4f8c-81d9-36f63899340e"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[To,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="47" width="121" height="20" uuid="39c4dc24-1330-494e-82ba-29924c37987b"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Operations Manager,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="67" width="54" height="20" uuid="fb3867ba-2a0a-4b33-973b-07ab829509ba"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Location :]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="54" y="67" width="100" height="20" uuid="13a8c05a-bd35-4c77-92c7-4cc197b8cc94"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{location}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="102" width="100" height="20" uuid="25b85a33-0304-4d08-a35c-e9edcca52434"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Dear Sir,]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="122" width="802" height="40" uuid="b86ebddf-ffde-4f11-bd2a-8a2e56c11e9e"/>
+				<textElement markup="html">
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["We understand that the " +$F{customerName}+ " has approached to " + $F{bankName} + " through your Direct/Branch banking channel for the Finance against the vehicle with following details:-"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="162" width="100" height="20" uuid="44ce3098-db9c-4eed-819e-1548a3de5d52"/>
+				<textElement>
+					<font size="11" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Registration No.-]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="100" y="162" width="100" height="20" uuid="53986389-a9dd-4db2-b972-6c6662eeef27"/>
+				<textElement>
+					<font size="11" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{registrationNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="182" width="100" height="20" uuid="3ec70fc8-9178-4e2b-add0-06a8556e1938"/>
+				<textElement>
+					<font size="11"/>
+				</textElement>
+				<text><![CDATA[Model & Variant-]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="100" y="182" width="139" height="20" uuid="d4f3511e-90b0-416f-bb09-51a3ea6e70bc"/>
+				<textElement>
+					<font size="11"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{makeandmodel}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="202" width="121" height="20" uuid="13d29bfc-5dee-47d2-af48-f47bf3a898b1"/>
+				<textElement>
+					<font size="11"/>
+				</textElement>
+				<text><![CDATA[Year of Manufacture:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="121" y="202" width="128" height="20" uuid="929fdd7e-c160-4859-8904-1d27ab24ad15"/>
+				<textElement>
+					<font size="11"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{manufacturingYear}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="222" width="355" height="20" uuid="a6e77ff0-ed98-4c90-bd4f-0f85f828dc83"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Please disburse the file in our agreegator account having code ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="435" y="222" width="179" height="20" uuid="4ae28692-76b8-42fd-960e-0e13019d774e"/>
+				<textElement>
+					<font size="12" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[& vendor code is 371763.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="242" width="386" height="20" uuid="472b6960-2fdf-4881-936b-9a3108b6f93b"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[we further request you to please remit the sum of Amount Finance Rs.]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="376" y="242" width="69" height="20" uuid="93fa60bb-0a1a-4c6f-8733-2bb41ae7e00d"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="262" width="802" height="20" uuid="3d2e2c22-f218-4911-8438-80dc04f49e78"/>
+				<textElement markup="html">
+					<font size="11"/>
+				</textElement>
+				<textFieldExpression><![CDATA["     To Our  "+ $F{bankName} +" Current Account (Memo Limit account) held with you, we undertake the responsibility of "]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="282" width="614" height="20" uuid="6eb45afa-68c5-419d-947a-ec47ffc50bda"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[the 'Transfer of the vehicle in The customer's name and due 'hypothecation' of  HDFC Bank Ltd. On Registration]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="604" y="282" width="157" height="20" uuid="8e47303f-ceed-438d-8bda-ff23daa4a279"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="302" width="802" height="25" uuid="4267bfa2-1c5f-4136-84b8-897242bc60bf"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Certificate with 45 days from the date of credit of Loan  amount to our HDFC Bank current account.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="335" y="222" width="100" height="20" uuid="27e016b4-d36c-4937-be26-1938f3cbc1ea"/>
+				<textElement>
+					<font size="12" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[50200053970439]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="27" width="100" height="20" uuid="a6ac59e8-22d3-4825-b54a-ae9d58ec653f"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[HDFC Bank Ltd.,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="338" width="100" height="20" uuid="d3f0e82f-ecda-451f-9caf-58ab8d471b51"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Yours Truly,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="373" width="149" height="20" uuid="c7869397-1b15-4ed7-b593-340760ed7ff8"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[for Pankaj Goel HUF]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="40" splitType="Stretch"/>
+	</pageFooter>
+</jasperReport>

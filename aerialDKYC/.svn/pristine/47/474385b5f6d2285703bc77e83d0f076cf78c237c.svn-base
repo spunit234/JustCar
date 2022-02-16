@@ -1,0 +1,84 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+
+@Entity
+@Table(name="patient_dispensed_items")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PatientDispensedItemEntity extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name="DISPENSED_ITEM_ID")
+	private Long dispensedItemId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="DISPENSED_QUANTITY")
+	private Long dispensedQuantity;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	//bi-directional many-to-one association
+	@ManyToOne
+	@JoinColumn(name="ITEM_STOCK_ID")
+	private ItemStockEntity itemStock;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to PatientPrescribedItem
+	@ManyToOne
+	@JoinColumn(name="PRESCRIBED_ITEM_ID")
+	private PatientPrescribedItemEntity patientPrescribedItem;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="DISPENSED_DATE_TIME")
+	private Date dispensedDateTime;
+	
+	@Column(name="DISPENSED_ITEM_STATUS")
+	private String dispensedItemStatus;
+
+}

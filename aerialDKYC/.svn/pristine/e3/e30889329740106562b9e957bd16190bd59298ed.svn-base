@@ -1,0 +1,677 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.DbCustomFunctions;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemCodeLinkageBean;
+import com.edios.pms.bean.ItemDrugSubstitutionBean;
+import com.edios.pms.bean.ItemInventorySettingBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.dao.ItemsDao;
+import com.edios.pms.dao.UserActivityDetailsManagerDao;
+import com.edios.pms.entity.ItemCodeLinkageEntity;
+import com.edios.pms.entity.ItemDrugSubstitutionEntity;
+import com.edios.pms.entity.ItemInventorySettingEntity;
+import com.edios.pms.entity.ItemPackSizeEntity;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.ItemsEntity;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+
+@Repository
+public class ItemsDaoImpl extends BaseDaoImpl<ItemsEntity> implements ItemsDao {
+	
+	@Autowired
+	UserActivityDetailsManagerDao userActivityDetailsManagerDao;
+	
+	DbCustomFunctions dbCustomFunctions = new DbCustomFunctions();
+	
+	@Override
+	public boolean addItemConfiguration(ItemsEntity itemsEntity, ItemsBean itemsBean) {
+			Session session=(Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemsEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemsEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemsBean.getLoginDetailId(), itemsBean.getScreenName(),itemsBean.getActivityName(), null,null, tablename, columnName, null, null,itemsBean.getItemName());
+			
+			itemsEntity.setUserActivityId(pkActivityId);
+			Long pk = (Long)session.save(itemsEntity);
+			userActivityDetailsManagerDao.updateActivityRow(null, null, pk, pkActivityId);
+			return true;
+	}
+
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ItemsEnityTO> fetchItems(PayloadBean payloadBean) {
+		List<ItemsEnityTO> itemEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select item.itemId As itemId , item.itemName As itemName , item.itemCode As itemCode ,"
+				+ " item.itemStatus As itemStatus ,item.strength as strength,item.route as route, "
+				+ " item.form As form,item.transactionCount as transactionCount from  ItemsEntity item  "
+				+ " where item.recordType<>'D'";
+		if (payloadBean.getSearchParameter()!=null) {
+			sqlQuery+="and item.itemName like '%"+payloadBean.getSearchParameter()+"%'";
+		}
+		
+		itemEntityTOList = (List<ItemsEnityTO>) session.createQuery(sqlQuery)
+				
+				.setResultTransformer(Transformers.aliasToBean(ItemsEnityTO.class)).list();
+		
+		if (payloadBean.getActivityFlag()==true) {
+			String sql = dbCustomFunctions.toSql(session, session.createQuery(sqlQuery).getQueryString());
+			String tablename = 	dbCustomFunctions.getTableName(ItemsEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemsEntity.class, session);
+			userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), sql,(long) (itemEntityTOList.size()), tablename, columnName, null, null,null);	
+		}
+		
+		return itemEntityTOList;
+	}
+
+	@Override
+	public ItemsEntity findItemById(PayloadBean payloadBean) {
+		ItemsEntity itemsEntity = null;
+		Session session = (Session) entityManager.getDelegate();
+			String sqlQuery = "";
+			try {
+				sqlQuery = "from  ItemsEntity as item where item.itemId=:itemId   ";
+				itemsEntity = (ItemsEntity) entityManager.createQuery(sqlQuery)
+					.setParameter("itemId", payloadBean.getId()).getSingleResult();
+				
+				if (payloadBean.getActivityFlag()==true) {
+					String tablename = 	dbCustomFunctions.getTableName(ItemsEntity.class);
+					String columnName = dbCustomFunctions.getPkColumnName(ItemsEntity.class, session);
+					userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), null,null, tablename, columnName, payloadBean.getId(), null,null);	
+				}
+				
+				
+			} catch (NoResultException noResultException) {
+				return null;
+			} catch (Exception exception) {
+				exception.printStackTrace();
+				return null;
+			}
+			return itemsEntity;
+	}
+	
+	@Override
+	public boolean updateItem(ItemsEntity itemsEntity,ItemsBean itemsBean) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemsEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemsEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemsBean.getLoginDetailId(), itemsBean.getScreenName(),itemsBean.getActivityName(), null,null, tablename, columnName, itemsBean.getItemId(), null,itemsBean.getItemName());
+			
+			itemsEntity.setUserActivityId(pkActivityId);
+			session.update(itemsEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataById(Long itemId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemsEntity table where table.itemId=:itemId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemId", itemId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchInventoryTransactionDataById(Long inventorySettingId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemInventorySettingEntity table where table.inventorySettingId=:inventorySettingId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("inventorySettingId", inventorySettingId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	
+	@Override
+	public boolean deleteItem(DeleteRecords deleteRecords) {
+		
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemsEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemsEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(deleteRecords.getLoginDetailId(), deleteRecords.getScreenName(),deleteRecords.getActivityName(), null,null, tablename, columnName, deleteRecords.getId(), null,null);
+			
+			String hql = "update ItemsEntity item set item.lastModifiedDate=:lastModifiedDate"
+					+ " , item.recordType='D' , item.lastModifiedBy=:lastModifiedBy,item.userActivityId=:userActivityId"
+					+ " WHERE item.itemId=:deleteRecordId";
+			
+			Query query = session.createQuery(hql);
+			query.setParameter("lastModifiedBy", deleteRecords.getModifiedBy());
+			query.setParameter("lastModifiedDate", new Date(), TemporalType.TIMESTAMP);
+			query.setParameter("deleteRecordId", deleteRecords.getId());
+			query.setParameter("userActivityId", pkActivityId);
+			query.executeUpdate();
+			
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	
+	//---------------Second Tab-----------//
+	
+
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ItemInventorySettingsTo> fetchPharmacyLocationNameAuto(Long userID) {
+
+		List<ItemInventorySettingsTo> itemInventorySettingsToList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select pharamacyLocation.pharmacyLocationName As pharmacyLocationName,pharamacyLocation.pharmacyLocationCode as pharmacyLocationCode,"
+				+ " pharamacyLocation.pharmacyLocationId As pharmacyLocationId from PharmacyLocationEntity pharamacyLocation where pharamacyLocation.recordType<> 'D' and "
+				+ "pharamacyLocation.pharmacyLocationStatus='Active' order by pharamacyLocation.pharmacyLocationName";
+
+		itemInventorySettingsToList = (List<ItemInventorySettingsTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemInventorySettingsTo.class)).list();
+		return itemInventorySettingsToList;
+	}
+
+	
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ItemInventorySettingsTo> fetchPharmacyLocationCodeAuto() {
+
+		List<ItemInventorySettingsTo> itemInventorySettingsToList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select pharamacyLocation.pharmacyLocationCode As pharmacyLocationCode,"
+				+ " pharamacyLocation.pharmacyLocationId As pharmacyLocationId from PharmacyLocationEntity pharamacyLocation where pharamacyLocation.recordType<> 'D' ";
+
+		itemInventorySettingsToList = (List<ItemInventorySettingsTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemInventorySettingsTo.class)).list();
+		return itemInventorySettingsToList;
+	}
+
+	@Override
+	public List<ItemEntityTO> fetchParameterList(String searchParameter) {
+		List<ItemEntityTO> formList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select paramList.parameterListValue as value, paramList.parameterListValue as label from ApplicationParameterListEntity paramList inner join paramList.parameterID as appParam where "
+				+ "appParam.parameterCode='"+searchParameter+"' and paramList.recordType<>'D' ";
+
+		formList = (List<ItemEntityTO>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemEntityTO.class)).list();
+		return formList;
+	}
+
+	@Override
+	public boolean addInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity,ItemInventorySettingBean itemInventorySettingBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String tablename = 	dbCustomFunctions.getTableName(ItemInventorySettingEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemInventorySettingEntity.class, session);
+		Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemInventorySettingBean.getLoginDetailId(), itemInventorySettingBean.getScreenName(),itemInventorySettingBean.getActivityName(), null,null, tablename, columnName, null, itemInventorySettingBean.getRemarks(),itemInventorySettingBean.getShelfLocations());	
+		
+		itemInventorySettingEntity.setUserActivityId(pkActivityId);
+		Long pk = (Long)session.save(itemInventorySettingEntity);
+		
+		 userActivityDetailsManagerDao.updateActivityRow(null, null, pk, pkActivityId);
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<ItemInventorySettingsTo> fetchInventorySettings(PayloadBean payloadbean) {
+		List<ItemInventorySettingsTo> itemInventorySettingsToList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select location.pharmacyLocationName As pharmacyLocationName,inventory.defaultShelfLocations as defaultShelfLocations,"
+				+ "inventory.shelfLocations as shelfLocations,item.itemId As itemId,inventory.inventorySettingId as inventorySettingId,"
+				+ "(select sum(iss.quantityOnHand) from ItemStockEntity iss where iss.pharmacyLocation.pharmacyLocationId=location.pharmacyLocationId and iss.item.itemId=:itemId ) as quantityOnHand,"
+				+ "(select sum(ceiling(iss.quantityOnHand/itemPackSizeDetail.packSize)*iss.unitCost) from ItemStockEntity iss left join iss.itemPackSize as itemPackSizeDetail where iss.pharmacyLocation.pharmacyLocationId=location.pharmacyLocationId and iss.item.itemId=:itemId ) as totalQuantityCost"
+				+ " from ItemInventorySettingEntity inventory left join inventory.pharmacyLocation as location left join inventory.item as item"
+				+ "  where inventory.recordType<> 'D' and item.itemId=:itemId order by location.pharmacyLocationName ";
+
+		itemInventorySettingsToList = (List<ItemInventorySettingsTo>) session.createQuery(sqlQuery)
+				.setParameter("itemId", payloadbean.getId()).setResultTransformer(Transformers.aliasToBean(ItemInventorySettingsTo.class)).list();
+		
+		if (payloadbean.getActivityFlag()==true) {
+			String sql = dbCustomFunctions.toSql(session, session.createQuery(sqlQuery).getQueryString());
+			String tablename = 	dbCustomFunctions.getTableName(ItemInventorySettingEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemInventorySettingEntity.class, session);
+			 userActivityDetailsManagerDao.insertScreenActivity(payloadbean.getLoginDetailId(), payloadbean.getScreenName(),payloadbean.getActivityName(), sql,(long) (itemInventorySettingsToList.size()), tablename, columnName, null, null,null);	
+		}
+		
+		return itemInventorySettingsToList;
+	}
+
+	@Override
+	public ItemInventorySettingEntity editInventorySettings(PayloadBean payloadBean) {
+		ItemInventorySettingEntity itemInventorySettingEntity = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "from  ItemInventorySettingEntity as inventory where inventory.inventorySettingId=:inventorySettingId   ";
+			itemInventorySettingEntity = (ItemInventorySettingEntity) entityManager.createQuery(sqlQuery)
+				.setParameter("inventorySettingId", payloadBean.getId()).getSingleResult();
+			
+			String tablename = 	dbCustomFunctions.getTableName(ItemInventorySettingEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemInventorySettingEntity.class, session);
+			 userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), null,null, tablename, columnName, payloadBean.getId(), payloadBean.getRemarks(),null);	
+			
+		} catch (NoResultException noResultException) {
+			return null;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return itemInventorySettingEntity;
+	}
+
+	@Override
+	public boolean updateInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity, ItemInventorySettingBean itemInventorySettingBean) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemInventorySettingEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemInventorySettingEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemInventorySettingBean.getLoginDetailId(), itemInventorySettingBean.getScreenName(),itemInventorySettingBean.getActivityName(), null,null, tablename, columnName, itemInventorySettingBean.getInventorySettingId(), itemInventorySettingBean.getRemarks(),itemInventorySettingBean.getShelfLocations());
+			
+			itemInventorySettingEntity.setUserActivityId(pkActivityId);
+			session.update(itemInventorySettingEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean addPackSize(ItemPackSizeEntity itemPackSizeEntity,ItemPackSizeBean itemPackSizeBean) {
+		Session session=(Session) entityManager.getDelegate();
+
+		String tablename = 	dbCustomFunctions.getTableName(ItemPackSizeEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemPackSizeEntity.class, session);
+		Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemPackSizeBean.getLoginDetailId(), itemPackSizeBean.getScreenName(),itemPackSizeBean.getActivityName(), null,null, tablename, columnName, null, null,"Pack Size -"+itemPackSizeBean.getPackSize());
+		itemPackSizeEntity.setUserActivityId(pkActivityId);
+		Long pk = (Long)session.save(itemPackSizeEntity);
+		
+		 userActivityDetailsManagerDao.updateActivityRow(null, null, pk, pkActivityId);
+		return true;
+	}
+
+	@Override
+	public List<ItemPackSizeEntityTO> fetchItemPackSize(PayloadBean payloadBean) {
+		List<ItemPackSizeEntityTO> itemPackSizeEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select pack.packSizeId as packSizeId, pack.packSize as packSize, pack.packSizeDesc as packSizeDesc,pack.packSizeStatus as packSizeStatus "
+				+ "from ItemPackSizeEntity as pack where pack.recordType<>'D' and pack.item.itemId=:itemId order by  pack.packSize";
+		itemPackSizeEntityTOList = (List<ItemPackSizeEntityTO>) session.createQuery(sqlQuery).setParameter("itemId", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(ItemPackSizeEntityTO.class)).list();
+		
+		if (payloadBean.getActivityFlag()==true) {
+		String sql = dbCustomFunctions.toSql(session, session.createQuery(sqlQuery).getQueryString());
+		String tablename = 	dbCustomFunctions.getTableName(ItemPackSizeEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemPackSizeEntity.class, session);
+		 userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), sql,(long) (itemPackSizeEntityTOList.size()), tablename, columnName, null, null,null);	
+	}
+		return itemPackSizeEntityTOList;
+	}
+
+	@Override
+	public ItemPackSizeEntity editItemPackSize(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		String tablename = 	dbCustomFunctions.getTableName(ItemPackSizeEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemPackSizeEntity.class, session);
+		 userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), null,null, tablename, columnName, payloadBean.getId(), payloadBean.getRemarks(),null);	
+		
+		return entityManager.find(ItemPackSizeEntity.class, payloadBean.getId());
+	}
+
+	@Override
+	public TransactionData fetchPackSizeTransactionDataById(Long packSizeId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemPackSizeEntity table where table.packSizeId="+packSizeId+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateItemPackSize(ItemPackSizeEntity itemPackSizeEntity,ItemPackSizeBean itemPackSizeBean) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemPackSizeEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemPackSizeEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemPackSizeBean.getLoginDetailId(), itemPackSizeBean.getScreenName(),itemPackSizeBean.getActivityName(), null,null, tablename, columnName, itemPackSizeBean.getPackSizeId(), null,"Pack Size -"+itemPackSizeBean.getPackSize());
+			
+			itemPackSizeEntity.setUserActivityId(pkActivityId);
+			session.update(itemPackSizeEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public Boolean checkItemsRecord(Long itemId, Long pharmacyLocationId) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select count(inventory.inventorySettingId) as count from ItemInventorySettingEntity inventory where inventory.item.itemId="+itemId+" and "
+					+ "inventory.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and inventory.recordType<>'D'";
+			Long count =   (Long) session.createQuery(sqlQuery).uniqueResult();
+			if (count>0) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		
+	}
+
+	@Override
+	public List<ItemEntityTO> fetchDrugSubstitutionAutoLookUpList(Long itemId) {
+		List<ItemEntityTO> itemEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode from ItemsEntity as item where item.itemId<>"+itemId+" "
+				+ "and item.recordType<>'D' order by item.itemName";
+		itemEntityTOList = (List<ItemEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ItemEntityTO.class)).list();
+		return itemEntityTOList;
+	}
+
+	@Override
+	public boolean addDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity,ItemDrugSubstitutionBean itemDrugSubstitutionBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String tablename = 	dbCustomFunctions.getTableName(ItemDrugSubstitutionEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemDrugSubstitutionEntity.class, session);
+		Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemDrugSubstitutionBean.getLoginDetailId(), itemDrugSubstitutionBean.getScreenName(),itemDrugSubstitutionBean.getActivityName(), null,null, tablename, columnName, null, itemDrugSubstitutionBean.getRemarks(),itemDrugSubstitutionBean.getItem().getItemName());
+		itemDrugSubstitutionEntity.setUserActivityId(pkActivityId);
+		session.save(itemDrugSubstitutionEntity);
+		return true;
+	}
+
+	@Override
+	public List<ItemDrugSubstitutionEntityTO> fetchDrugSubstitution(PayloadBean payloadBean) {
+		List<ItemDrugSubstitutionEntityTO> itemDrugSubstitutionEntityTOList = null;
+		String sqlQuery = "select item.itemName as drugSubstitutionName,item.itemCode as drugSubstitutionCode,substitute.drugSubstitutionId as drugSubstitutionId, "
+				+ "substitute.drugSubstitutionStatus as drugSubstitutionStatus,substitute.notes as notes from ItemDrugSubstitutionEntity as substitute left join substitute.subItem as item where substitute.item.itemId=:itemId  "
+				+ "and substitute.recordType<>'D' order by item.itemName";
+		Session session = (Session) entityManager.getDelegate();
+		itemDrugSubstitutionEntityTOList = (List<ItemDrugSubstitutionEntityTO>) session.createQuery(sqlQuery).setParameter("itemId", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ItemDrugSubstitutionEntityTO.class)).list();
+		
+		if (payloadBean.getActivityFlag()==true) {
+				String sql = dbCustomFunctions.toSql(session, session.createQuery(sqlQuery).getQueryString());
+				String tablename = 	dbCustomFunctions.getTableName(ItemDrugSubstitutionEntity.class);
+				String columnName = dbCustomFunctions.getPkColumnName(ItemDrugSubstitutionEntity.class, session);
+				userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), sql,(long) (itemDrugSubstitutionEntityTOList.size()), tablename, columnName, null, null,null);	
+			}
+		return itemDrugSubstitutionEntityTOList;
+	}
+
+	@Override
+	public ItemDrugSubstitutionEntity editDrugSubstitution(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		String tablename = 	dbCustomFunctions.getTableName(ItemDrugSubstitutionEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemDrugSubstitutionEntity.class, session);
+		 userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), null,null, tablename, columnName, payloadBean.getId(), payloadBean.getRemarks(),null);	
+		
+		return entityManager.find(ItemDrugSubstitutionEntity.class, payloadBean.getId());
+	}
+
+	@Override
+	public TransactionData fetchDrugSubstitutionTransactionDataById(Long drugSubstitutionId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemDrugSubstitutionEntity table where table.drugSubstitutionId="+drugSubstitutionId+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity, ItemDrugSubstitutionBean itemDrugSubstitutionBean) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemDrugSubstitutionEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemDrugSubstitutionEntity.class, session);
+			
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemDrugSubstitutionBean.getLoginDetailId(), itemDrugSubstitutionBean.getScreenName(),itemDrugSubstitutionBean.getActivityName(), null,null, tablename, columnName, itemDrugSubstitutionBean.getDrugSubstitutionId(), itemDrugSubstitutionBean.getRemarks(),itemDrugSubstitutionBean.getItem().getItemName());
+			
+			itemDrugSubstitutionEntity.setUserActivityId(pkActivityId);
+			session.update(itemDrugSubstitutionEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean addItemCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity,ItemCodeLinkageBean itemCodeLinkageBean) {
+		Session session=(Session) entityManager.getDelegate();
+		String tablename = 	dbCustomFunctions.getTableName(ItemCodeLinkageEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemCodeLinkageEntity.class, session);
+		Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemCodeLinkageBean.getLoginDetailId(), itemCodeLinkageBean.getScreenName(),itemCodeLinkageBean.getActivityName(), null,null, tablename, columnName, null, itemCodeLinkageBean.getRemarks(),itemCodeLinkageBean.getCodeLinkageValue());
+		itemCodeLinkageEntity.setUserActivityId(pkActivityId);
+		Long pk = (Long)session.save(itemCodeLinkageEntity);
+		userActivityDetailsManagerDao.updateActivityRow(null, null, pk, pkActivityId);
+		return true;
+	}
+
+	@Override
+	public List<ItemCodeLinkageEntityTO> fetchCodeLinkage(PayloadBean payloadbean) {
+		List<ItemCodeLinkageEntityTO> itemCodeLinkageBeanTOList = null;
+		String sqlQuery = "select code.codeLinkageId as codeLinkageId,code.codeLinkageStatus as codeLinkageStatus,code.codeLinkageType as codeLinkageType, "
+				+ "code.codeLinkageValue as codeLinkageValue,code.manufacture as manufacture from ItemCodeLinkageEntity code where code.recordType<>'D' and "
+				+ "code.item.itemId=:itemId order by code.codeLinkageType";
+		Session session = (Session) entityManager.getDelegate();
+		itemCodeLinkageBeanTOList = (List<ItemCodeLinkageEntityTO>) session.createQuery(sqlQuery).setParameter("itemId",payloadbean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ItemCodeLinkageEntityTO.class)).list();
+		
+		if (payloadbean.getActivityFlag()==true) {
+		String sql = dbCustomFunctions.toSql(session, session.createQuery(sqlQuery).getQueryString());
+		String tablename = 	dbCustomFunctions.getTableName(ItemCodeLinkageEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemCodeLinkageEntity.class, session);
+		userActivityDetailsManagerDao.insertScreenActivity(payloadbean.getLoginDetailId(), payloadbean.getScreenName(),payloadbean.getActivityName(), sql,(long) (itemCodeLinkageBeanTOList.size()), tablename, columnName, null, null,null);	
+	}
+		return itemCodeLinkageBeanTOList;
+	}
+
+	@Override
+	public ItemCodeLinkageEntity editCodeLinkage(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		String tablename = 	dbCustomFunctions.getTableName(ItemCodeLinkageEntity.class);
+		String columnName = dbCustomFunctions.getPkColumnName(ItemCodeLinkageEntity.class, session);
+		 userActivityDetailsManagerDao.insertScreenActivity(payloadBean.getLoginDetailId(), payloadBean.getScreenName(),payloadBean.getActivityName(), null,null, tablename, columnName, payloadBean.getId(), payloadBean.getRemarks(),null);	
+		
+		return entityManager.find(ItemCodeLinkageEntity.class, payloadBean.getId());
+	}
+
+	@Override
+	public TransactionData fetchCodeLinkageTransactionDataById(Long codeLinkageId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemCodeLinkageEntity table where table.codeLinkageId="+codeLinkageId+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity,ItemCodeLinkageBean itemCodeLinkageBean) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String tablename = 	dbCustomFunctions.getTableName(ItemCodeLinkageEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(ItemCodeLinkageEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(itemCodeLinkageBean.getLoginDetailId(), itemCodeLinkageBean.getScreenName(),itemCodeLinkageBean.getActivityName(), null,null, tablename, columnName, itemCodeLinkageBean.getCodeLinkageId(), itemCodeLinkageBean.getRemarks(),itemCodeLinkageBean.getCodeLinkageValue());
+			
+			itemCodeLinkageEntity.setUserActivityId(pkActivityId);
+			session.update(itemCodeLinkageEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean checkExistingDrugSubstitutes(Long substituteItemId,Long itemId) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select count(substitute.drugSubstitutionId) from ItemDrugSubstitutionEntity as substitute where substitute.subItem.itemId="+substituteItemId+" and "
+						+ "substitute.recordType<>'D' and substitute.item.itemId="+itemId+"";
+		
+		Long count = (Long) session.createQuery(sqlQuery).getSingleResult();
+		if (count>0) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
+	@Override
+	public boolean checkExistingPackSizes(Long packSize, Long itemId) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select count(pack.packSizeId) from ItemPackSizeEntity as pack where pack.item.itemId="+itemId+" and "
+						+ "pack.recordType<>'D' and pack.packSize="+packSize+"";
+		
+		Long count = (Long) session.createQuery(sqlQuery).getSingleResult();
+		if (count>0) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
+	@Override
+	public Boolean checkItemsInventoryRecord(Long itemId, Long pharmacyLocationId, Long inventorySettingId) {
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select count(inventory.inventorySettingId) as count from ItemInventorySettingEntity inventory where inventory.item.itemId="+itemId+" and "
+					+ "inventory.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and inventory.recordType<>'D'and inventory.inventorySettingId<>"+inventorySettingId+" ";
+			Long count =   (Long) session.createQuery(sqlQuery).uniqueResult();
+			if (count>0) {
+				return false;
+			}
+			else {
+				return true;
+			}
+	
+		}
+
+	@Override
+	public Long checkItemUsageInItemStockAndItemOrderDetails(Long id) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "";
+		Long count =   (Long) session.createQuery(sqlQuery).uniqueResult();
+		
+		return count;
+	}
+
+	@Override
+	public Long addItemTransaction(ItemTransactionEntity itemTransactionEntity) {
+		Long pk = 0L;
+		Session session=(Session) entityManager.getDelegate();
+		 pk= (Long) session.save(itemTransactionEntity);
+		 return pk;
+		
+	}
+
+	@Override
+	public boolean checkItemExistenceInItemStock(Long itemId) {
+			return entityManager.createQuery(
+					"select table.itemStockId as itemStockId from ItemStockEntity table where "
+							+ " table.item.itemId=" + itemId).getResultList().size() == 0? false : true;
+		
+	}
+
+
+	
+	
+
+	
+	
+	
+	
+
+	
+	
+
+	
+
+}

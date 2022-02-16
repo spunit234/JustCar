@@ -1,0 +1,63 @@
+package com.edios.pms.controller;
+
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.DispenseMedicationPdfTO;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.manager.ExportNonDashBoardReportManager;
+
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+
+@RestController
+public class PrintReportsController extends AbstractController {
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	ExportNonDashBoardReportManager exportNonDashBoardReportManager;
+	
+	@PostMapping("/print_dispensed-medication-to-patient")
+	public void exportDispensedMedicationToPatient(@RequestBody DispenseMedicationPdfTO dispenseMedicationPdfTO,HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+	try {
+		
+		PatientDispensedItemsTO objPatientDispensedItemsTO=new PatientDispensedItemsTO();
+		objPatientDispensedItemsTO.setUserId(dispenseMedicationPdfTO.getUserID());
+		objPatientDispensedItemsTO.setPatientPrescriptionId(dispenseMedicationPdfTO.getPatientPrescriptionId());
+		List<PatientDispensedItemsTO> PatientDispensedItemsTOList = null;
+		PatientDispensedItemsTOList = exportNonDashBoardReportManager.exportDispensedMedicationToPatient(objPatientDispensedItemsTO,httpServletRequest);
+	
+		
+		HashMap<String, Object> parametersPDF = new HashMap<String, Object>();
+		JasperPrint jasperPrint = null;
+		JRBeanCollectionDataSource beanCollectionDataSource = null;
+		beanCollectionDataSource = new JRBeanCollectionDataSource(PatientDispensedItemsTOList);
+		String reportPath = httpServletRequest.getServletContext().getRealPath("//WEB-INF//JasperReports//Dispensed_Medications.jasper");
+		jasperPrint = JasperFillManager.fillReport(reportPath, parametersPDF, beanCollectionDataSource);
+		httpServletResponse.addHeader("Content-disposition","attachment; filename=Dispensed_Medications.pdf");
+		ServletOutputStream servletOutputStream = httpServletResponse.getOutputStream();	
+		JasperExportManager.exportReportToPdfStream(jasperPrint, servletOutputStream);
+	}
+	catch(Exception e) {
+	e.printStackTrace();
+	}
+	}
+	
+}

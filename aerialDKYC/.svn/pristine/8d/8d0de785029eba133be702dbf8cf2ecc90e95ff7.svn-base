@@ -1,0 +1,67 @@
+package com.edios.pms.bean;
+
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemCodeLinkageBean extends AbstractBean {
+
+	
+	private static final long serialVersionUID = -8619729682840925584L;
+
+	private Long codeLinkageId;
+
+	private String codeLinkageStatus;
+
+	private String codeLinkageType;
+
+	private String codeLinkageValue;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private Date inactivatedDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String manufacture;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	private ItemBean item;
+
+	
+
+}

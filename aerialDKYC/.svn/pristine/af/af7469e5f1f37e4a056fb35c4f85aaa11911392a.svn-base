@@ -1,0 +1,38 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ConfigureDashBoardBean;
+import com.edios.pms.entity.DashboardEntity;
+import com.edios.pms.entity.DashboardWidgetEntity;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.entity.to.WidgetEntityTO;
+
+public interface ConfigureDashboardDao {
+
+	List<DashboardTO> getDashboardList(String customParameter);
+
+	ConfigureDashBoardBean getDataByID(PayloadBean payloadBean);
+	TransactionData fetchTransactionDataById(Long id);
+
+	List<WidgetEntityTO> getAllWidget();
+
+	String uniqueCheck(PayloadBean payloadBean);
+
+	Long addDashBoard(DashboardEntity dashboardEntity);
+
+	String addDashboardWidget(DashboardWidgetEntity dashboardWidgetEntity);
+
+	boolean updateDashBoard(DashboardEntity dashboardEntity);
+
+	String updateDashboardWidget(DashboardWidgetEntity dashboardWidgetEntity);
+
+	boolean deleteDashboardWidget(Long id);
+
+	TransactionData fetchDashTransactionDataById(Long id);
+
+	boolean deleteDashboard(Long id);
+
+}

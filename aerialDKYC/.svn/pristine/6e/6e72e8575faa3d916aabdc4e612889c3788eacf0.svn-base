@@ -1,0 +1,163 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.dao.AssignPharmacyLocationDao;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyLocationUserEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+@Repository
+public class AssignPharmacyLocationDaoImpl extends BaseDaoImpl<PharmacyLocationEntity>
+		implements AssignPharmacyLocationDao {
+	@Autowired
+	MessageSource messageSource;
+
+	@Override
+	public List<PharmacyLocationBean> PharmacyLocationNames(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select phLocUserEn.pharmacyLocationId as pharmacyLocationId,phLocUserEn.pharmacyLocationName as pharmacyLocationName from PharmacyLocationEntity phLocUserEn"
+				+ " where phLocUserEn.recordType<>'D' order by  phLocUserEn.pharmacyLocationName ";
+
+		return (List<PharmacyLocationBean>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(PharmacyLocationBean.class)).list();
+	}
+
+	@Override
+	public List<PharmacyLocationEntityTO> searchLocationNames(PayloadBean payloadBean) {
+
+		
+		List<PharmacyLocationEntityTO> pharmacyLocationTo = null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			if (payloadBean.getId() == null) {
+				String sqlQuery = "select use.userID as userId, use.loginName as userLoginName,pharLocEn.pharmacyLocationId as pharmacyLocationId,"
+						+ "pharLocEn.pharmacyLocationCode as pharmacyLocationCode, phnLOcUserEn.pharmacyLocationUserId as pharmacyLocationUserId, "
+						+ "use.firstName as userFirstName,use.lastName as userLastName, site.siteName as siteName,pharLocEn.pharmacyLocationName as pharmacyLocationName,"
+						+ "phnLOcUserEn.transactionCount as TransactionCount from PharmacyLocationUserEntity as phnLOcUserEn right join phnLOcUserEn.userId as use "
+						+ "left join phnLOcUserEn.pharmacyLocation as pharLocEn inner join SiteEntity as site on use.defaultSiteID=site.siteID where  use.recordType<>'D'"
+						+ " order by  use.loginName  ";
+				pharmacyLocationTo = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+						.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+			} else {
+				String sqlQuery = "select use.userID as userId, use.loginName as userLoginName,pharLocEn.pharmacyLocationId as pharmacyLocationId,"
+						+ "pharLocEn.pharmacyLocationCode as pharmacyLocationCode,phnLOcUserEn.pharmacyLocationUserId as pharmacyLocationUserId,"
+						+ "use.firstName as userFirstName,use.lastName as userLastName, site.siteName as siteName,pharLocEn.pharmacyLocationName as pharmacyLocationName,"
+						+ "phnLOcUserEn.transactionCount as transactionCount from PharmacyLocationUserEntity as phnLOcUserEn right join phnLOcUserEn.userId as use "
+						+ " left join phnLOcUserEn.pharmacyLocation as pharLocEn  inner join SiteEntity as site on use.defaultSiteID=site.siteID  where site.siteID=:siteID "
+						+ " and use.recordType<>'D' order by  use.loginName ";
+				pharmacyLocationTo = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+						.setParameter("siteID", payloadBean.getId())
+						.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+			}
+		}
+
+		catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return pharmacyLocationTo;
+	}
+
+	@Override
+	public List<PharmacyLocationEntityTO> searchLocationCode(PayloadBean payloadBean) {
+		System.out.println("&&&&&&&&&&&&&&&&&&&&" + payloadBean.getId());
+		List<PharmacyLocationEntityTO> pharmacyLocationTo = null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+
+			String sqlQuery = "select pharLocEn.pharmacyLocationCode as pharmacyLocationCode "
+					+ " from PharmacyLocationEntity as pharLocEn  where pharLocEn.pharmacyLocationId=:pharmacyLocationId and pharLocEn.recordType<>'D'";
+			pharmacyLocationTo = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("pharmacyLocationId", payloadBean.getId())
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return pharmacyLocationTo;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long pharmacyLocationUserId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  PharmacyLocationUserEntity table where table.pharmacyLocationUserId=:pharmacyLocationUserId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("pharmacyLocationUserId", pharmacyLocationUserId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updatePharmacyLocation(PharmacyLocationUserEntity pharmacyLocationUserEntity) {
+		boolean result = true;
+		try {
+			// entityManager.merge(siteEntity);
+			Session session = (Session) entityManager.getDelegate();
+			session.update(pharmacyLocationUserEntity);
+			// shipmentAdviceEntity.setContainerNo(shipmentAdviceEntity.getContainerNo().toUpperCase());
+			// shipmentAdviceEntity.setContainerSize(shipmentAdviceEntity.getContainerSize().toUpperCase());
+			// shipmentAdviceEntity.setContainerWeight(shipmentAdviceEntity.getContainerWeight().toUpperCase());
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean addPharmacyLocation(PharmacyLocationUserEntity pharmacyLocationUserEntity) {
+		boolean result = true;
+		try {
+			// entityManager.persist(pharmacyLocationUserEntity);
+			Session session = (Session) entityManager.getDelegate();
+			Long pkOfUser = (Long) session.save(pharmacyLocationUserEntity);
+			if (pkOfUser != null) {
+				result = true;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+
+		return result;
+	}
+
+	@Override
+	public boolean deletePharmacyUser(PharmacyLocationUserEntity pharmacyLocationUserEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.createQuery(
+					"delete from PharmacyLocationUserEntity where pharmacyLocationUserId=:pharmacyLocationUserId")
+					.setParameter("pharmacyLocationUserId", pharmacyLocationUserEntity.getPharmacyLocationUserId())
+					.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
+
+}

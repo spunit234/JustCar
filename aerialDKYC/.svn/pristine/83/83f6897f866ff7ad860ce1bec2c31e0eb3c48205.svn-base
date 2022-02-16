@@ -1,0 +1,122 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import com.edios.cdf.entity.AbstractEntity;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="patients")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PatientEntity extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name="PATIENT_ID")
+	private Long patientId;
+
+	@Column(name="ADDRESS_LINE_1")
+	private String addressLine1;
+
+	@Column(name="ADDRESS_LINE_2")
+	private String addressLine2;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="BIRTH_DATE")
+	private Date birthDate;
+
+	@Column(name="CITY")
+	private String city;
+
+	@Column(name="COUNTRY")
+	private String country;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="EMAIL_ADDRESS")
+	private String emailAddress;
+
+	@Column(name="FIRST_NAME")
+	private String firstName;
+
+	@Column(name="GENDER")
+	private String gender;
+
+	@Column(name="HOME_PHONE")
+	private String homePhone;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LANGUAGE")
+	private String language;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="LAST_NAME")
+	private String lastName;
+
+	@Column(name="MIDDLE_NAME")
+	private String middleName;
+
+	@Column(name="MOBILE_PHONE")
+	private String mobilePhone;
+
+	@Column(name="OFFICE_PHONE")
+	private String officePhone;
+
+	@Column(name="PATIENT_NO")
+	private String patientNo;
+
+	@Column(name="PATIENT_STATUS")
+	private String patientStatus;
+
+	@Column(name="POSTAL_CODE")
+	private String postalCode;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="SALUTATION")
+	private String salutation;
+
+	@Column(name="STATE")
+	private String state;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to PatientEncounter
+	@OneToMany(mappedBy="patient")
+	private List<PatientEncounterEntity> patientEncounters;
+
+
+}

@@ -1,0 +1,35 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.FinalizeClassificationItemBean;
+import com.edios.pms.entity.ClassificationItemDetailsEntity;
+import com.edios.pms.entity.ClassificationItemsEntity;
+import com.edios.pms.entity.to.ClassificationItemDetailsEntityTO;
+import com.edios.pms.entity.to.ClassificationItemsEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+
+public interface ClassificationItemsDao {
+
+	List<ClassificationItemsEntityTO> fetchClassificationItems(PayloadBean payloadBean);
+
+	boolean isClassificationNameExist(Long classificationId, String classificationName);
+
+	boolean addClassificationItem(ClassificationItemsEntity classificationItemsEntity);
+
+	List<ClassificationItemDetailsEntityTO> getItem(ClassificationItemsEntity classificationItemsEntity);
+
+	ClassificationItemDetailsEntity insertClassificationItemDetails(ClassificationItemDetailsEntity classificationItemDetailsEntity);
+
+	ClassificationItemsEntity getClassificationItem(PayloadBean payloadBean);
+
+	List<ClassificationItemDetailsEntityTO> getClassificationListItem(PayloadBean payloadBean);
+
+	boolean discardClassification(PayloadBean payloadBean);
+
+	boolean finalizeClassification(FinalizeClassificationItemBean finalizeClassificationItemBean);
+
+	boolean saveToDraft(PayloadBean payloadBean);
+
+}

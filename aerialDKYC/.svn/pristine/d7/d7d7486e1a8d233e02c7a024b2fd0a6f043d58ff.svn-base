@@ -1,0 +1,151 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.entity.to.ApplicationParameterTO;
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.AdhocReportAccessRightBean;
+import com.edios.pms.bean.AdhocReportBean;
+import com.edios.pms.bean.AdhocReportFieldBean;
+import com.edios.pms.bean.AdhocReportFilterBean;
+import com.edios.pms.bean.AdhocReportParameterBean;
+import com.edios.pms.bean.AdhocReportSortBean;
+import com.edios.pms.bean.WorksStationAssignmentBean;
+import com.edios.pms.entity.to.AdhocFilterTO;
+import com.edios.pms.entity.to.AdhocReportFieldTO;
+import com.edios.pms.entity.to.AdhocReportParameterTO;
+import com.edios.pms.entity.to.AdhocReportTO;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.DataSourceTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+
+public interface AdhocReportManager extends AbstractManager {
+	
+	List<AdhocReportTO> getAdhocReportsDetails(PayloadBean payloadBean);
+	
+	String addAdhocReport(AdhocReportBean objAdhocReportBean);
+	
+	AdhocReportBean editAdhocReport( PayloadBean payloadBean);
+	
+	List<String> getViewAndTableDetail( PayloadBean payloadBean);
+	
+	DataSourceFieldTO getAdhocReportFields(AdhocReportFieldTO payloadBean) ;
+	
+	List<DataSourceFieldTO> getDataSourceFields(AdhocReportFieldTO payloadBean);
+	
+	String addAdhocReportFields( List<AdhocReportFieldBean> objAdhocReportFieldBeanList);
+	
+	List<AdhocReportFieldTO> getAdhocReportFieldByDataSourceId(AdhocReportFieldTO payloadBean);
+	
+	String deleteAdhocReportDataSourceField(DeleteRecords deleteRecords);
+	
+	String updateAdhocReport(AdhocReportBean objAdhocReportBean);
+	
+	//Adhoc parameter functionality
+
+	List<AdhocReportParameterTO> fetchAdhocParameterDetail(@RequestBody AdhocReportFieldTO payloadBean);
+	
+	List<ApplicationParameterTO> fetchListTypeAppParameters();
+	
+	List<DataSourceFieldTO> fetchFixedListDynamicSQLDetailOfDataSourceField(AdhocReportFieldTO payloadBean);
+	
+	String addAdhocReportParameter(AdhocReportParameterBean objAdhocReportParameterBean);
+	
+	AdhocReportParameterBean findAdhocReportParameterById(PayloadBean payloadBean);
+	
+	String updateAdhocReportParameter(AdhocReportParameterBean objAdhocReportParameterBean);
+	
+	String deleteAdhocReportParameter(DeleteRecords deleteRecords) ;
+	
+	//End of adhoc parameter functionality
+	
+	
+	//Start of adhoc selection criteria
+	
+	List<AdhocFilterTO> fetchAdhocSelectionCriteriaDetail(AdhocReportFieldTO payloadBean);
+	
+	String addAdhocReportSelectionCriteria(AdhocReportFilterBean objAdhocReportFilterBean);
+	
+	AdhocReportFilterBean findAdhocReportSelectionCriteriaById(PayloadBean payloadBean);
+	
+	String updateAdhocReportSelectionCriteria(AdhocReportFilterBean objAdhocReportFilterBean);
+	
+	String deleteAdhocReportSelectionCriteria(DeleteRecords deleteRecords) ;
+	
+	//End of adhoc selection criteria
+	
+	//Start of Adhoc sorting criteria
+	
+	DataSourceFieldTO getAdhocReportSortingFields(AdhocReportFieldTO payloadBean);
+	
+	String addAdhocReportSortFields( List<AdhocReportSortBean> objAdhocReportSortBeanList);
+	
+	String deleteAdhocReportSortField(DeleteRecords deleteRecords);
+	//End of adhoc sorting criteria
+	
+	//Start of adhoc report access right
+	
+	String addAdhocReportAccessRights(List<AdhocReportAccessRightBean> objAdhocReportAccessRightBeanList);
+	
+	DataSourceFieldTO getAdhocReportAccessRightDetail(AdhocReportFieldTO payloadBean);
+	
+	String deleteAdhocReportRoleAccessRight(DeleteRecords deleteRecords);
+	
+	String deleteAdhocReportRoleAccessRightByReportID(DeleteRecords deleteRecords);
+	
+	DataSourceFieldTO getSelectedUsersAccessRightDetail(AdhocReportFieldTO payloadBean);
+	
+	String deleteAdhocReportUserAccessRight(DeleteRecords deleteRecords);
+	//End of adhoc report access right
+	
+	String fetchAccessRightOfUserToExecuteReport(AdhocReportTO payloadBean);
+	
+	List <Object[]> fetchAdhocReportSQLData(AdhocReportTO payloadBean);
+	
+	List<AdhocReportFieldTO> fetchAdhocReportCols( AdhocReportTO payloadBean);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	List<DataSourceFieldTO> getViewTableDescription(String name);
+	
+	String addDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request);
+	
+	DataSourceTO editDataSource(Long dataSourceId);
+	
+	String updateDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request) throws TransactionFailedException;
+	
+	
+	
+	List<String> verifyDynamicSQL(PayloadBean payloadBean);
+	
+	
+	
+	List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails( Long siteID);	
+	
+	String addAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean); 
+	
+	WorksStationAssignmentBean findWorkStationById(Long workStationID);
+	
+	String updateAssignWorkStation(WorksStationAssignmentBean WorksStationAssignmentBean);
+	
+	
+	
+	List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id);
+	
+}

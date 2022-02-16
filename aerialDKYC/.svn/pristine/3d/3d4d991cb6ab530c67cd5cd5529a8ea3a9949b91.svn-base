@@ -1,0 +1,106 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.manager.BatchRecallManager;
+
+@RestController
+public class BatchRecallController extends AbstractController {
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	BatchRecallManager  batchRecallManager;
+
+	@PostMapping("/fetch-batch-recall")
+	public ResponseEntity<List<ItemStockEntityTO>> fetchItemStock(@RequestBody ItemStockEntityTO itemStockEntityTO) {
+		List<ItemStockEntityTO> itemStockEntityTOList=null;
+		if(itemStockEntityTO.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemStockEntityTOList = batchRecallManager.fetchItemStock(itemStockEntityTO);
+			return new ResponseEntity<List<ItemStockEntityTO>>(itemStockEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/update-item-stock")
+	public BaseResponse updateItemStockHold(@RequestBody List<ItemStockBean> itemStockBeanList, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = batchRecallManager.updateItemStockHold(itemStockBeanList,request);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			else {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ERROR",resultString+" were updated by some other user. Please try again. ");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	@PostMapping("/update-item-stockStatus")
+	public BaseResponse updateItemStockResume(@RequestBody List<ItemStockBean> itemStockBeanList, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = batchRecallManager.updateItemStockResume(itemStockBeanList,request);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			else {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ERROR",resultString+" were updated by some other user. Please try again. ");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	@PostMapping("/fetch-patient-list")
+	public ResponseEntity<List<PatientEntityTO>> fetchPatientList(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> patientEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			patientEntityTOList = batchRecallManager.fetchPatientList(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(patientEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	
+}

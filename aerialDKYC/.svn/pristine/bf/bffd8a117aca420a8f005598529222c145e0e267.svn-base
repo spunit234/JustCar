@@ -1,0 +1,35 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyStoreTO;
+
+
+public interface PharmacyDao {
+
+	List<PharmacyStoreTO> fetchPharmacyLookUp();
+
+	boolean addPharmacy(PharmacyStoreBean pharmacyStoreBean, PharmacyStoreEntity pharmacyStoreEntity);
+
+	List<PharmacyStoreTO> fetchPharmacy(PayloadBean payloadbean);
+
+	PharmacyStoreEntity findPharmacyById(PayloadBean payloadbean);
+
+	TransactionData fetchTransactionDataById(Long id);
+
+	boolean deletePharmacy(DeleteRecords deleteRecords);
+	
+	boolean updatePharmacy(PharmacyStoreEntity pharmacyStoreEntity, PharmacyStoreBean pharmacyStoreBean);
+
+	boolean checkStoreCode(String pharmacyStoreCode,Long storeId);
+	
+	boolean checkStoreName(String pharmacyStoreName,Long storeId);
+
+
+
+}

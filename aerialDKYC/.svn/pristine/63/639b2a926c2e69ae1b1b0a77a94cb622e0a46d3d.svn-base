@@ -1,0 +1,107 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+import java.util.StringJoiner;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.dao.BatchRecallDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.ItemsEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.manager.BatchRecallManager;
+
+@Service
+public class BatchRecallManagerImpl extends AbstractManagerImpl<ItemStockBean,ItemStockEntity > implements BatchRecallManager{
+
+	@Autowired
+	BatchRecallDao batchRecallDao;
+	
+	@Override
+	@Transactional
+	public List<ItemStockEntityTO> fetchItemStock(ItemStockEntityTO itemStockEntityTO) {
+		return batchRecallDao.fetchItemStock(itemStockEntityTO);
+	}
+
+	@Override
+	@Transactional
+	public String updateItemStockHold(List<ItemStockBean> itemStockBeanList, HttpServletRequest request) {
+		String errorLotNo="";
+		StringJoiner error = new StringJoiner(",");
+		boolean resultFlag = false;
+			for(ItemStockBean itemStockBean:itemStockBeanList) {
+				TransactionData latestData = batchRecallDao.fetchTransactionDataById(itemStockBean.getItemStockId());
+				if (latestData.getTransactionCount() > (itemStockBean.getTransactionCount())) {
+					error.add(itemStockBean.getLotNo());
+				}
+				else {
+					
+					itemStockBean.setTransactionCount(itemStockBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+					itemStockBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+					itemStockBean.setIpAddress(request.getRemoteAddr());
+					itemStockBean.setLastModifiedDate(new Date());
+					
+					resultFlag = batchRecallDao.updateItemStock(itemStockBean.getItemStockId(),itemStockBean.getItemStockStatus(),itemStockBean.getLastModifiedBy(),
+							itemStockBean.getLastModifiedDate(),itemStockBean.getRecordType(),itemStockBean.getTransactionCount(),itemStockBean.getOnHoldNotes(),itemStockBean.getIpAddress());	
+				}
+			}
+		 
+		errorLotNo=error.toString();
+		if (errorLotNo.length()>0) {
+			return errorLotNo;
+		}
+		else {
+			return "UPDATED";
+		}
+
+	}
+
+	@Override
+	@Transactional
+	public String updateItemStockResume(List<ItemStockBean> itemStockBeanList, HttpServletRequest request) {
+		String errorLotNo="";
+		StringJoiner error = new StringJoiner(",");
+		boolean resultFlag = false;
+			for(ItemStockBean itemStockBean:itemStockBeanList) {
+				TransactionData latestData = batchRecallDao.fetchTransactionDataById(itemStockBean.getItemStockId());
+				if (latestData.getTransactionCount() > (itemStockBean.getTransactionCount())) {
+					error.add(itemStockBean.getLotNo());
+				}
+				else {
+					
+					itemStockBean.setTransactionCount(itemStockBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+					itemStockBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+					itemStockBean.setIpAddress(request.getRemoteAddr());
+					itemStockBean.setLastModifiedDate(new Date());
+					
+					resultFlag = batchRecallDao.updateItemStockResume(itemStockBean.getItemStockId(),itemStockBean.getItemStockStatus(),itemStockBean.getLastModifiedBy(),
+							itemStockBean.getLastModifiedDate(),itemStockBean.getRecordType(),itemStockBean.getTransactionCount(),itemStockBean.getResumedNotes(),itemStockBean.getIpAddress());	
+				}
+			}
+		 
+		errorLotNo=error.toString();
+		if (errorLotNo.length()>0) {
+			return errorLotNo;
+		}
+		else {
+			return "UPDATED";
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<PatientEntityTO> fetchPatientList(PayloadBean payloadBean) {
+		return batchRecallDao.fetchPatientList(payloadBean.getId());
+	}
+
+}

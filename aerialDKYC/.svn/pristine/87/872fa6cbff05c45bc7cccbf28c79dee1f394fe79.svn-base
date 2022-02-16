@@ -1,0 +1,90 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+/**
+ * The persistent class for the ` items` database table.
+ * 
+ */
+@Entity
+@Table(name="PREPARED_COMPOUND_ITEM_DETAILS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PreparedCompoundItemDetailEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="PREPARED_ITEM_DETAIL_ID")
+	private Long preparedItemDetailId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="UNIT_MIXED_QUANTITY")
+	private Double unitMixedQuantity;
+	
+	@Column(name="PREPARED_MIXED_QUANTITY")
+	private Double preparedMixedQuantity;
+
+	//private String notes;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to CompoundItem
+	@ManyToOne
+	@JoinColumn(name="PREPARED_ITEM_ID")
+	private PreparedCompoundItemEntity preparedCompoundItem;
+	
+	/*@ManyToOne
+	@JoinColumn(name="PACK_SIZE_ID")
+	private ItemPackSizeEntity itemPackSize;*/
+	
+	@ManyToOne
+	@JoinColumn(name="ITEM_STOCK_ID")
+	private ItemStockEntity itemStock;
+	
+	
+
+}

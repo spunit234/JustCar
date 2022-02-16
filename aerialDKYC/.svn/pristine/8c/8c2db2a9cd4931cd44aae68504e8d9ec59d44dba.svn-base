@@ -1,0 +1,35 @@
+#For Admin Portal-- by Arvind Singh
+duplicateFieldMessage={0} already exists.
+transactionFailedDeleteMessage=Transaction failed. This record was deleted by some other user. Please try again.
+transactionFailedUpdateMessage=Transaction failed. This record was updated by some other user. Please try again.
+transactionFailedNotDeletedMessage=Transaction failed. Record can't be deleted as this value is used in some other table.
+itemInUserFieldMessage={0} already in use.
+
+
+#For Location Name-- by Arvind Singh
+locationNameForProfilePic=Profile Pic
+locationNameForCustomerDocument=Customer Document
+locationNameForVendorDocument=Vendor Document
+locationNameForTeamMember=Team Member
+locationNameForEmployeeDocument=Employee Address Proof
+locationNameForEmployeeEduDocument=Employee Education Document
+locationNameForEmployeePastEmpDocument=Employee Past Employment Document
+locationNameForEmployeeIDCardDocument=Employee ID Card Document
+locationNameForEmployeeProfilePicDocument=Employee Profile Pic Document
+
+#For Date Format-- by Arvind Singh
+dateFormat=%d-%b-%Y
+timeFormat=%H:%i:%s
+dateTimeFormat=%d-%b-%Y %h:%i %p
+
+#For Tasks and Queries-- by Arvind Singh
+TasksCode=TK-
+QueryCode=QR-
+
+#For Employee Code Configuration
+#employeeCodeConfigurable=Manual
+employeeCodeConfigurable=Format-1
+#employeeCodeConfigurable= Format-2
+IndentNo=IN-1
+
+

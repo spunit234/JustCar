@@ -1,0 +1,34 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.pms.dao.ExportNonDashboardReportDao;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.to.ReportsTO;
+
+@Repository
+public class ExportNonDashboardReportDaoImpl extends BaseDaoImpl<InventoryCountEntity> implements ExportNonDashboardReportDao{
+
+	@Override
+	public List<ReportsTO> fetchInvMimatchedItems(Long invCountId) {
+	//	List<ReportsTO> invCountMisMatchList = new ArrayList<>();
+		
+			String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemName as itemName,item.itemCode as itemCode,itemStock.lotNo as lotNo,invCountMismatch.quantityOnHand as quantityOnHand,"
+					+ "invCountMismatch.countedQuantity as countedQuantity,invCountMismatch.notes as notes "
+					+ "from InventoryCountMismatchEntity invCountMismatch left join invCountMismatch.invCountItem as invCountItem left join "
+					+ "invCountMismatch.itemStock as itemStock left join invCountItem.item as item left join invCountItem.invCount as invCount where "
+					+ "invCount.invCountId=:invCountId and  invCountMismatch.recordType<>'D'";
+
+			return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("invCountId", invCountId)
+					.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+
+		 
+	}
+
+}

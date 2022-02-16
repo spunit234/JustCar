@@ -1,0 +1,16 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.entity.security.UserEntity;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.DashboardTO;
+
+public interface DashboardDao extends BaseDao<UserEntity>  {
+
+	DashboardTO findDashBoardById(PayloadBean payloadBean);
+
+	List<DashboardTO> getDashboardWidgetDetails(Long dashboardID);
+
+}

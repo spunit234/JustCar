@@ -1,0 +1,65 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.DataSourceTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+
+public interface DataSourceDao extends BaseDao<DataSourceEntity> {
+	List<DataSourceTO> getDataSourcesDetails(PayloadBean payloadBean);
+	
+	List<String> getViewAndTableDetail(@RequestBody PayloadBean payloadBean);
+	
+	List<DataSourceFieldTO> getViewTableDescription(String name);
+	
+	boolean isDataSourceNameExist(String dataSourceName,Long dataSourceId);
+	
+	Long addDataSource(DataSourceEntity objDataSourceEntity);
+	
+	DataSourceEntity findDataSourceById(Long dataSourceID);
+	
+	DataSourceFieldEntity findDataSourceFieldById(Long dataSourceFieldID);
+	
+	TransactionData fetchTransactionDataById(Long dataSourceId);
+	
+	TransactionData fetchTransactionDataByFieldId(Long dataSourceFieldId);
+	
+	boolean updateDataSource(DataSourceEntity objDataSourceEntity);
+	
+	boolean updateDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity);
+	
+	boolean addDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity);
+	
+	boolean deleteDataSourceField(Long dataSourceFieldId);
+	
+	List verifyDynamicSQL(PayloadBean payloadBean);
+	
+	
+	
+	boolean isAssignWorkStationCodeExist(Long workStationID,String workStationCode,Long siteID,Long pharmacyLocationID);
+	
+	boolean isAssignWorkStationIpAddressExist(String ipAddress,Long workStationId,Long siteID,Long pharmacyLocationID);
+	
+	boolean isAssignWorkStationMACAddressExist(String macAddress,Long workStationId,Long siteID,Long pharmacyLocationID);
+	
+	boolean addAssignWorkStation(WorksStationAssignmentEntity objWorksStationAssignmentEntity);
+	
+	WorksStationAssignmentEntity findWorkStationById(Long workStationID);
+	
+	
+	
+	boolean updateAssignWorkStation(WorksStationAssignmentEntity WorksStationAssignmentEntity);
+	
+	
+	
+	List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id);
+}

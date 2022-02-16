@@ -1,0 +1,413 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.bean.security.SiteBean;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.DataSourceBean;
+import com.edios.pms.bean.DataSourceFieldBean;
+import com.edios.pms.bean.ItemOrderDetailBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.WorksStationAssignmentBean;
+import com.edios.pms.dao.DataSourceDao;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.DataSourceTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.edios.pms.manager.DataSourceManager;
+
+@Service("dataSourceManagerImpl")
+public class DataSourceManagerImpl extends AbstractManagerImpl<DataSourceBean,DataSourceEntity > implements DataSourceManager {
+
+	@Autowired
+	DataSourceDao dataSourceDao;
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	@Transactional
+	public List<DataSourceTO> getDataSourcesDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return dataSourceDao.getDataSourcesDetails(payloadBean);
+	}
+
+	
+	private void setAuditInfoOfItemOrderDetailBean(ItemOrderDetailBean ItemOrderDetailBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemOrderDetailBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemOrderDetailBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemOrderDetailBean.setCreatedDate(new Date());
+		} else {
+			ItemOrderDetailBean.setTransactionCount(ItemOrderDetailBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemOrderDetailBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemOrderDetailBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+
+	@Override
+	@Transactional
+	public List<String> getViewAndTableDetail(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return dataSourceDao.getViewAndTableDetail(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<DataSourceFieldTO> getViewTableDescription(String name) {
+		// TODO Auto-generated method stub
+		return dataSourceDao.getViewTableDescription(name);
+	}
+	
+	@Override
+	@Transactional
+	public String addDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request) {
+		String resultString = "";
+		boolean resultFlag = false;
+		DataSourceBean objDataSourceBean=objDataSourceTO.getObjDataSourceBean();
+		resultFlag = dataSourceDao.isDataSourceNameExist(objDataSourceBean.getDataSourceName(),objDataSourceBean.getDataSourceId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		objDataSourceBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfo(objDataSourceBean,"newFlag");
+		Long dataSourceId=dataSourceDao.addDataSource(mapper.map(objDataSourceBean, DataSourceEntity.class));
+		if(dataSourceId!=null) {
+			resultString="ADDED";
+			objDataSourceBean.setDataSourceId(dataSourceId);
+			for(DataSourceFieldTO objDataSourceFieldTO:objDataSourceTO.getObjDataSourceFieldTOList()) {
+				DataSourceFieldBean objDataSourceFieldBean=new DataSourceFieldBean();
+				objDataSourceFieldBean.setDataSource(objDataSourceBean);
+				objDataSourceFieldBean.setFieldActualName(objDataSourceFieldTO.getFieldActualName());
+				objDataSourceFieldBean.setFieldDisplayName(objDataSourceFieldTO.getFieldDisplayName());
+				objDataSourceFieldBean.setFieldStatus(objDataSourceFieldTO.getFieldStatus());
+				objDataSourceFieldBean.setFieldDataType(objDataSourceFieldTO.getFieldDataType());
+				objDataSourceFieldBean.setFieldLength(objDataSourceFieldTO.getFieldLength());
+				objDataSourceFieldBean.setRefrenceField(objDataSourceFieldTO.isReferenceField());
+				objDataSourceFieldBean.setFieldSequence(objDataSourceFieldTO.getOrdinalPostion());
+				objDataSourceFieldBean.setFixList(objDataSourceFieldTO.getFixList());
+				objDataSourceFieldBean.setDynamicSQL(objDataSourceFieldTO.getDynamicSQL());
+				objDataSourceFieldBean.setCreatedBy(objDataSourceBean.getCreatedBy());
+				objDataSourceFieldBean.setIpAddress(request.getRemoteAddr());
+				setAuditInfoDataSourceFieldBean(objDataSourceFieldBean,"newFlag");
+				if(dataSourceDao.addDataSourceField(mapper.map(objDataSourceFieldBean,DataSourceFieldEntity.class))) {
+					resultString="ADDED";
+				}
+			}
+		}
+		return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public DataSourceTO editDataSource(Long dataSourceId) {
+		// TODO Auto-generated method stub
+		DataSourceTO objDataSourceTO = new DataSourceTO();
+		List<DataSourceFieldTO> objDataSourceFieldListTO=new ArrayList<>();
+		DataSourceBean objDataSourceBean=mapper.map(dataSourceDao.findDataSourceById(dataSourceId),DataSourceBean.class);
+		for(DataSourceFieldBean objDataSourceFieldBean:objDataSourceBean.getDataSouceFeild()) {
+			DataSourceFieldTO objDataSourceFieldTO = new DataSourceFieldTO();
+			objDataSourceFieldTO.setDataSourceFieldId(objDataSourceFieldBean.getDataSourceFieldId());
+			objDataSourceFieldTO.setFieldActualName(objDataSourceFieldBean.getFieldActualName());
+			objDataSourceFieldTO.setFieldDisplayName(objDataSourceFieldBean.getFieldDisplayName());
+			objDataSourceFieldTO.setFieldStatus(objDataSourceFieldBean.getFieldStatus());
+			objDataSourceFieldTO.setFieldDataType(objDataSourceFieldBean.getFieldDataType());
+			objDataSourceFieldTO.setFieldLength(objDataSourceFieldBean.getFieldLength());
+			objDataSourceFieldTO.setReferenceField(objDataSourceFieldBean.isRefrenceField());
+			objDataSourceFieldTO.setOrdinalPostion(objDataSourceFieldBean.getFieldSequence());
+			objDataSourceFieldTO.setFixList(objDataSourceFieldBean.getFixList());
+			objDataSourceFieldTO.setDynamicSQL(objDataSourceFieldBean.getDynamicSQL());
+			objDataSourceFieldTO.setTransactionCount(objDataSourceFieldBean.getTransactionCount());
+			objDataSourceFieldTO.setEditFlag(false);
+			objDataSourceFieldListTO.add(objDataSourceFieldTO);
+		}
+		
+		objDataSourceBean.setDataSouceFeild(null);
+		
+		objDataSourceTO.setObjDataSourceBean(objDataSourceBean);
+		objDataSourceTO.setObjDataSourceFieldTOList(objDataSourceFieldListTO);
+		
+		return objDataSourceTO;
+	}
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String updateDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request) throws TransactionFailedException{
+		String resultString = "";
+		boolean resultFlag = false;
+		DataSourceBean objDataSourceBean=objDataSourceTO.getObjDataSourceBean();
+		resultFlag = dataSourceDao.isDataSourceNameExist(objDataSourceBean.getDataSourceName(),objDataSourceBean.getDataSourceId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		TransactionData latestData = dataSourceDao.fetchTransactionDataById(objDataSourceBean.getDataSourceId());
+		if (latestData.getTransactionCount() > (objDataSourceBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		objDataSourceBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfo(objDataSourceBean,"editFlag");
+		//dataSourceDao.updateDataSource(mapper.map(objDataSourceBean, DataSourceEntity.class));
+		if(dataSourceDao.updateDataSource(mapper.map(objDataSourceBean, DataSourceEntity.class))) {
+			resultString="ADDED";
+			//objDataSourceBean.setDataSourceId(dataSourceId);
+			for(DataSourceFieldTO objDataSourceFieldTO:objDataSourceTO.getObjDataSourceFieldTOList()) {
+				if(objDataSourceFieldTO.getDataSourceFieldId()!=null) {
+					DataSourceFieldBean objDataSourceFieldBean=mapper.map(dataSourceDao.findDataSourceFieldById(objDataSourceFieldTO.getDataSourceFieldId()),DataSourceFieldBean.class);
+					if (objDataSourceFieldBean.getTransactionCount() > (objDataSourceFieldTO.getTransactionCount())) {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+					}
+					if (objDataSourceFieldBean.getRecordType() == 'D') {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+					}
+					
+					//objDataSourceFieldEntity.setDataSource(objDataSourceBean);
+					//objDataSourceFieldEntity.setFieldActualName(objDataSourceFieldTO.getFieldActualName());
+					objDataSourceFieldBean.setFieldDisplayName(objDataSourceFieldTO.getFieldDisplayName());
+					//objDataSourceFieldBean.setFieldStatus(objDataSourceFieldTO.getFieldStatus());
+					//objDataSourceFieldBean.setFieldDataType(objDataSourceFieldTO.getFieldDataType());
+					//objDataSourceFieldBean.setFieldLength(objDataSourceFieldTO.getFieldLength());
+					objDataSourceFieldBean.setRefrenceField(objDataSourceFieldTO.isReferenceField());
+					objDataSourceFieldBean.setFixList(objDataSourceFieldTO.getFixList());
+					objDataSourceFieldBean.setDynamicSQL(objDataSourceFieldTO.getDynamicSQL());
+					//objDataSourceFieldBean.setFieldSequence(objDataSourceFieldTO.getOrdinalPostion());
+					objDataSourceFieldBean.setLastModifiedBy(objDataSourceBean.getLastModifiedBy());
+					objDataSourceFieldBean.setIpAddress(request.getRemoteAddr());
+					setAuditInfoDataSourceFieldBean(objDataSourceFieldBean,"editFlag");
+					if(dataSourceDao.updateDataSourceField(mapper.map(objDataSourceFieldBean, DataSourceFieldEntity.class)))
+						resultString="UPDATED";
+				}else {
+					DataSourceFieldBean objDataSourceFieldBean=new DataSourceFieldBean();
+					objDataSourceFieldBean.setDataSource(objDataSourceBean);
+					objDataSourceFieldBean.setFieldActualName(objDataSourceFieldTO.getFieldActualName());
+					objDataSourceFieldBean.setFieldDisplayName(objDataSourceFieldTO.getFieldDisplayName());
+					//objDataSourceFieldBean.setFieldStatus(objDataSourceFieldTO.getFieldStatus());
+					objDataSourceFieldBean.setFieldDataType(objDataSourceFieldTO.getFieldDataType());
+					objDataSourceFieldBean.setFieldLength(objDataSourceFieldTO.getFieldLength());
+					objDataSourceFieldBean.setRefrenceField(objDataSourceFieldTO.isReferenceField());
+					objDataSourceFieldBean.setFieldSequence(objDataSourceFieldTO.getOrdinalPostion());
+					objDataSourceFieldBean.setCreatedBy(objDataSourceBean.getCreatedBy());
+					objDataSourceFieldBean.setFixList(objDataSourceFieldTO.getFixList());
+					objDataSourceFieldBean.setDynamicSQL(objDataSourceFieldTO.getDynamicSQL());
+					objDataSourceFieldBean.setIpAddress(request.getRemoteAddr());
+					setAuditInfoDataSourceFieldBean(objDataSourceFieldBean,"newFlag");
+					if(dataSourceDao.addDataSourceField(mapper.map(objDataSourceFieldBean,DataSourceFieldEntity.class))) {
+						resultString="ADDED";
+					}
+				}
+				
+			}
+		}
+		return resultString;
+	}
+	
+	
+	@Override
+	@Transactional
+	public List verifyDynamicSQL(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return dataSourceDao.verifyDynamicSQL(payloadBean);
+	}
+
+
+	private void setAuditInfo(DataSourceBean objDataSourceBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			objDataSourceBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			objDataSourceBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			objDataSourceBean.setCreatedDate(new Date());
+		} else {
+			objDataSourceBean.setTransactionCount(objDataSourceBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			objDataSourceBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			objDataSourceBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	private void setAuditInfoDataSourceFieldBean(DataSourceFieldBean objDataSourceFieldBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			objDataSourceFieldBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			objDataSourceFieldBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			objDataSourceFieldBean.setCreatedDate(new Date());
+		} else {
+			objDataSourceFieldBean.setTransactionCount(objDataSourceFieldBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			objDataSourceFieldBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			objDataSourceFieldBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails(Long siteID) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	@Transactional
+	public String addAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+
+		//resultFlag = dataSourceDao.isDataSourceNameExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationName(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = dataSourceDao.isAssignWorkStationCodeExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationCode(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+		resultFlag = dataSourceDao.isAssignWorkStationIpAddressExist(objWorksStationAssignmentBean.getWorkStationIpAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "IPAddressAlreadyExist";
+		}
+		resultFlag = dataSourceDao.isAssignWorkStationMACAddressExist(objWorksStationAssignmentBean.getWorkStationMacAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "MACAddressAlreadyExist";
+		}
+
+		setAuditInfo(objWorksStationAssignmentBean, "newFlag");
+		WorksStationAssignmentEntity objWorksStationAssignmentEntity = mapper.map(objWorksStationAssignmentBean,WorksStationAssignmentEntity.class);
+		resultFlag = dataSourceDao.addAssignWorkStation(objWorksStationAssignmentEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+	private void setAuditInfo(WorksStationAssignmentBean WorksStationAssignmentBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			WorksStationAssignmentBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			WorksStationAssignmentBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			WorksStationAssignmentBean.setCreatedDate(new Date());
+		} else {
+			WorksStationAssignmentBean.setTransactionCount(WorksStationAssignmentBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			WorksStationAssignmentBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			WorksStationAssignmentBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+
+	@Override
+	@Transactional
+	public WorksStationAssignmentBean findWorkStationById(Long workStationID) {
+		// TODO Auto-generated method stub
+		WorksStationAssignmentBean objWorksStationAssignmentBean=mapper.map(dataSourceDao.findWorkStationById(workStationID), WorksStationAssignmentBean.class);
+		SiteBean objSiteBean=new SiteBean();
+		objSiteBean.setSiteID(objWorksStationAssignmentBean.getSite().getSiteID());
+		objSiteBean.setSiteName(objWorksStationAssignmentBean.getSite().getSiteName());
+		objSiteBean.setSiteCode(objWorksStationAssignmentBean.getSite().getSiteCode());
+		objSiteBean.setSiteStatus(objWorksStationAssignmentBean.getSite().getSiteStatus());
+		objSiteBean.setTransactionCount(objWorksStationAssignmentBean.getSite().getTransactionCount());
+		
+		objWorksStationAssignmentBean.setSite(objSiteBean);
+		
+		PharmacyLocationBean objPharmacyLocationBean=new PharmacyLocationBean();
+		objPharmacyLocationBean.setPharmacyLocationId(objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		objPharmacyLocationBean.setPharmacyLocationName(objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationName());
+		
+		objWorksStationAssignmentBean.setPharmacyLocation(objPharmacyLocationBean);
+		return objWorksStationAssignmentBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean) {
+			String resultString = "";
+			boolean resultFlag = false;
+
+			//resultFlag = dataSourceDao.isAssignWorkStationNameExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationName(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "NameAlreadyExist";
+			}
+
+			resultFlag = dataSourceDao.isAssignWorkStationCodeExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationCode(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "CodeAlreadyExist";
+			}
+			resultFlag = dataSourceDao.isAssignWorkStationIpAddressExist(objWorksStationAssignmentBean.getWorkStationIpAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "IPAddressAlreadyExist";
+			}
+			resultFlag = dataSourceDao.isAssignWorkStationMACAddressExist(objWorksStationAssignmentBean.getWorkStationMacAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "MACAddressAlreadyExist";
+			}
+			// Optimistic Locking for Hibernate
+			TransactionData latestData = dataSourceDao.fetchTransactionDataById(objWorksStationAssignmentBean.getWorkStationID());
+			if (latestData.getTransactionCount() > (objWorksStationAssignmentBean.getTransactionCount())) {
+				return "TransactionFailed";
+			}
+			if (latestData.getRecordType() == 'D') {
+				return "recordDeleted";
+			}
+
+			setAuditInfo(objWorksStationAssignmentBean, "editFlag");
+			WorksStationAssignmentEntity WorksStationAssignmentEntity = mapper.map(objWorksStationAssignmentBean,WorksStationAssignmentEntity.class);
+			resultFlag = dataSourceDao.updateAssignWorkStation(WorksStationAssignmentEntity);
+			if (resultFlag) {
+				return "UPDATED";
+			}
+			return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public String deleteDataSourceField(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = dataSourceDao.fetchTransactionDataByFieldId(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		resultFlag = dataSourceDao.deleteDataSourceField(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	@Override
+	@Transactional
+	public List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id) {
+		return dataSourceDao.fetchPharmacyLocationRobots(id);
+	}
+
+
+	
+
+	
+	
+
+	
+	
+}

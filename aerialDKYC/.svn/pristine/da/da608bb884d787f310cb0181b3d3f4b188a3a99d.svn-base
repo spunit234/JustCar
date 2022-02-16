@@ -1,0 +1,76 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.manager.DashboardManager;
+
+@RestController
+public class DashboardController extends AbstractController {
+
+	@Autowired
+	DashboardManager dashboardManager;
+	@Autowired
+	MessageSource messageSource;
+
+	@PostMapping("/fetch-dashboard-rights")
+	public ResponseEntity<DashboardTO> getDashboards(@RequestBody PayloadBean payloadBean) {
+		DashboardTO dashboardsList = null;
+		dashboardsList = dashboardManager.getDashboards(payloadBean);
+		return new ResponseEntity<DashboardTO>(dashboardsList, HttpStatus.OK);
+
+	}
+	
+	@PostMapping("/fetch-dashboard-widget-detail")
+	public ResponseEntity<List<DashboardTO>> getDashboardWidgetDetails(@RequestBody PayloadBean payloadBean) {
+		List<DashboardTO> dashboardsList = null;
+		dashboardsList = dashboardManager.getDashboardWidgetDetails(payloadBean);
+		return new ResponseEntity<List<DashboardTO>>(dashboardsList, HttpStatus.OK);
+
+	}
+
+	/*@PostMapping("/fetch-birthday-List")
+	public ResponseEntity<List<EmployeeTO>> getBirthdaysList(@RequestBody PayloadBean payloadBean) {
+		List<EmployeeTO> birthdayList = null;
+		birthdayList = dashboardManager.getBirthdaysList(payloadBean);
+		return new ResponseEntity<List<EmployeeTO>>(birthdayList, HttpStatus.OK);
+	}
+
+	@PostMapping("/fetch-leave-List")
+	public ResponseEntity<List<EmployeeTO>> getLeaveList(@RequestBody PayloadBean payloadBean) {
+		List<EmployeeTO> birthdayList = null;
+		birthdayList = dashboardManager.getLeaveList(payloadBean);
+		return new ResponseEntity<List<EmployeeTO>>(birthdayList, HttpStatus.OK);
+	}
+
+	@PostMapping("/fetch-reference-List")
+	public ResponseEntity<List<EmployeeTO>> getReferenceList(@RequestBody PayloadBean payloadBean) {
+		List<EmployeeTO> birthdayList = null;
+		birthdayList = dashboardManager.getReferenceList(payloadBean);
+		return new ResponseEntity<List<EmployeeTO>>(birthdayList, HttpStatus.OK);
+	}
+
+	@PostMapping("/fetch-employee-count-List")
+	public ResponseEntity<List<EmployeeTO>> getActiveEmpList(@RequestBody PayloadBean payloadBean) {
+		List<EmployeeTO> birthdayList = null;
+		birthdayList = dashboardManager.getActiveEmpList(payloadBean);
+		return new ResponseEntity<List<EmployeeTO>>(birthdayList, HttpStatus.OK);
+	}
+
+	@PostMapping("/fetch-employee-totalSalary-List")
+	public ResponseEntity<List<EmployeeTO>> getEmpTotalSalaryList(@RequestBody PayloadBean payloadBean) {
+		List<EmployeeTO> birthdayList = null;
+		birthdayList = dashboardManager.getEmpTotalSalaryList(payloadBean);
+		return new ResponseEntity<List<EmployeeTO>>(birthdayList, HttpStatus.OK);
+	}*/
+}

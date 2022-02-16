@@ -1,0 +1,47 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PharmacyLocationEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+
+	private Long pharmacyLocationId;
+
+	private String pharmacyLocationName;
+	
+	//Tarun' field
+	private String pharmacyLocationCode;
+	private Long siteID;	
+	private String siteName;
+	private String contactPersonName;
+	private String contactPersonPhone;
+	private String pharmacyLocationStatus;
+	private Long transactionCount;
+	
+	private Long pharmacyLocationUserId;
+	private Long userId;
+	private String userLoginName;
+	private String userFirstName;
+	private String userLastName;
+	
+	//Balraj
+	private String dashboardName;
+	private String dashboardCode;
+	private Long  userDashboardID;
+	private Long dashboardID;
+	
+	
+	
+}

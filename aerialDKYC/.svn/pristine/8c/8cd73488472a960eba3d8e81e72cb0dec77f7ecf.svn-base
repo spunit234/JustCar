@@ -1,0 +1,14 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+
+public interface StockReportManager extends AbstractManager  {
+
+	List<PhysicalCountReportTO> fetchStockReport(PayloadBean payloadBean);
+	
+
+}

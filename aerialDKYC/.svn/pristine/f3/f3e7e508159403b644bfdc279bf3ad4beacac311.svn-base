@@ -1,0 +1,36 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.entity.to.SiteEntityTO;
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.WorksStationAssignmentBean;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.edios.pms.entity.to.WorksStationAssignmentTO;
+
+public interface WorksStationAssignmentManager extends AbstractManager {
+	
+	List<WorksStationAssignmentTO> getWorkStationAssigmentDetails(PayloadBean payloadBean);
+	
+	List<SiteEntityTO> fetchSiteDetails();
+	
+	List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails( Long siteID);	
+	
+	String addAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean); 
+	
+	WorksStationAssignmentBean findWorkStationById(Long workStationID);
+	
+	String updateAssignWorkStation(WorksStationAssignmentBean WorksStationAssignmentBean);
+	
+	String deleteAssignWorkStation(DeleteRecords deleteRecords);
+	
+	List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id);
+	
+}

@@ -1,0 +1,160 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.bean.ItemReturnBean;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.entity.to.ReturnItemsToStoreEntityTO;
+import com.edios.pms.manager.ReturnItemsToStoreManager;
+@RestController
+public class ReturnItemsToStoreController extends AbstractController{
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	ReturnItemsToStoreManager returnItemsToStoreManager;
+
+	@PostMapping("/fetch-return-items-order-detail")
+	public ResponseEntity<List<ReturnItemsToStoreEntityTO>> getReturnItemsDetails(@RequestBody PayloadBean payloadBean) {
+		List<ReturnItemsToStoreEntityTO> objReturnItemsToStoreEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objReturnItemsToStoreEntityTOList = returnItemsToStoreManager.getReturnItemsDetails(payloadBean);
+			return new ResponseEntity<List<ReturnItemsToStoreEntityTO>>(objReturnItemsToStoreEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-item-stock-detail-by-id-and-location")
+	public ResponseEntity<List<ItemStockEntityTO>> getItemStockDetailsByIdAndLocation(@RequestBody ItemStockEntityTO payloadBean) {
+		List<ItemStockEntityTO> objItemStockEntityTOList=null;
+			objItemStockEntityTOList = returnItemsToStoreManager.getItemStockDetailsByIdAndLocation(payloadBean);
+			return new ResponseEntity<List<ItemStockEntityTO>>(objItemStockEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	
+	@PostMapping("/save-draft-return-items-to-store")
+	public ResponseEntity<ItemReturnBean> savedDraftReturnItemToStore(@RequestBody CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			ItemReturnBean objItemReturnBean = returnItemsToStoreManager.savedDraftReturnItemToStore(CreateOrderCompositeBean,request);
+			return new ResponseEntity<ItemReturnBean>(objItemReturnBean, HttpStatus.OK);
+			/*if (resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}*/
+		
+	}
+	
+	@PostMapping("/edit-return-item-stock-detail-to-store")
+	public ResponseEntity<ItemStockEntityTO> editItemStockDetailReturnToStore(@RequestBody ItemStockEntityTO payloadBean) {
+		ItemStockEntityTO objItemStockEntityTO=null;
+		objItemStockEntityTO = returnItemsToStoreManager.editItemStockDetailReturnToStore(payloadBean);
+			return new ResponseEntity<ItemStockEntityTO>(objItemStockEntityTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/edit-return-items-to-store")
+	public ResponseEntity<CreateOrderCompositeBean> findItemReturnDetailsById(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			CreateOrderCompositeBean CreateOrderCompositeBean = returnItemsToStoreManager.findItemReturnDetailsById(payloadBean);
+			return new ResponseEntity<CreateOrderCompositeBean>(CreateOrderCompositeBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/delete-return-item-detail")
+	public BaseResponse deleteReturnItemStockDetailRecord(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = returnItemsToStoreManager.deleteReturnItemStockDetailRecord(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	@PostMapping("/update-return-item-detail")
+	public ResponseEntity<ItemReturnBean>  updateReturnItemStockDetailRecord(@RequestBody CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+		ItemReturnBean objItemReturnBean = null;
+		try {
+			objItemReturnBean = returnItemsToStoreManager.updateReturnItemStockDetailRecord(CreateOrderCompositeBean,request);
+				return new ResponseEntity<ItemReturnBean>(objItemReturnBean, HttpStatus.OK);
+			} catch (Exception e) {
+				return new ResponseEntity<ItemReturnBean>(objItemReturnBean, HttpStatus.OK);
+				}
+	}
+	@PostMapping("/update-item-return-status")
+	public BaseResponse updateItemReturnBeanDetail(@RequestBody ItemReturnBean objItemReturnBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			objItemReturnBean.setIpAddress(request.getRemoteAddr());
+			String resultString = returnItemsToStoreManager.updateItemReturnBeanDetail(objItemReturnBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+//			else if(resultString.contains("Returned Quantity")) {
+//				baseResponse = new BaseResponse(HttpStatus.OK, "RETURNEDQUANTITYEXCEED",
+//						resultString);
+//			}
+			return baseResponse;
+		} catch (Exception exception) {
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "RETURNEDQUANTITYEXCEED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	
+	@PostMapping("/fetch-item-details-for-finalized-return-order")
+	public ResponseEntity<List<ReportsTO>> fetchFinalizedreturnItemsDetail(@RequestBody ItemReturnBean objItemReturnBean) {
+		List<ReportsTO> assetCategoryTOList = null;
+		assetCategoryTOList = returnItemsToStoreManager.fetchFinalizedreturnItemsDetail(objItemReturnBean);
+		return new ResponseEntity<List<ReportsTO>>(assetCategoryTOList, HttpStatus.OK);
+	}
+}

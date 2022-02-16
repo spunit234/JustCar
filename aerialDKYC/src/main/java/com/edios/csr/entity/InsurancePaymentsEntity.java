@@ -1,0 +1,79 @@
+
+package com.edios.csr.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.DynamicUpdate;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@DynamicUpdate
+@Table(name = "vehicle_insurance_payments")
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class InsurancePaymentsEntity extends AbstractEntity implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "INSURANCE_PAYMENT_ID")
+	private Long insurancePaymentId;
+
+	@JoinColumn(name = "VEHICLE_INSURANCE_ID")
+	@ManyToOne(fetch = FetchType.LAZY)
+	private VehicleInsuranceEntity vehicleInsuranceId;
+	
+	@Column(name = "INSURANCE_PAYMENT_DATE")
+	private Date insurancePaymentDate;
+	
+	@Column(name = "INSURANCE_PAYMENT_AMOUNT")
+	private Double insurancePaymentAmount;
+	
+	@Column(name = "INSURANCE_MODE_PAYMENT")
+	private String insuranceModePayment;
+	
+	@Column(name = "COMPANY_BANK_ID")
+	private Long companyBankId;
+	
+	@Column(name = "TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name = "IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name = "RECORD_TYPE")
+	private char recordType;
+
+	@Column(name = "CREATED_BY")
+	private Long createdBy;
+
+	@Column(name = "CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name = "LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Column(name = "LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+}

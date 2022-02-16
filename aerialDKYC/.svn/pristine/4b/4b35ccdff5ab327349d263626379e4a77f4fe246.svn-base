@@ -1,0 +1,37 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PatientEncounterBean  extends AbstractBean {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+	
+	private Long patientEncounterId;
+	private String admissionType;
+	private Date admitDateTime;
+	private String attendingDoctor;
+	private Long createdBy;
+	private Date createdDate;
+	private Date dischargeDateTime;
+	private String ipAddress;
+	private Long lastModifiedBy;
+	private Date lastModifiedDate;
+	private String patientType;
+	private Character recordType;
+	private String referringDoctor;
+	private Long transactionCount;
+	private Long userActivityId;
+	private String visitNumber;
+	private PatientBean patient;
+}

@@ -1,0 +1,15 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+
+public interface ExportNonDashBoardReportManager extends AbstractManager {
+
+	List<PhysicalCountEntityTo> fetchPhysicalCountDetails(PayloadBean payloadBean);
+
+	List<PhysicalCountEntityTo> fetchCycleCountDetails(PayloadBean payloadBean);
+
+}

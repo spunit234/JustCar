@@ -1,0 +1,47 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PharmacyLocationRobotBean extends AbstractBean {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private Long robotId;
+
+	private String robotCode;
+	
+	private String robotName;
+	
+	private String robotStatus;
+	
+	private PharmacyLocationBean pharmacyLocation;
+	
+	private String ipAddress;
+	
+	private Long createdBy;
+
+	private Long lastModifiedBy;
+	
+	private Date lastModifiedDate;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+	
+	private Date createdDate;
+}

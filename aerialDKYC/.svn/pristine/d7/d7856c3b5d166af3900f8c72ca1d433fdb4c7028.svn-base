@@ -1,0 +1,30 @@
+package com.edios.pms.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+
+public interface BatchRecallDao extends BaseDao<ItemStockEntity> {
+
+	List<ItemStockEntityTO> fetchItemStock(ItemStockEntityTO itemStockEntityTO);
+
+	TransactionData fetchTransactionDataById(Long itemStockId);
+
+	boolean updateItemStock(Long itemStockId, String itemStockStatus, Long lastModifiedBy, Date lastModifiedDate,
+			Character recordType, Long transactionCount, String onHoldNotes, String ipAddress);
+
+	boolean updateItemStockResume(Long itemStockId, String itemStockStatus, Long lastModifiedBy, Date lastModifiedDate,
+			Character recordType, Long transactionCount, String resumedNotes, String ipAddress);
+
+	List<PatientEntityTO> fetchPatientList(Long id);
+
+	Long fetchPharmacyLocationId(Long userID);
+	
+	
+
+}

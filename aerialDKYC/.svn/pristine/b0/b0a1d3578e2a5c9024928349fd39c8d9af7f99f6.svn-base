@@ -1,0 +1,33 @@
+package com.edios.pms.bean;
+
+import java.util.List;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.to.ItemOrderDetailEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CreateOrderCompositeBean extends AbstractBean {
+
+	private List<ItemOrderDetailBean> objItemOrderDetailBeanList ;
+	
+	private ItemOrderBean objItemOrderBean;
+	
+	private List<ItemOrderDetailEntityTO> objReceivedItemOrderDetailList ;
+	
+	
+	//For Return To Store
+	private ItemReturnBean objItemReturnBean;
+	
+	private List<ItemStockEntityTO> objItemStockEntityTOList ;
+	
+
+}

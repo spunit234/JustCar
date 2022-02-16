@@ -1,0 +1,49 @@
+package com.edios.pms.bean;
+
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemConsumptionReportBean extends AbstractBean {
+
+	private static final long serialVersionUID = -7714660376015217396L;
+
+	private String itemName;
+	private String itemCode;
+	private String lotNo;
+	private String expiryDate;
+	private Double unitCost;
+	private Long quantityReceived;
+	private Double totalReceivedCost;
+	private Long jan;
+	private Long feb;
+	private Long mar;
+	private Long april;
+	private Long may;
+	private Long june;
+	private Long july;
+	private Long aug;
+	private Long sept;
+	private Long oct;
+	private Long nov;
+	private Long dec;
+	private Long totalQuantityConsumed;
+	private Long totalConsumedCost;
+	private Long packSize;
+	
+	private Long dispensedQuantitySum;
+	private Long dispensedQuantityMonth;
+	private String dispensedDateTime;
+	
+	private String dateRange;
+	private String itemNameReport;
+	
+	
+}

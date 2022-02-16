@@ -1,0 +1,58 @@
+package com.edios.pms.entity.to;
+
+import java.util.List;
+
+import com.edios.cdf.entity.to.RoleEntityTO;
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class DataSourceFieldTO {
+	private Long dataSourceFieldId;
+
+	private String fieldActualName;
+	
+	private String fieldDisplayName;
+	
+	private String fieldStatus="Active";
+	
+	private String fieldDataType;
+
+	private Long fieldLength;
+	
+	private boolean referenceField=false;
+	
+	private String fieldValues;
+	
+	private Long transactionCount;
+	
+	private boolean editFlag=true;
+	
+	private Long ordinalPostion;
+	
+	private String fixList;
+	
+	private String dynamicSQL;
+	
+	private List<DataSourceFieldTO> pickListSourceList;
+	
+	private List<AdhocReportFieldTO> pickListTargetList;
+	
+	private String sortCriteria;
+	
+	private List<RoleEntityTO> adhocReportAccessRightList;
+	
+	private List<RoleEntityTO> roleList;
+	
+	private List<UserEntityTO> targetUserList;
+	
+	private List<UserEntityTO> userList;
+
+}

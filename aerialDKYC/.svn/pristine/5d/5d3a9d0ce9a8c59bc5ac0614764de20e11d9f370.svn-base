@@ -1,0 +1,407 @@
+package com.edios.pms.manager.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.StringJoiner;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.bean.ItemBean;
+import com.edios.pms.bean.ItemReturnBean;
+import com.edios.pms.bean.ItemReturnDetailBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.bean.ItemTransactionBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.dao.DistributeOrderDao;
+import com.edios.pms.dao.ReceiveOrderDao;
+import com.edios.pms.dao.ReturnItemsToStoreDao;
+import com.edios.pms.entity.ItemReturnDetailEntity;
+import com.edios.pms.entity.ItemReturnEntity;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.entity.to.ReturnItemsToStoreEntityTO;
+import com.edios.pms.manager.ReturnItemsToStoreManager;
+
+@Service("returnItemsToStoreManagerImpl")
+public class ReturnItemsToStoreManagerImpl extends AbstractManagerImpl<ItemReturnBean, ItemReturnEntity>
+		implements ReturnItemsToStoreManager {
+	@Autowired
+	ReturnItemsToStoreDao returnItemsToStoreDao;
+	
+	@Autowired
+	DistributeOrderDao distributeOrderDao;
+	
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	ReceiveOrderDao receiveOrderDao;
+	
+
+	@Override
+	@Transactional
+	public List<ReturnItemsToStoreEntityTO> getReturnItemsDetails(PayloadBean payloadBean) {
+
+		return returnItemsToStoreDao.getReturnItemsDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<ItemStockEntityTO> getItemStockDetailsByIdAndLocation(ItemStockEntityTO payloadBean) {
+		// TODO Auto-generated method stub
+		return returnItemsToStoreDao.getItemStockDetailsByIdAndLocation(payloadBean);
+	}
+
+	
+
+	@Override
+	@Transactional
+	public ItemStockEntityTO editItemStockDetailReturnToStore(ItemStockEntityTO payloadBean) {
+		ItemStockEntityTO returnItemStockEntityTO=new ItemStockEntityTO();
+		List<ItemStockEntityTO> objEditItemStockEntityTOList=new ArrayList<>();
+		StringJoiner stringJoiner=new StringJoiner(",");
+		ItemReturnBean objItemReturnBean=mapper.map(returnItemsToStoreDao.findItemReturnDetailsById(payloadBean.getItemReturnId()),ItemReturnBean.class);
+		for(ItemReturnDetailBean objItemReturnDetailBean:objItemReturnBean.getItemReturnDetails()) {
+			ItemStockEntityTO objItemStockEntityTO=new ItemStockEntityTO();
+			ItemStockBean objItemStockBean=objItemReturnDetailBean.getItemStock();
+			ItemBean ItemBean=objItemStockBean.getItem();
+			if(ItemBean.getItemId().equals(payloadBean.getItemId())) {
+				//Set itemReturnDetails Info
+				objItemStockEntityTO.setItemReturnDetailId(objItemReturnDetailBean.getItemReturnDetailId());
+				objItemStockEntityTO.setItemReturnTransactionCount(objItemReturnDetailBean.getTransactionCount());
+				objItemStockEntityTO.setQuantityReturned(objItemReturnDetailBean.getReturnQuantity());
+				
+				
+				objItemStockEntityTO.setItemStockId(objItemStockBean.getItemStockId());
+				stringJoiner.add(objItemStockBean.getItemStockId().toString());
+				objItemStockEntityTO.setLotNo(objItemStockBean.getLotNo());
+				objItemStockEntityTO.setExpiryDate(objItemStockBean.getExpiryDate());
+				objItemStockEntityTO.setPackSize(objItemStockBean.getItemPackSize().getPackSize());
+				objItemStockEntityTO.setQuantityOnHand(objItemStockBean.getQuantityOnHand());
+				objItemStockEntityTO.setQuantityBlocked(objItemStockBean.getQuantityBlocked());
+				objItemStockEntityTO.setItemName(ItemBean.getItemName());
+				objItemStockEntityTO.setItemCode(ItemBean.getItemCode());
+				objItemStockEntityTO.setItemStockTransactionCount(objItemStockBean.getTransactionCount());
+				objItemStockEntityTO.setItemId(ItemBean.getItemId());
+				objItemStockEntityTO.setFlag(false);
+				objEditItemStockEntityTOList.add(objItemStockEntityTO);
+			}
+			
+		}
+		boolean checkFlag=true;
+		payloadBean.setItemName(stringJoiner.toString());
+		System.out.println(payloadBean.getItemName());
+		List<ItemStockEntityTO> objNewItemStockEntityTOListWholeData=returnItemsToStoreDao.getItemStockDetailsByIdByReturnId(payloadBean);
+		
+		if(objItemReturnBean.getReturnStatus().equals("Finalized"))
+			objNewItemStockEntityTOListWholeData=objEditItemStockEntityTOList;
+		else
+		objNewItemStockEntityTOListWholeData.addAll(0,objEditItemStockEntityTOList);
+		
+		returnItemStockEntityTO.setObjItemStockEntityTOList(objNewItemStockEntityTOListWholeData);
+		//returnItemStockEntityTO.setObjSelectedItemStockEntityTOList(objEditItemStockEntityTOList);
+		return returnItemStockEntityTO;
+	}
+	@Override
+	@Transactional
+	public ItemReturnBean savedDraftReturnItemToStore(CreateOrderCompositeBean CreateOrderCompositeBean,
+			HttpServletRequest request) {
+		String resultString="";
+		boolean resultFlag=false;
+		Long returnId = null;
+		ItemReturnBean objItemReturnBean=CreateOrderCompositeBean.getObjItemReturnBean();
+		if(objItemReturnBean.getItemReturnId()==null) {
+			setAuditInfo(objItemReturnBean,"newFlag");
+			returnId=returnItemsToStoreDao.addItemReturnBeanDetail(mapper.map(objItemReturnBean, ItemReturnEntity.class));
+			objItemReturnBean.setItemReturnId(returnId);
+			objItemReturnBean.setItemReturnNo(messageSource.getMessage("ItemReturnNo", null, "", Locale.US)+returnId);
+		}
+		
+		if(objItemReturnBean.getItemReturnId()!=null) {
+			resultString="ADDED";
+			for(ItemStockEntityTO objItemStockEntityTO:CreateOrderCompositeBean.getObjItemStockEntityTOList()) {
+				ItemReturnDetailBean objItemReturnDetailBean=new ItemReturnDetailBean();
+				objItemReturnDetailBean.setItemReturn(objItemReturnBean);
+				
+				ItemStockBean objItemStockBean=new ItemStockBean();
+				objItemStockBean.setItemStockId(objItemStockEntityTO.getItemStockId());
+				
+				objItemReturnDetailBean.setItemStock(objItemStockBean);
+				
+				objItemReturnDetailBean.setReturnQuantity(objItemStockEntityTO.getQuantityReturned());
+				objItemReturnDetailBean.setPackOrderQuantity(new Double(Math.ceil((double)  objItemStockEntityTO.getQuantityReturned()/objItemStockEntityTO.getPackSize())).longValue());
+				objItemReturnDetailBean.setCreatedBy(objItemReturnBean.getLastModifiedBy()==null ?objItemReturnBean.getCreatedBy():objItemReturnBean.getLastModifiedBy());
+				setAuditInfoItemReturnDetailBean(objItemReturnDetailBean, "newFlag");
+				
+				resultFlag=returnItemsToStoreDao.addItemReturnDetailBeanDetail(mapper.map(objItemReturnDetailBean, ItemReturnDetailEntity.class));
+				if(resultFlag) {
+					resultString="ADDED";
+				}
+			}
+		}
+		return objItemReturnBean;
+	}
+	
+	@Override
+	@Transactional
+	public CreateOrderCompositeBean findItemReturnDetailsById(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		CreateOrderCompositeBean objCreateOrderCompositeBean=new CreateOrderCompositeBean();
+		List<ItemStockEntityTO> objItemStockEntityTOList=new ArrayList<>();
+		ItemReturnBean objItemReturnBean=mapper.map(returnItemsToStoreDao.findItemReturnDetailsById(payloadBean.getId()),ItemReturnBean.class);
+		objItemReturnBean.setItemReturnDetails(null);
+		objCreateOrderCompositeBean.setObjItemReturnBean(objItemReturnBean);
+		/*for(ItemReturnDetailBean objItemReturnDetailBean:objItemReturnBean.getItemReturnDetails()) {
+			ItemStockEntityTO objItemStockEntityTO=new ItemStockEntityTO();
+			//Set itemReturnDetails Info
+			objItemStockEntityTO.setItemReturnDetailId(objItemReturnDetailBean.getItemReturnDetailId());
+			objItemStockEntityTO.setItemReturnTransactionCount(objItemReturnDetailBean.getTransactionCount());
+			objItemStockEntityTO.setQuantityReturned(objItemReturnDetailBean.getReturnQuantity());
+			
+			ItemStockBean objItemStockBean=objItemReturnDetailBean.getItemStock();
+			
+			objItemStockEntityTO.setItemStockId(objItemStockBean.getItemStockId());
+			objItemStockEntityTO.setLotNo(objItemStockBean.getLotNo());
+			objItemStockEntityTO.setExpiryDate(objItemStockBean.getExpiryDate());
+			objItemStockEntityTO.setPackSize(objItemStockBean.getItemPackSize().getPackSize());
+			objItemStockEntityTO.setQuantityOnHand(objItemStockBean.getQuantityOnHand());
+			objItemStockEntityTO.setQuantityBlocked(objItemStockBean.getQuantityBlocked());
+			objItemStockEntityTO.setItemName(objItemStockBean.getItem().getItemName());
+			objItemStockEntityTO.setItemCode(objItemStockBean.getItem().getItemCode());
+			objItemStockEntityTO.setItemStockTransactionCount(objItemStockBean.getTransactionCount());
+			objItemStockEntityTOList.add(objItemStockEntityTO);
+		}*/
+		return objCreateOrderCompositeBean;
+	}
+	
+
+	@Override
+	@Transactional
+	public String deleteReturnItemStockDetailRecord(DeleteRecords deleteRecords) {
+		// TODO Auto-generated method stub
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = returnItemsToStoreDao.fetchTransactionDataItemReturnDetailEntityById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		if(returnItemsToStoreDao.deleteReturnItemDetailsById(deleteRecords.getId())) {
+			return "DELETED";
+		}
+		else
+			return "";
+	}
+
+	private void setAuditInfo(ItemReturnBean ItemReturnBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemReturnBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemReturnBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemReturnBean.setCreatedDate(new Date());
+		} else {
+			ItemReturnBean.setTransactionCount(
+					ItemReturnBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemReturnBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemReturnBean.setLastModifiedDate(new Date());
+		}
+	}
+	
+	private void setAuditInfoItemReturnDetailBean(ItemReturnDetailBean ItemReturnDetailBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemReturnDetailBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemReturnDetailBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemReturnDetailBean.setCreatedDate(new Date());
+		} else {
+			ItemReturnDetailBean.setTransactionCount(
+					ItemReturnDetailBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemReturnDetailBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemReturnDetailBean.setLastModifiedDate(new Date());
+		}
+	}
+
+	@Override
+	@Transactional(rollbackOn = TransactionFailedException.class)
+	public ItemReturnBean updateReturnItemStockDetailRecord(CreateOrderCompositeBean CreateOrderCompositeBean,
+			HttpServletRequest request) throws TransactionFailedException {
+		String resultString = null;
+		boolean resultFlag=false;
+		ItemReturnBean objItemReturnBean=CreateOrderCompositeBean.getObjItemReturnBean();
+		
+		//ItemReturnBean updateItemReturnBean=mapper.map(returnItemsToStoreDao.findItemReturnDetailsById(objItemReturnBean.getItemReturnId()),ItemReturnBean.class);
+		TransactionData latestData = returnItemsToStoreDao.fetchTransactionDataItemReturnEntityById(objItemReturnBean.getItemReturnId());
+		if (latestData.getTransactionCount() > (objItemReturnBean.getTransactionCount())) {
+			throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		}
+		if (latestData.getRecordType() == 'D') {
+			throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		else {
+			setAuditInfo(objItemReturnBean,"editFlag");
+			objItemReturnBean.setIpAddress(request.getRemoteAddr());
+			resultFlag=returnItemsToStoreDao.updateItemReturnEntityDetail(mapper.map(objItemReturnBean, ItemReturnEntity.class));
+			if(resultFlag) {
+				resultString="UPDATED";
+				for(ItemStockEntityTO objItemStockEntityTO:CreateOrderCompositeBean.getObjItemStockEntityTOList()) {
+					//update existing row	
+						if(objItemStockEntityTO.getItemReturnDetailId()!=null) {
+							ItemReturnDetailBean updateItemReturnDetailBean=mapper.map(returnItemsToStoreDao.fetchItemReturnDetailEntityDetailbyId(objItemStockEntityTO.getItemReturnDetailId()),ItemReturnDetailBean.class);
+							updateItemReturnDetailBean.setReturnQuantity(objItemStockEntityTO.getQuantityReturned());
+							updateItemReturnDetailBean.setPackOrderQuantity(new Double(Math.ceil((double)  objItemStockEntityTO.getQuantityReturned()/objItemStockEntityTO.getPackSize())).longValue());
+							updateItemReturnDetailBean.setLastModifiedBy(objItemReturnBean.getLastModifiedBy());
+							updateItemReturnDetailBean.setIpAddress(request.getRemoteAddr());
+							if(updateItemReturnDetailBean.getTransactionCount()>objItemStockEntityTO.getItemReturnTransactionCount()) {
+								throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+							}
+							else if(updateItemReturnDetailBean.getRecordType() == 'D') {
+								throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+							}
+							setAuditInfoItemReturnDetailBean(updateItemReturnDetailBean, "editFlag");
+							resultFlag=returnItemsToStoreDao.updateItemReturnDetailBeanDetail(mapper.map(updateItemReturnDetailBean,ItemReturnDetailEntity.class));
+							if(resultFlag)
+								resultString="UPDATED";
+						}
+						else {
+							//return new item stock details for item
+
+							ItemReturnDetailBean objItemReturnDetailBean=new ItemReturnDetailBean();
+							objItemReturnDetailBean.setItemReturn(objItemReturnBean);
+							
+							ItemStockBean objItemStockBean=new ItemStockBean();
+							objItemStockBean.setItemStockId(objItemStockEntityTO.getItemStockId());
+							
+							objItemReturnDetailBean.setItemStock(objItemStockBean);
+							
+							objItemReturnDetailBean.setReturnQuantity(objItemStockEntityTO.getQuantityReturned());
+							objItemReturnDetailBean.setPackOrderQuantity(new Double(Math.ceil((double)  objItemStockEntityTO.getQuantityReturned()/objItemStockEntityTO.getPackSize())).longValue());
+							objItemReturnDetailBean.setCreatedBy(objItemReturnBean.getCreatedBy());
+							setAuditInfoItemReturnDetailBean(objItemReturnDetailBean, "newFlag");
+							
+							resultFlag=returnItemsToStoreDao.addItemReturnDetailBeanDetail(mapper.map(objItemReturnDetailBean, ItemReturnDetailEntity.class));
+							if(resultFlag) {
+								resultString="ADDED";
+							}
+						
+							
+						}
+					}
+			}
+		}
+		objItemReturnBean.setItemReturnDetails(null);
+		return objItemReturnBean;
+		}
+
+	@Override
+	@Transactional(rollbackOn = TransactionFailedException.class)
+	public String updateItemReturnBeanDetail(ItemReturnBean objItemReturnBean) throws TransactionFailedException {
+		
+		if(objItemReturnBean.getItemReturnId()==null) {
+			objItemReturnBean.setCreatedBy(objItemReturnBean.getLastModifiedBy());
+			objItemReturnBean.setLastModifiedBy(null);
+			setAuditInfo(objItemReturnBean,"newFlag");
+			if(returnItemsToStoreDao.addItemReturnBeanDetail(mapper.map(objItemReturnBean, ItemReturnEntity.class))!=null) {
+				return "ADDED";
+			}
+		}
+		
+		ItemReturnBean updateItemReturnBean=mapper.map(returnItemsToStoreDao.findItemReturnDetailsById(objItemReturnBean.getItemReturnId()),ItemReturnBean.class);
+		
+		//TransactionData latestData = returnItemsToStoreDao.fetchTransactionDataItemReturnEntityById(objItemReturnBean.getItemReturnId());
+		if (updateItemReturnBean.getTransactionCount() > (objItemReturnBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (updateItemReturnBean.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		updateItemReturnBean.setLastModifiedBy(objItemReturnBean.getLastModifiedBy());
+		updateItemReturnBean.setReturnStatus(objItemReturnBean.getReturnStatus());
+		updateItemReturnBean.setIpAddress(objItemReturnBean.getIpAddress());
+		setAuditInfo(updateItemReturnBean,"editFlag");
+		
+		if(objItemReturnBean.getReturnStatus().equals("Finalized")) {
+			for(ItemReturnDetailBean objItemReturnDetailBean:updateItemReturnBean.getItemReturnDetails()) {
+				ItemStockBean objItemStockBean=objItemReturnDetailBean.getItemStock();
+				if(objItemReturnDetailBean.getReturnQuantity()>(objItemStockBean.getQuantityOnHand()-objItemStockBean.getQuantityBlocked())) {
+					throw new TransactionFailedException("Returned Quantity \""+objItemReturnDetailBean.getReturnQuantity()+"\" can't be greater then \""
+							+(objItemStockBean.getQuantityOnHand()-objItemStockBean.getQuantityBlocked())+"\" for Item Name \""+
+							objItemStockBean.getItem().getItemName()+"\" and Lot No. is \""+objItemStockBean.getLotNo()+"\"!");
+					
+				}
+				else {
+					objItemStockBean.setQuantityOnHand(objItemStockBean.getQuantityOnHand()-objItemReturnDetailBean.getReturnQuantity());
+					objItemStockBean.setQuantityReturned(objItemStockBean.getQuantityReturned()+objItemReturnDetailBean.getReturnQuantity());
+					objItemStockBean.setLastModifiedBy(objItemReturnBean.getLastModifiedBy());
+					objItemStockBean.setLastModifiedDate(new Date());
+					objItemStockBean.setTransactionCount(objItemStockBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+					objItemStockBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+					objItemStockBean.setIpAddress(objItemReturnBean.getIpAddress());
+					distributeOrderDao.updateItemStockEnitity(mapper.map(objItemStockBean, ItemStockEntity.class)); 
+					
+					//update item transaction data
+					ItemTransactionBean objAddCompletedItemTransactionBean=new ItemTransactionBean();
+					
+					ItemTransactionBean objDistributeItemTransactionBean=mapper.map(receiveOrderDao.fetchLatestItemRecordForPharmacyLocation(updateItemReturnBean.getRfPharmacyLocation().getPharmacyLocationId(), objItemStockBean.getItem().getItemId()),ItemTransactionBean.class);
+					objAddCompletedItemTransactionBean.setPharmacyLocation(updateItemReturnBean.getRfPharmacyLocation());
+					objAddCompletedItemTransactionBean.setItem(objItemStockBean.getItem());
+					
+					objAddCompletedItemTransactionBean.setTransactionQuantity(objItemReturnDetailBean.getReturnQuantity());
+					objAddCompletedItemTransactionBean.setTransactionQuantityCost(Math.ceil((double)objItemReturnDetailBean.getReturnQuantity()/objItemStockBean.getItemPackSize().getPackSize())*objItemStockBean.getUnitCost());
+					
+					if(objDistributeItemTransactionBean.getBalanceQuantity()==null) {
+						objAddCompletedItemTransactionBean.setBalanceQuantity(objAddCompletedItemTransactionBean.getTransactionQuantity());
+						objAddCompletedItemTransactionBean.setBalanceQuantityCost(objAddCompletedItemTransactionBean.getTransactionQuantityCost());
+					}
+					
+					else {
+						objAddCompletedItemTransactionBean.setBalanceQuantity(objDistributeItemTransactionBean.getBalanceQuantity()-objAddCompletedItemTransactionBean.getTransactionQuantity());
+						objAddCompletedItemTransactionBean.setBalanceQuantityCost(objDistributeItemTransactionBean.getBalanceQuantityCost()-objAddCompletedItemTransactionBean.getTransactionQuantityCost());
+					}
+					
+					objAddCompletedItemTransactionBean.setTransactionDate(new Date());
+					objAddCompletedItemTransactionBean.setTransactionType("Returned");
+					objAddCompletedItemTransactionBean.setCreatedBy(objItemReturnBean.getLastModifiedBy());
+					objAddCompletedItemTransactionBean.setIpAddress(objItemReturnBean.getIpAddress());
+					objAddCompletedItemTransactionBean.setTransactionNotes(updateItemReturnBean.getItemReturnNo());
+					//objAddMixedItemTransactionBean.setItemProcessingDetail(mapper.map(objItemOrderProcessingEntity, ItemOrderProcessingBean.class));
+					objAddCompletedItemTransactionBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+					objAddCompletedItemTransactionBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+					objAddCompletedItemTransactionBean.setCreatedDate(new Date());
+					receiveOrderDao.addItemTransactionEntityDetails(mapper.map(objAddCompletedItemTransactionBean, ItemTransactionEntity.class));
+					
+				}
+			}
+		}
+	//	else {
+			if(returnItemsToStoreDao.updateItemReturnEntityDetail(mapper.map(updateItemReturnBean, ItemReturnEntity.class))) 
+				return "UPDATED";
+	//	}
+		return null;
+	}
+
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchFinalizedreturnItemsDetail(ItemReturnBean objItemReturnBean) {
+		// TODO Auto-generated method stub
+		List<Long> itemIdList=returnItemsToStoreDao.fetchItemDetailsForFinalizedReturnOrder(objItemReturnBean.getItemReturnId());
+		PayloadBean payloadBean=new PayloadBean();
+		payloadBean.setId(objItemReturnBean.getLastModifiedBy());
+		return returnItemsToStoreDao.fetchQuantityOnHandDetails(payloadBean,itemIdList);
+	}
+}

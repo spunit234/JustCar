@@ -1,0 +1,76 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.bean.security.UserActivityDetailsBean;
+import com.edios.cdf.entity.security.UserActivityDetailsEntity;
+import com.edios.cdf.entity.to.UserActivityLogEntityTO;
+import com.edios.cdf.entity.to.UserLoginLogDetailRespEntityTO;
+import com.edios.cdf.entity.to.UserLoginLogResponseEntityTO;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AdminReportSearchParameterBean;
+import com.edios.pms.dao.AdminReportDao;
+import com.edios.pms.manager.AdminReportManager;
+
+@Service
+public class AdminReportManagerImpl extends AbstractManagerImpl<UserActivityDetailsBean, UserActivityDetailsEntity>
+		implements AdminReportManager {
+
+	@Autowired
+	AdminReportDao adminReportDao;
+
+
+	@Override
+	@Transactional
+	public List<UserActivityLogEntityTO> fetchUserActivityLog(
+			AdminReportSearchParameterBean adminReportSearchParameterBean) {
+		List<UserActivityLogEntityTO> userActivityLogList = adminReportDao
+				.fetchUserActivityLog(adminReportSearchParameterBean);
+		return userActivityLogList;
+	}
+
+	@Override
+	@Transactional
+	public List<UserActivityLogEntityTO> fetchSavedClickedUserActivityLog(PayloadBean payloadBean) {
+		List<UserActivityLogEntityTO> userActivityLogList = adminReportDao
+				.fetchSavedClickedUserActivityLog(payloadBean);
+		return userActivityLogList;
+	}
+
+	@Override
+	@Transactional
+	public UserActivityLogEntityTO fetchSearchedUserActivityLog(PayloadBean payloadBean) {
+		UserActivityLogEntityTO searchedActivityLog = adminReportDao
+				.fetchSearchedUserActivityLog(payloadBean);
+		return searchedActivityLog;
+	}
+
+	@Override
+	@Transactional
+	public List<UserActivityLogEntityTO> fetchUserAuditLog(
+			AdminReportSearchParameterBean adminReportSearchParameterBean) {
+			List<UserActivityLogEntityTO> userActivityLogList = adminReportDao
+					.fetchUserAuditLog(adminReportSearchParameterBean);
+			return userActivityLogList;
+	}
+	
+	
+
+	@Override
+	@Transactional
+	public List<UserLoginLogResponseEntityTO> getUserLoginLogs(AdminReportSearchParameterBean payload) {
+		return adminReportDao.getUserLoginLogs(payload);
+	}
+
+	@Override
+	@Transactional
+	public List<UserLoginLogDetailRespEntityTO> getUserLoginLogDetails(PayloadBean payload) {
+		 return adminReportDao.getUserLoginLogDetails(payload);
+	}
+
+}

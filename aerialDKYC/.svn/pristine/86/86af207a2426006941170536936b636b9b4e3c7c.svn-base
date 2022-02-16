@@ -1,0 +1,44 @@
+## MySQL connection properties for Development Environment
+# jdbc.url = jdbc:mysql://192.168.5.47:3306/edios_pms
+# jdbc.username = edioscdf
+# jdbc.password = edios123
+
+# MySQL connection properties for Production Environment
+#jdbc.url =jdbc:mysql://localhost:3306/caf
+#jdbc.username = root
+#jdbc.password = caf@139
+
+# MySQL connection properties for Test Environment
+#jdbc.url = jdbc:mysql://localhost:3306/edios_pms
+#jdbc.username = root
+#jdbc.password = root
+
+#Connection for Test Server
+# jdbc.url = jdbc:mysql://192.168.5.129:3306/edios_pms
+# jdbc.username = testPMS
+# jdbc.password = edios123
+
+# Hibernate properties-- by Arvind Singh
+#jdbc.driverClassName = com.mysql.jdbc.Driver
+#hibernate.dialect = org.hibernate.dialect.MySQL5Dialect
+#hibernate.show_sql = true
+#hibernate.format_sql = true
+
+# SQL SERVER connection properties for Local Environment -- Tarun
+jdbc.url = jdbc:sqlserver://192.168.5.135;databaseName=edios_PMS;user=edioscdf;password=edios
+
+# Hibernate properties SQL SERVER connection-- Tarun 
+jdbc.driverClassName = com.microsoft.sqlserver.jdbc.SQLServerDriver
+hibernate.dialect = org.hibernate.dialect.SQLServer2012Dialect
+hibernate.show_sql = true
+hibernate.format_sql = true
+
+# c3p0  pooling properties-- by Arvind Singh
+hibernate.c3p0.idle_test_period=30
+hibernate.c3p0.initialPoolSize=2
+hibernate.c3p0.timeout=60
+hibernate.c3p0.max_size=100
+hibernate.c3p0.min_size=1
+hibernate.c3p0.max_statements=100
+
+app.jwt.secret=qwerty

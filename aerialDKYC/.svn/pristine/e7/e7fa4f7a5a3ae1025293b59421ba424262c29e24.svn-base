@@ -1,0 +1,67 @@
+package com.edios.pms.bean;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemOrderProcessingBean extends AbstractBean {
+	private static final long serialVersionUID = -7959006084525327336L;
+	
+	private Long itemOrderProcessingId;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private Long distributedQuantity;
+
+	private Double dqTotalCost;
+
+	private Double dqUnitCost;
+
+	private Date expiryDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String lotNo;
+
+	private Long receivedQuantity;
+
+	private Character recordType;
+
+	private Double rqTotalCost;
+
+	private Double rqUnitCost;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	private ItemStockBean itemStock;
+
+	private ItemOrderDetailBean itemOrderDetail;
+
+	private ItemPackSizeBean itemPackSize;
+		
+	private String notes;
+
+	
+
+}

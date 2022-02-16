@@ -1,0 +1,72 @@
+package com.edios.pms.entity.to;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PatientDispensedItemsTO {
+
+	private String itemCode;
+	private String itemName;
+	private Long quantityOnHand;
+	private Long dispensedQuantity;
+	private Long avgQuantityDispensed;
+	private ItemStockEntityTO itemStock;
+	
+	private Long userId;
+	private Long prescribedItemId;
+	private Long dispensedItemId;
+	private Long itemStockId;
+	private String lotNo;
+	private Date expiryDate;
+	private Long itemStockTransactionCount;
+	private Long dispensedTransactionCount;
+	//private Long prescriptionTransactionCount;
+	private Long prescribedItemTransactionCount;
+	
+	private boolean editAbleFlag=true;
+	
+	private List<PatientDispensedItemsTO> objSelectedItemsToDispensed;
+	private List<PatientDispensedItemsTO> objUnselectedDispensedItems;
+	
+	private String prescribedStatus;
+	private Long patientPrescriptionId;
+	
+	private PatientPrescriptionEntityTO objPatientPrescriptionEntityTO;
+	private Long dupliDispensedQuantity;
+	
+	private String dateRange;
+	private String averageDailyUsage;
+	
+	/*DateFormatter formatter = new DateFormatter();
+
+	public void setExpiryDate(Date expiryDate) {
+		this.expiryDate=formatter.formaDate(expiryDate);
+	}*/
+	
+	private String searchParameter;
+	private String robotName="Shelf";
+	private String dispensedItemStatus="Pending";
+	private String mulipleDispensedItemIds;
+	
+	
+	//for pdf report
+	private String pharmacyLocationName;
+	private String workStationName;
+	private String patientNo;
+	private String patientName;
+	private String prescriptionNo;
+	private Date prescriptionDate;
+	private String itemLocationName;
+	
+}

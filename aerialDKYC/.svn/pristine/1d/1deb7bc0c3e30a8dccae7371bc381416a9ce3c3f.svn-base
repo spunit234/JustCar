@@ -1,0 +1,172 @@
+package com.edios.pms.controller;
+
+
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.CompoundCompositeItemBean;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.manager.PreparedCompoundItemManager;
+
+
+@RestController
+public class PreparedCompoundItemController extends AbstractController {
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	PreparedCompoundItemManager preparedCompoundItemManager;
+	
+	
+	
+	@PostMapping("/fetch-configure-compound-item-details")
+	public ResponseEntity<List<CompoundItemEntityTO>> fetchConfiguredCompoundItemdetails(@RequestBody PayloadBean payloadBean) {
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objCompoundItemEntityTOList = preparedCompoundItemManager.fetchConfiguredCompoundItemdetails(payloadBean);
+			return new ResponseEntity<List<CompoundItemEntityTO>>(objCompoundItemEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-quantity-info-to-prepare-item")
+	public ResponseEntity<List<CompoundItemEntityTO>> fetchItemDetailsToPreparedConfigureCompoundItem(@RequestBody PayloadBean payloadBean) {
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objCompoundItemEntityTOList = preparedCompoundItemManager.fetchItemDetailsToPreparedConfigureCompoundItem(payloadBean);
+			return new ResponseEntity<List<CompoundItemEntityTO>>(objCompoundItemEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-item-info-to-prepare-compound-item")
+	public ResponseEntity<List<CompoundItemEntityTO>> fetchConfigureItemDetails(@RequestBody PayloadBean payloadBean) {
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objCompoundItemEntityTOList = preparedCompoundItemManager.fetchConfigureItemDetails(payloadBean);
+			return new ResponseEntity<List<CompoundItemEntityTO>>(objCompoundItemEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	/*@PostMapping("/get-item-details-with-combination")
+	public ResponseEntity<List<ItemEntityTO>> getItemDetailsWithCombinationStatus(@RequestBody PayloadBean payloadBean) {
+		List<ItemEntityTO> objItemEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objItemEntityTOList = compoundItemManager.getItemDetailsWithCombinationStatus(payloadBean);
+			return new ResponseEntity<List<ItemEntityTO>>(objItemEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/get-compound-item-detail")
+	public ResponseEntity<List<CompoundItemEntityTO>> getCompoundItemDetails(@RequestBody ConfigureCompoundItemsTO payloadBean) {
+		List<CompoundItemEntityTO> objItemOrderEntityTOList=null;
+			objItemOrderEntityTOList = compoundItemManager.getCompoundItemDetails(payloadBean);
+			return new ResponseEntity<List<CompoundItemEntityTO>>(objItemOrderEntityTOList, HttpStatus.OK);
+	}*/
+	
+	
+	@PostMapping("/add-prepared-compound-items")
+	public BaseResponse addPreparedCompoundItem(@RequestBody CompoundCompositeItemBean CreateOrderCompositeBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = preparedCompoundItemManager.addPreparedCompoundItem(CreateOrderCompositeBean,request);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Compound Item Name" }, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+		}
+		return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	/*@PostMapping("/edit-compound-item")
+	public ResponseEntity<CompoundCompositeItemBean> findCompoundItemBeanDetailsById(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			CompoundCompositeItemBean CreateOrderCompositeBean = compoundItemManager.findCompoundItemBeanDetailsById(payloadBean.getId());
+			return new ResponseEntity<CompoundCompositeItemBean>(CreateOrderCompositeBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PutMapping("/update-compound-item")
+	public BaseResponse updateCompoundItemDetails(@RequestBody CompoundCompositeItemBean CompoundCompositeItemBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = compoundItemManager.updateCompoundItemDetails(CompoundCompositeItemBean,request);
+			if (resultString.equalsIgnoreCase("UPDATED") ||resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Compound Item Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	@PostMapping("/delete-compound-item-detail")
+	public BaseResponse deleteCompoundItemDetailsById(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = compoundItemManager.deleteCompoundItemDetailsById(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}else if (resultString.equalsIgnoreCase("")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ALREADY_DELETED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}*/
+}

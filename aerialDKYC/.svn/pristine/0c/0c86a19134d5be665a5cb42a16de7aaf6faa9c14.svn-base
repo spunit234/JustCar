@@ -1,0 +1,511 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.ItemsDao;
+import com.edios.pms.entity.ItemCodeLinkageEntity;
+import com.edios.pms.entity.ItemDrugSubstitutionEntity;
+import com.edios.pms.entity.ItemInventorySettingEntity;
+import com.edios.pms.entity.ItemPackSizeEntity;
+import com.edios.pms.entity.ItemsEntity;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+
+@Repository
+public class ItemsDaoImpl extends BaseDaoImpl<ItemsEntity> implements ItemsDao {
+	@Override
+	public boolean addItemConfiguration(ItemsEntity itemsEntity) {
+			Session session=(Session) entityManager.getDelegate();
+			session.save(itemsEntity);
+			return true;
+	}
+
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ItemsEnityTO> fetchItems(Integer accountId,String searchParameter) {
+		List<ItemsEnityTO> itemEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select item.itemId As itemId , item.itemName As itemName , item.itemCode As itemCode ,"
+				+ " item.itemStatus As itemStatus ,item.strength as strength,item.route as route, "
+				+ " item.form As form,item.transactionCount as transactionCount from  ItemsEntity item  "
+				+ " where item.recordType<>'D'";
+		if (searchParameter!=null) {
+			sqlQuery+="and item.itemName like '%"+searchParameter+"%'";
+		}
+		
+		itemEntityTOList = (List<ItemsEnityTO>) session.createQuery(sqlQuery)
+				
+				.setResultTransformer(Transformers.aliasToBean(ItemsEnityTO.class)).list();
+		
+		return itemEntityTOList;
+	}
+
+	@Override
+	public ItemsEntity findItemById(Long itemId) {
+		ItemsEntity itemsEntity = null;
+			String sqlQuery = "";
+			try {
+				sqlQuery = "from  ItemsEntity as item where item.itemId=:itemId   ";
+				itemsEntity = (ItemsEntity) entityManager.createQuery(sqlQuery)
+					.setParameter("itemId", itemId).getSingleResult();
+			} catch (NoResultException noResultException) {
+				return null;
+			} catch (Exception exception) {
+				exception.printStackTrace();
+				return null;
+			}
+			return itemsEntity;
+	}
+	
+	@Override
+	public boolean updateItem(ItemsEntity itemsEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(itemsEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataById(Long itemId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemsEntity table where table.itemId=:itemId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemId", itemId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchInventoryTransactionDataById(Long inventorySettingId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemInventorySettingEntity table where table.inventorySettingId=:inventorySettingId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("inventorySettingId", inventorySettingId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	
+	@Override
+	public boolean deleteItem(Long deleteRecordId, Integer lastModifiedBy) {
+		
+		boolean result = true;
+		try {
+			String hql = "update ItemsEntity item set item.lastModifiedDate=:lastModifiedDate"
+					+ " , item.recordType='D' , item.lastModifiedBy=:lastModifiedBy"
+					+ " WHERE item.itemId=:deleteRecordId";
+			Session session = (Session) entityManager.getDelegate();
+			Query query = session.createQuery(hql);
+			query.setParameter("lastModifiedBy", lastModifiedBy);
+			query.setParameter("lastModifiedDate", new Date(), TemporalType.TIMESTAMP);
+			query.setParameter("deleteRecordId", deleteRecordId);
+			int resultID = query.executeUpdate();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	
+	//---------------Second Tab-----------//
+	
+
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ItemInventorySettingsTo> fetchPharmacyLocationNameAuto(Long userID) {
+
+		List<ItemInventorySettingsTo> itemInventorySettingsToList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select pharamacyLocation.pharmacyLocationName As pharmacyLocationName,pharamacyLocation.pharmacyLocationCode as pharmacyLocationCode,"
+				+ " pharamacyLocation.pharmacyLocationId As pharmacyLocationId from PharmacyLocationEntity pharamacyLocation where pharamacyLocation.recordType<> 'D' and "
+				+ "pharamacyLocation.pharmacyLocationStatus='Active' ";
+
+		itemInventorySettingsToList = (List<ItemInventorySettingsTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemInventorySettingsTo.class)).list();
+		return itemInventorySettingsToList;
+	}
+
+	
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ItemInventorySettingsTo> fetchPharmacyLocationCodeAuto() {
+
+		List<ItemInventorySettingsTo> itemInventorySettingsToList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select pharamacyLocation.pharmacyLocationCode As pharmacyLocationCode,"
+				+ " pharamacyLocation.pharmacyLocationId As pharmacyLocationId from PharmacyLocationEntity pharamacyLocation where pharamacyLocation.recordType<> 'D' ";
+
+		itemInventorySettingsToList = (List<ItemInventorySettingsTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemInventorySettingsTo.class)).list();
+		return itemInventorySettingsToList;
+	}
+
+	@Override
+	public List<ItemEntityTO> fetchParameterList(String searchParameter) {
+		List<ItemEntityTO> formList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select paramList.parameterListValue as value, paramList.parameterListValue as label from ApplicationParameterListEntity paramList inner join paramList.parameterID as appParam where "
+				+ "appParam.parameterCode='"+searchParameter+"' and paramList.recordType<>'D' ";
+
+		formList = (List<ItemEntityTO>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemEntityTO.class)).list();
+		return formList;
+	}
+
+	@Override
+	public boolean addInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity) {
+		Session session=(Session) entityManager.getDelegate();
+		session.save(itemInventorySettingEntity);
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<ItemInventorySettingsTo> fetchInventorySettings(Long itemID) {
+		List<ItemInventorySettingsTo> itemInventorySettingsToList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select location.pharmacyLocationName As pharmacyLocationName,inventory.defaultShelfLocations as defaultShelfLocations,"
+				+ "inventory.shelfLocations as shelfLocations,item.itemId As itemId,inventory.inventorySettingId as inventorySettingId,"
+				+ "(select sum(iss.quantityOnHand) from ItemStockEntity iss where iss.pharmacyLocation.pharmacyLocationId=location.pharmacyLocationId and iss.item.itemId="+itemID+" ) as quantityOnHand,"
+				+ "(select sum(ceiling(iss.quantityOnHand/itemPackSizeDetail.packSize)*iss.unitCost) from ItemStockEntity iss left join iss.itemPackSize as itemPackSizeDetail where iss.pharmacyLocation.pharmacyLocationId=location.pharmacyLocationId and iss.item.itemId="+itemID+" ) as totalQuantityCost"
+				+ " from ItemInventorySettingEntity inventory left join inventory.pharmacyLocation as location left join inventory.item as item"
+				+ "  where inventory.recordType<> 'D' and item.itemId="+itemID+" order by location.pharmacyLocationName ";
+
+		itemInventorySettingsToList = (List<ItemInventorySettingsTo>) session.createQuery(sqlQuery)
+				.setResultTransformer(Transformers.aliasToBean(ItemInventorySettingsTo.class)).list();
+		return itemInventorySettingsToList;
+	}
+
+	@Override
+	public ItemInventorySettingEntity editInventorySettings(Long id) {
+		ItemInventorySettingEntity itemInventorySettingEntity = null;
+		String sqlQuery = "";
+		try {
+			sqlQuery = "from  ItemInventorySettingEntity as inventory where inventory.inventorySettingId=:inventorySettingId   ";
+			itemInventorySettingEntity = (ItemInventorySettingEntity) entityManager.createQuery(sqlQuery)
+				.setParameter("inventorySettingId", id).getSingleResult();
+		} catch (NoResultException noResultException) {
+			return null;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return itemInventorySettingEntity;
+	}
+
+	@Override
+	public boolean updateInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(itemInventorySettingEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean addPackSize(ItemPackSizeEntity itemPackSizeEntity) {
+		Session session=(Session) entityManager.getDelegate();
+		session.save(itemPackSizeEntity);
+		return true;
+	}
+
+	@Override
+	public List<ItemPackSizeEntityTO> fetchItemPackSize(Long itemID) {
+		List<ItemPackSizeEntityTO> itemPackSizeEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select pack.packSizeId as packSizeId, pack.packSize as packSize, pack.packSizeDesc as packSizeDesc,pack.packSizeStatus as packSizeStatus "
+				+ "from ItemPackSizeEntity as pack where pack.recordType<>'D' and pack.item.itemId="+itemID+" order by  pack.packSize";
+		itemPackSizeEntityTOList = (List<ItemPackSizeEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ItemPackSizeEntityTO.class)).list();
+		return itemPackSizeEntityTOList;
+	}
+
+	@Override
+	public ItemPackSizeEntity editItemPackSize(Long packSizeid) {
+		return entityManager.find(ItemPackSizeEntity.class, packSizeid);
+	}
+
+	@Override
+	public TransactionData fetchPackSizeTransactionDataById(Long packSizeId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemPackSizeEntity table where table.packSizeId="+packSizeId+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateItemPackSize(ItemPackSizeEntity itemPackSizeEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(itemPackSizeEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public Boolean checkItemsRecord(Long itemId, Long pharmacyLocationId) {
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select count(inventory.inventorySettingId) as count from ItemInventorySettingEntity inventory where inventory.item.itemId="+itemId+" and "
+					+ "inventory.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and inventory.recordType<>'D'";
+			Long count =   (Long) session.createQuery(sqlQuery).uniqueResult();
+			if (count>0) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		
+	}
+
+	@Override
+	public List<ItemEntityTO> fetchDrugSubstitutionAutoLookUpList(Long itemId) {
+		List<ItemEntityTO> itemEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode from ItemsEntity as item where item.itemId<>"+itemId+" "
+				+ "and item.recordType<>'D'";
+		itemEntityTOList = (List<ItemEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ItemEntityTO.class)).list();
+		return itemEntityTOList;
+	}
+
+	@Override
+	public boolean addDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity) {
+		Session session=(Session) entityManager.getDelegate();
+		session.save(itemDrugSubstitutionEntity);
+		return true;
+	}
+
+	@Override
+	public List<ItemDrugSubstitutionEntityTO> fetchDrugSubstitution(Long itemID) {
+		List<ItemDrugSubstitutionEntityTO> itemDrugSubstitutionEntityTOList = null;
+		String sqlQuery = "select item.itemName as drugSubstitutionName,item.itemCode as drugSubstitutionCode,substitute.drugSubstitutionId as drugSubstitutionId, "
+				+ "substitute.drugSubstitutionStatus as drugSubstitutionStatus,substitute.notes as notes from ItemDrugSubstitutionEntity as substitute left join substitute.subItem as item where substitute.item.itemId="+itemID+"  "
+				+ "and substitute.recordType<>'D' order by item.itemName";
+		Session session = (Session) entityManager.getDelegate();
+		itemDrugSubstitutionEntityTOList = (List<ItemDrugSubstitutionEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ItemDrugSubstitutionEntityTO.class)).list();
+		return itemDrugSubstitutionEntityTOList;
+	}
+
+	@Override
+	public ItemDrugSubstitutionEntity editDrugSubstitution(Long drugSubstitutionid) {
+		return entityManager.find(ItemDrugSubstitutionEntity.class, drugSubstitutionid);
+	}
+
+	@Override
+	public TransactionData fetchDrugSubstitutionTransactionDataById(Long drugSubstitutionId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemDrugSubstitutionEntity table where table.drugSubstitutionId="+drugSubstitutionId+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(itemDrugSubstitutionEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean addItemCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity) {
+		Session session=(Session) entityManager.getDelegate();
+		session.save(itemCodeLinkageEntity);
+		return true;
+	}
+
+	@Override
+	public List<ItemCodeLinkageEntityTO> fetchCodeLinkage(Long itemID) {
+		List<ItemCodeLinkageEntityTO> itemCodeLinkageBeanTOList = null;
+		String sqlQuery = "select code.codeLinkageId as codeLinkageId,code.codeLinkageStatus as codeLinkageStatus,code.codeLinkageType as codeLinkageType, "
+				+ "code.codeLinkageValue as codeLinkageValue,code.manufacture as manufacture from ItemCodeLinkageEntity code where code.recordType<>'D' and "
+				+ "code.item.itemId="+itemID+" order by code.codeLinkageType";
+		Session session = (Session) entityManager.getDelegate();
+		itemCodeLinkageBeanTOList = (List<ItemCodeLinkageEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(ItemCodeLinkageEntityTO.class)).list();
+		return itemCodeLinkageBeanTOList;
+	}
+
+	@Override
+	public ItemCodeLinkageEntity editCodeLinkage(Long codeLinkageId) {
+		return entityManager.find(ItemCodeLinkageEntity.class, codeLinkageId);
+	}
+
+	@Override
+	public TransactionData fetchCodeLinkageTransactionDataById(Long codeLinkageId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemCodeLinkageEntity table where table.codeLinkageId="+codeLinkageId+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(itemCodeLinkageEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean checkExistingDrugSubstitutes(Long substituteItemId,Long itemId) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select count(substitute.drugSubstitutionId) from ItemDrugSubstitutionEntity as substitute where substitute.subItem.itemId="+substituteItemId+" and "
+						+ "substitute.recordType<>'D' and substitute.item.itemId="+itemId+"";
+		
+		Long count = (Long) session.createQuery(sqlQuery).getSingleResult();
+		if (count>0) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
+	@Override
+	public boolean checkExistingPackSizes(Long packSize, Long itemId) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select count(pack.packSizeId) from ItemPackSizeEntity as pack where pack.item.itemId="+itemId+" and "
+						+ "pack.recordType<>'D' and pack.packSize="+packSize+"";
+		
+		Long count = (Long) session.createQuery(sqlQuery).getSingleResult();
+		if (count>0) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+
+	@Override
+	public Boolean checkItemsInventoryRecord(Long itemId, Long pharmacyLocationId, Long inventorySettingId) {
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select count(inventory.inventorySettingId) as count from ItemInventorySettingEntity inventory where inventory.item.itemId="+itemId+" and "
+					+ "inventory.pharmacyLocation.pharmacyLocationId="+pharmacyLocationId+" and inventory.recordType<>'D'and inventory.inventorySettingId<>"+inventorySettingId+" ";
+			Long count =   (Long) session.createQuery(sqlQuery).uniqueResult();
+			if (count>0) {
+				return false;
+			}
+			else {
+				return true;
+			}
+	
+		}
+
+	@Override
+	public Long checkItemUsageInItemStockAndItemOrderDetails(Long id) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "";
+		Long count =   (Long) session.createQuery(sqlQuery).uniqueResult();
+		
+		return count;
+	}
+
+
+	
+	
+
+	
+	
+	
+	
+
+	
+	
+
+	
+
+}

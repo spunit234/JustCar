@@ -1,0 +1,100 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+/**
+ * The persistent class for the ` items` database table.
+ * 
+ */
+@Entity
+@Table(name="PREPARED_COMPOUND_ITEMS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PreparedCompoundItemEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="PREPARED_ITEM_ID")
+	private Long preparedItemId;
+
+	@ManyToOne
+	@JoinColumn(name="COMPOUND_ITEM_ID")
+	private CompoundItemEntity compoundItem;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="PREPARATION_DATE")
+	private Date preparartionDate;
+	
+	@Column(name="PREPARED_COMPOUND_QUANTITY")
+	private Double preparedCompoundItemQuantity;
+	
+	@Column(name="LOT_NO")
+	private String lotNo;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="EXPIRY_DATE")
+	private Date expiryDate;
+	
+	@ManyToOne
+	@JoinColumn(name="PACK_SIZE_ID")
+	private ItemPackSizeEntity itemPackSize;
+	
+	@Column(name="UNIT_COST")
+	private Double unitCost;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to PreparedCompoundItem
+	@OneToMany(mappedBy="preparedCompoundItem")
+	private List<PreparedCompoundItemDetailEntity> preparedItemDetails;
+
+}

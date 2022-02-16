@@ -1,0 +1,473 @@
+package com.edios.pms.controller;
+
+
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.bean.common.ApplicationParameterListBean;
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.ItemCodeLinkageBean;
+import com.edios.pms.bean.ItemDrugSubstitutionBean;
+import com.edios.pms.bean.ItemInventorySettingBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+import com.edios.pms.manager.ItemsManager;
+
+import net.sf.jasperreports.components.items.ItemCompiler;
+
+@RestController
+public class ItemsController extends AbstractController {
+	
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	ItemsManager itemsManager;
+	
+	
+	@PostMapping("/add-item-configuration")
+	public BaseResponse addItemConfiguration(@RequestBody ItemsBean itemsBean, HttpServletRequest request) {
+		
+		BaseResponse baseResponse = null;
+		itemsBean.setIpAddress(request.getRemoteAddr());
+		String resultString = itemsManager.addItemConfiguration(itemsBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		return baseResponse;
+	}
+	
+	@PostMapping("/fetch-items")
+	public ResponseEntity<List<ItemsEnityTO>> fetchItems(@RequestBody PayloadBean payloadBean) {
+		List<ItemsEnityTO> itemsEntityTOList = null;
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemsEntityTOList = itemsManager.fetchItems(payloadBean);
+			return new ResponseEntity<List<ItemsEnityTO>>(itemsEntityTOList, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	@PostMapping("/fetch-parameterList")
+	public ResponseEntity<List<ItemEntityTO>> fetchParameterList(@RequestBody PayloadBean payloadBean) {
+		List<ItemEntityTO> formsList = null;
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			formsList = itemsManager.fetchParameterList(payloadBean.getSearchParameter());
+			return new ResponseEntity<List<ItemEntityTO>>(formsList, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	
+	
+	@PostMapping("/edit-items")
+	public ResponseEntity<ItemsBean> findItemById(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			ItemsBean itemsBean = itemsManager.findItemById(payloadBean);
+			return new ResponseEntity<ItemsBean>(itemsBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	
+	@PutMapping("/update-item-configuration")
+	public BaseResponse updateItem(@RequestBody ItemsBean itemsBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			itemsBean.setIpAddress(request.getRemoteAddr());
+			String resultString = itemsManager.updateItem(itemsBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	
+	@PostMapping("/delete-item")
+	public BaseResponse deleteItem(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = itemsManager.deleteItem(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	//-------------Second Tab---------------------//
+	
+	@PostMapping("/fetch-pharmacy-location-name-auto")
+	public ResponseEntity<List<ItemInventorySettingsTo>> fetchPharmacyLocationNameAuto(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			List<ItemInventorySettingsTo> itemInventorySettingsToList=null;
+			itemInventorySettingsToList=itemsManager.fetchPharmacyLocationNameAuto(payloadbean.getId());
+			 return new ResponseEntity<List<ItemInventorySettingsTo>>(itemInventorySettingsToList, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/add-inventory-setting")
+	public BaseResponse addInventorySetting(@RequestBody ItemInventorySettingBean itemInventorySettingBean, HttpServletRequest request) {
+		
+		BaseResponse baseResponse = null;
+		String resultString="";
+		itemInventorySettingBean.setIpAddress(request.getRemoteAddr());
+		Boolean result = itemsManager.checkItemsRecord(itemInventorySettingBean.getItem().getItemId(),itemInventorySettingBean.getPharmacyLocation().getPharmacyLocationId());
+		if (result) {
+			if (itemInventorySettingBean.getInventorySettingStatus().equals("InActive")) {
+				itemInventorySettingBean.setInactivatedDate(new Date());
+			}
+		resultString = itemsManager.addInventorySetting(itemInventorySettingBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		}
+		else {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ERROR", "Record For This Item Is Already Inserted In the Selected Location");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/fetch-inventory-setting")
+	public ResponseEntity<List<ItemInventorySettingsTo>> fetchInventorySettings(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			List<ItemInventorySettingsTo> itemInventorySettingsToList=null;
+			itemInventorySettingsToList=itemsManager.fetchInventorySettings(payloadbean);
+			 return new ResponseEntity<List<ItemInventorySettingsTo>>(itemInventorySettingsToList, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/edit-inventory-setting")
+	public ResponseEntity<ItemInventorySettingBean> editInventorySettings(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			ItemInventorySettingBean itemInventorySettingBean=null;
+			itemInventorySettingBean=itemsManager.editInventorySettings(payloadbean);
+			 return new ResponseEntity<ItemInventorySettingBean>(itemInventorySettingBean, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/update-inventory-setting")
+	public BaseResponse updateInventorySetting(@RequestBody ItemInventorySettingBean itemInventorySettingBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			Boolean result = itemsManager.checkItemsInventoryRecord(itemInventorySettingBean.getItem().getItemId(),itemInventorySettingBean.getPharmacyLocation().getPharmacyLocationId(),
+					itemInventorySettingBean.getInventorySettingId());
+			if (result) {
+			itemInventorySettingBean.setIpAddress(request.getRemoteAddr());
+			if (itemInventorySettingBean.getInventorySettingStatus().equals("InActive")) {
+				itemInventorySettingBean.setInactivatedDate(new Date());
+			}
+			String resultString = itemsManager.updateInventorySetting(itemInventorySettingBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			}
+			else {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ERROR", "Record For This Item Is Already Inserted In the Selected Location");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	
+	@PostMapping("/add-pack-size")
+	public BaseResponse addPackSize(@RequestBody ItemPackSizeBean itemPackSizeBean, HttpServletRequest request) {
+		
+		BaseResponse baseResponse = null;
+		boolean result =itemsManager.checkExistingPackSizes(itemPackSizeBean.getPackSize(),itemPackSizeBean.getItem().getItemId());
+		if (result) {
+			itemPackSizeBean.setIpAddress(request.getRemoteAddr());
+			if (itemPackSizeBean.getPackSizeStatus().equals("InActive")) {
+				itemPackSizeBean.setInactivatedDate(new Date());
+			}
+			String resultString = itemsManager.addPackSize(itemPackSizeBean);
+			if (resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			} 
+		}
+		else {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ERROR", "Pack Size For This Item Already Exists. Please Enter Another Pack Size");
+		}
+		
+		
+		
+		return baseResponse;
+	}
+	
+	@PostMapping("/fetch-item-packSize")
+	public ResponseEntity<List<ItemPackSizeEntityTO>> fetchItemPackSize(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			List<ItemPackSizeEntityTO> ItemPackSizeEntityTOList=null;
+			ItemPackSizeEntityTOList=itemsManager.fetchItemPackSize(payloadbean);
+			 return new ResponseEntity<List<ItemPackSizeEntityTO>>(ItemPackSizeEntityTOList, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/edit-item-packSize")
+	public ResponseEntity<ItemPackSizeBean> editItemPackSize(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			ItemPackSizeBean itemPackSizeBean=null;
+			itemPackSizeBean=itemsManager.editItemPackSize(payloadbean);
+			 return new ResponseEntity<ItemPackSizeBean>(itemPackSizeBean, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/update-pack-size")
+	public BaseResponse updateItemPackSize(@RequestBody ItemPackSizeBean itemPackSizeBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			
+				itemPackSizeBean.setIpAddress(request.getRemoteAddr());
+				if (itemPackSizeBean.getPackSizeStatus().equals("InActive")) {
+					itemPackSizeBean.setInactivatedDate(new Date());
+				}
+				String resultString = itemsManager.updateItemPackSize(itemPackSizeBean);
+				if (resultString.equalsIgnoreCase("UPDATED")) {
+					baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+				}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+					baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+							messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+				} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+					baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+							messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+				}	
+			
+			
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	@PostMapping("/fetch-drugSubstitue-auto")
+	public ResponseEntity<List<ItemEntityTO>> fetchDrugSubstitutionAutoLookUpList(@RequestBody PayloadBean payloadBean) {
+		List<ItemEntityTO> itemsList = null;
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemsList = itemsManager.fetchDrugSubstitutionAutoLookUpList(payloadBean.getId());
+			return new ResponseEntity<List<ItemEntityTO>>(itemsList, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	@PostMapping("/add-drug-substitution")
+	public BaseResponse addDrugSubstitution(@RequestBody ItemDrugSubstitutionBean itemDrugSubstitutionBean, HttpServletRequest request) {
+		
+		BaseResponse baseResponse = null;
+		String resultString="";
+		boolean result =itemsManager.checkExistingDrugSubstitutes(itemDrugSubstitutionBean.getSubItem().getItemId(),itemDrugSubstitutionBean.getItem().getItemId());
+		
+		if (result) {
+		itemDrugSubstitutionBean.setIpAddress(request.getRemoteAddr());
+		if (itemDrugSubstitutionBean.getDrugSubstitutionStatus().trim().equals("InActive")) {
+			itemDrugSubstitutionBean.setInactivatedDate(new Date());
+		}
+		resultString = itemsManager.addDrugSubstitution(itemDrugSubstitutionBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		
+		}
+		else {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ERROR", "Selected Drug Substitute For This Item Is Already Inserted. Please Try Adding Another Substitute");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/fetch-drug-substitution")
+	public ResponseEntity<List<ItemDrugSubstitutionEntityTO>> fetchDrugSubstitution(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			List<ItemDrugSubstitutionEntityTO> itemDrugSubstitutionEntityTOList=null;
+			itemDrugSubstitutionEntityTOList=itemsManager.fetchDrugSubstitution(payloadbean);
+			 return new ResponseEntity<List<ItemDrugSubstitutionEntityTO>>(itemDrugSubstitutionEntityTOList, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/edit-drug-substitution")
+	public ResponseEntity<ItemDrugSubstitutionBean> editDrugSubstitution(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			ItemDrugSubstitutionBean itemDrugSubstitutionBean=null;
+			itemDrugSubstitutionBean=itemsManager.editDrugSubstitution(payloadbean);
+			 return new ResponseEntity<ItemDrugSubstitutionBean>(itemDrugSubstitutionBean, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/update-drug-substitution")
+	public BaseResponse updateDrugSubstitution(@RequestBody ItemDrugSubstitutionBean itemDrugSubstitutionBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+				itemDrugSubstitutionBean.setIpAddress(request.getRemoteAddr());
+
+				if (itemDrugSubstitutionBean.getDrugSubstitutionStatus().trim().equals("InActive")) {
+					itemDrugSubstitutionBean.setInactivatedDate(new Date());
+				}
+				String resultString = itemsManager.updateDrugSubstitution(itemDrugSubstitutionBean);
+				if (resultString.equalsIgnoreCase("UPDATED")) {
+					baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+				}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+					baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+							messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+				} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+					baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+							messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+				}	
+			
+			
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	@PostMapping("/add-code-linkage")
+	public BaseResponse addItemCodeLinkage(@RequestBody ItemCodeLinkageBean itemCodeLinkageBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		itemCodeLinkageBean.setIpAddress(request.getRemoteAddr());
+		if (itemCodeLinkageBean.getCodeLinkageStatus().equals("InActive")) {
+			itemCodeLinkageBean.setInactivatedDate(new Date());
+		}
+		String resultString = itemsManager.addItemCodeLinkage(itemCodeLinkageBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		return baseResponse;
+	}
+	
+	@PostMapping("/fetch-code-linkage")
+	public ResponseEntity<List<ItemCodeLinkageEntityTO>> fetchCodeLinkage(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			List<ItemCodeLinkageEntityTO> ItemCodeLinkageBeanTOList=null;
+			ItemCodeLinkageBeanTOList=itemsManager.fetchCodeLinkage(payloadbean);
+			 return new ResponseEntity<List<ItemCodeLinkageEntityTO>>(ItemCodeLinkageBeanTOList, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/edit-code-linkage")
+	public ResponseEntity<ItemCodeLinkageBean> editCodeLinkage(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			ItemCodeLinkageBean itemCodeLinkageBean=null;
+			itemCodeLinkageBean=itemsManager.editCodeLinkage(payloadbean);
+			 return new ResponseEntity<ItemCodeLinkageBean>(itemCodeLinkageBean, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/update-code-linkage")
+	public BaseResponse updateCodeLinkage(@RequestBody ItemCodeLinkageBean itemCodeLinkageBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			itemCodeLinkageBean.setIpAddress(request.getRemoteAddr());
+			if (itemCodeLinkageBean.getCodeLinkageStatus().equals("InActive")) {
+				itemCodeLinkageBean.setInactivatedDate(new Date());
+			}
+			String resultString = itemsManager.updateCodeLinkage(itemCodeLinkageBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	
+	
+/*	@PostMapping("/fetch-pharmacy-location-code-auto")
+	public ResponseEntity<List<ItemInventorySettingsTo>> fetchPharmacyLocationCodeAuto(@RequestBody PayloadBean payloadbean){
+		if(payloadbean.getSignatureKey().equals(messageSource.getMessage("signatureKey",null,"",Locale.US ))) {
+			List<ItemInventorySettingsTo> itemInventorySettingsToList=null;
+			itemInventorySettingsToList=itemsManager.fetchPharmacyLocationCodeAuto();
+			 return new ResponseEntity<List<ItemInventorySettingsTo>>(itemInventorySettingsToList, HttpStatus.OK);
+		}else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	*/
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+
+}

@@ -1,0 +1,71 @@
+package com.edios.pms.entity.to;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ReportsTO {
+private Long dashboardID;
+private Long packSize;  
+private String itemName;
+private String itemCode; 
+private String notes;
+
+private String lotNo;
+private String expiryDate;
+private String widgetImageFileName;
+private Long quantityReceived; 
+private Long quantityOnHand; 
+private Long countedQuantity;
+
+private Long aoMinQuantity;
+
+private String indentNo;
+private Long itemOrderId;
+private String orderDate;
+private String orderCreatedBy;
+private String orderProcessedBy;
+private String orderProcessedLocation;
+private String orderProcessedStore;
+
+private Long noOfItems;
+private String itemStockStatus;
+
+private Long itemOrderDetailId;
+private Long orderQuantity;
+private Long distributeQuantity;
+private Long reorderQuantity;
+private Long itemId;
+private Long pharmacyLocationId;
+
+String dateRange;
+//Auto Order Variables
+private String dispenseAsPack;
+
+private Double quantityOnHandCost;
+private Double quantityReceivedCost;
+
+private List<ReportsTO> processedOrderItemDetailList = new ArrayList<>();
+
+DateFormatter formatter = new DateFormatter();
+
+public void setExpiryDate(Date expiryDate) {
+	this.expiryDate=formatter.formaDate(expiryDate);
+}
+
+public void setOrderDate(Date orderDate) {
+	this.orderDate=formatter.formaDate(orderDate);
+}
+	private String itemReturnStatus; 
+}

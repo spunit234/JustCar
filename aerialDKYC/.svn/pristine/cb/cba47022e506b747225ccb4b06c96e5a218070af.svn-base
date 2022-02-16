@@ -1,0 +1,225 @@
+package com.edios.pms.controller;
+
+
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.bean.PatientMedicalPrescriptionDetailBean;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PatientPrescriptionEntityTO;
+import com.edios.pms.manager.PatientDispensingManager;
+
+
+@RestController
+public class PatientDispensingController extends AbstractController {
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	PatientDispensingManager patientDispensingManager;
+	
+	@PostMapping("/get-patient-details")
+	public ResponseEntity<List<PatientEntityTO>> getPatientDetails(@RequestBody PatientEntityTO payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getPatientDetails(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+
+	@PostMapping("/get-patient-details-by-id")
+	public ResponseEntity<PatientMedicalPrescriptionDetailBean> getPatientDetailsById(@RequestBody PayloadBean payloadBean) {
+		PatientMedicalPrescriptionDetailBean objPatientMedicalPrescriptionDetailBean=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPatientMedicalPrescriptionDetailBean = patientDispensingManager.getPatientDetailsById(payloadBean);
+				return new ResponseEntity<PatientMedicalPrescriptionDetailBean>(objPatientMedicalPrescriptionDetailBean, HttpStatus.OK);
+			}else{
+				return new ResponseEntity<>(null, HttpStatus.OK);
+			}
+		
+	}
+	
+	@PostMapping("/get-patient-prescribed-items-detail")
+	public ResponseEntity<List<PatientPrescriptionEntityTO>> getPatientPatientPrescribedDetailsByEncounterId(@RequestBody PayloadBean payloadBean) {
+		List<PatientPrescriptionEntityTO> objPatientPrescriptionEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPatientPrescriptionEntityTOList = patientDispensingManager.getPatientPatientPrescribedDetailsByEncounterId(payloadBean);
+				return new ResponseEntity<List<PatientPrescriptionEntityTO>>(objPatientPrescriptionEntityTOList, HttpStatus.OK);
+			}else{
+				return new ResponseEntity<>(null, HttpStatus.OK);
+			}
+		
+	}
+	
+	@PostMapping("/get-dispensed-items-detail")
+	public ResponseEntity<List<PatientDispensedItemsTO>> getPerscribedItemsToBeDispensed(@RequestBody PatientDispensedItemsTO payloadBean) {
+		List<PatientDispensedItemsTO> objPatientDispensedItemsTOList=null;
+			objPatientDispensedItemsTOList = patientDispensingManager.getPerscribedItemsToBeDispensed(payloadBean);
+				return new ResponseEntity<List<PatientDispensedItemsTO>>(objPatientDispensedItemsTOList, HttpStatus.OK);
+			
+		
+	}
+	
+	@PostMapping("/dispense-medicine-to-patient")
+	public BaseResponse dispenseMedicineToPatient(@RequestBody PatientDispensedItemsTO objPatientDispensedItemsTO, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = patientDispensingManager.dispenseMedicineToPatient(objPatientDispensedItemsTO,request);
+		 if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	/*@PostMapping("/get-user-pharmacy-location")
+	public ResponseEntity<PharmacyLocationEntityTO> getUserPharmacyLocation(@RequestBody PayloadBean payloadBean) {
+		PharmacyLocationEntityTO objPharmacyLocationEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPharmacyLocationEntityTO = createOrderManager.getUserPharmacyLocation(payloadBean.getId());
+			return new ResponseEntity<PharmacyLocationEntityTO>(objPharmacyLocationEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	@PostMapping("/get-user-corresponding-pharmacy-location")
+	public ResponseEntity<List<PharmacyLocationEntityTO>> getUserCorrespondingPharmacyLocation(@RequestBody PayloadBean payloadBean) {
+		List<PharmacyLocationEntityTO> objPharmacyLocationEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPharmacyLocationEntityTO = createOrderManager.getUserCorrespondingPharmacyLocation(payloadBean.getId());
+			return new ResponseEntity<List<PharmacyLocationEntityTO>>(objPharmacyLocationEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	@PostMapping("/get-user-pharmacy-store")
+	public ResponseEntity<List<PharmacyStoreEntityTO>> getUserPharmacyStore(@RequestBody PayloadBean payloadBean) {
+		List<PharmacyStoreEntityTO> objPharmacyLocationEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPharmacyLocationEntityTO = createOrderManager.getUserPharmacyStore(payloadBean.getId());
+			return new ResponseEntity<List<PharmacyStoreEntityTO>>(objPharmacyLocationEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/get-item-pack-size-detail")
+	public ResponseEntity<List<ItemPackSizeEntityTO>> getItemPackSizeDetails(@RequestBody PayloadBean payloadBean) {
+		List<ItemPackSizeEntityTO> objItemPackSizeEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objItemPackSizeEntityTOList = createOrderManager.getItemPackSizeDetails(payloadBean);
+			return new ResponseEntity<List<ItemPackSizeEntityTO>>(objItemPackSizeEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-item-quantity-on-hand")
+	public ResponseEntity<ItemStockEntityTO> fetchItemQuantityOnHandDetail(@RequestBody ItemStockEntityTO itemStockEntityTO) {
+		ItemStockEntityTO objItemStockEntityTO=null;
+			objItemStockEntityTO = createOrderManager.fetchItemQuantityOnHandDetail(itemStockEntityTO);
+			return new ResponseEntity<ItemStockEntityTO>(objItemStockEntityTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/create-order")
+	public BaseResponse createOrder(@RequestBody CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = createOrderManager.createOrder(CreateOrderCompositeBean,request);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+		}
+		return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	@PostMapping("/get-item-order-detail")
+	public ResponseEntity<List<ItemOrderEntityTO>> getItemOrderDetails(@RequestBody PayloadBean payloadBean) {
+		List<ItemOrderEntityTO> objItemOrderEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objItemOrderEntityTOList = createOrderManager.getItemOrderDetails(payloadBean);
+			return new ResponseEntity<List<ItemOrderEntityTO>>(objItemOrderEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/edit-item-order")
+	public ResponseEntity<CreateOrderCompositeBean> findItemOrderDetailsById(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			CreateOrderCompositeBean CreateOrderCompositeBean = createOrderManager.findItemOrderDetailsById(payloadBean.getId());
+			return new ResponseEntity<CreateOrderCompositeBean>(CreateOrderCompositeBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PutMapping("/update-item-order")
+	public BaseResponse updateItemOrderDetails(@RequestBody CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = createOrderManager.updateItemOrderDetails(CreateOrderCompositeBean,request);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}*/
+}

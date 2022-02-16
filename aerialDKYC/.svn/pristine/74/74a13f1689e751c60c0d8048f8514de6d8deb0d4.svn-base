@@ -1,0 +1,31 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.GeneralLedgerTo;
+import com.edios.pms.manager.GeneralLedgerManager;
+@RestController
+public class GeneralLedgerController extends AbstractController{
+	@Autowired
+	GeneralLedgerManager generalLedger;
+	@Autowired
+	MessageSource messageSource;
+	
+	
+	@PostMapping("/generalLedgerReport")
+	public ResponseEntity<List<GeneralLedgerTo>> getGeneralLedgerReport(@RequestBody PayloadBean payloadBean) {
+		List<GeneralLedgerTo> generalLedgerTo = null;
+		generalLedgerTo =(List<GeneralLedgerTo>) generalLedger.getGeneralLedgerReport(payloadBean);
+		return new ResponseEntity<List<GeneralLedgerTo>>(generalLedgerTo, HttpStatus.OK);
+}
+}

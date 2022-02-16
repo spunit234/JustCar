@@ -1,0 +1,117 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.UserEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="INV_COUNTS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class InventoryCountEntity extends AbstractEntity implements Serializable {
+	
+	private static final long serialVersionUID = -1845656515301970156L;
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="INV_COUNT_ID")
+	private Long invCountId;
+
+	@Column(name="INV_COUNT_NAME")
+	private String invCountName;
+	
+	@Column(name="INV_COUNT_TYPE")
+	private String invCountType;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="INV_COUNT_DATE")
+	private Date invCountDate;
+
+	@Column(name="ITEM_CLASS")
+	private String itemClass;
+	
+	@Column(name="NO_OF_ITEMS")
+	private Long noOfItems;
+	
+	@Column(name="COUNT_FREQUENCY")
+	private Long countFrequency;
+	
+	@Column(name="WORKING_DAYS")
+	private String workingDays;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="COUNT_START_DATE")
+	private Date countStartDate;
+	
+	@Column(name="COUNT_MATCHED")
+	private String countMatched;
+	
+	@Column(name="COUNTED_BY")
+	private String countedBy;
+	
+	@Column(name="CHECKED_BY")
+	private String checkedBy;
+	
+	@Column(name="COUNT_STATUS")
+	private String countStatus;
+	
+	@Column(name="NOTES")
+	private String notes;
+	
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+	
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+	
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+	
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+	
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+	
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+	
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+	
+	
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+	
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="APPROVAL_USER_ID")
+	private UserEntity user;
+
+}

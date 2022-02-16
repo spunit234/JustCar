@@ -1,0 +1,965 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.StringJoiner;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.bean.security.SiteBean;
+import com.edios.cdf.entity.to.ApplicationParameterTO;
+import com.edios.cdf.entity.to.RoleEntityTO;
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.edios.cdf.entity.to.UserProfileTO;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.AdhocReportAccessRightBean;
+import com.edios.pms.bean.AdhocReportBean;
+import com.edios.pms.bean.AdhocReportFieldBean;
+import com.edios.pms.bean.AdhocReportFilterBean;
+import com.edios.pms.bean.AdhocReportParameterBean;
+import com.edios.pms.bean.AdhocReportSortBean;
+import com.edios.pms.bean.DataSourceBean;
+import com.edios.pms.bean.DataSourceFieldBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.WorksStationAssignmentBean;
+import com.edios.pms.dao.AdhocReportDao;
+import com.edios.pms.entity.AdhocReportAccessRightEntity;
+import com.edios.pms.entity.AdhocReportEntity;
+import com.edios.pms.entity.AdhocReportFieldEntity;
+import com.edios.pms.entity.AdhocReportFilterEntity;
+import com.edios.pms.entity.AdhocReportParameterEntity;
+import com.edios.pms.entity.AdhocReportSortEntity;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.AdhocFilterTO;
+import com.edios.pms.entity.to.AdhocReportFieldTO;
+import com.edios.pms.entity.to.AdhocReportParameterTO;
+import com.edios.pms.entity.to.AdhocReportTO;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.DataSourceTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.edios.pms.manager.AdhocReportManager;
+
+@Service("adhocReportManagerImpl")
+public class AdhocReportManagerImpl extends AbstractManagerImpl<AdhocReportBean,AdhocReportEntity > implements AdhocReportManager {
+
+	@Autowired
+	AdhocReportDao adhocReportDao;
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	@Transactional
+	public List<AdhocReportTO> getAdhocReportsDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return adhocReportDao.getAdhocReportsDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public String addAdhocReport(AdhocReportBean objAdhocReportBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.isAdhocReportNameExist(objAdhocReportBean.getReportName(),objAdhocReportBean.getAdhocReportId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		setAuditInfoOfAdhocReportBean(objAdhocReportBean,"newFlag");
+		if(adhocReportDao.addAdhocReport(mapper.map(objAdhocReportBean, AdhocReportEntity.class)))
+			return "ADDED";
+		return null;
+		}
+	
+	@Override
+	@Transactional
+	public AdhocReportBean editAdhocReport(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		AdhocReportBean objAdhocReportBean=mapper.map(adhocReportDao.editAdhocReport(payloadBean.getId()),AdhocReportBean.class);
+		DataSourceBean objDataSourceBean1=new DataSourceBean();
+		objDataSourceBean1.setDataSourceId(objAdhocReportBean.getDataSource1().getDataSourceId());
+		objAdhocReportBean.setDataSource1(objDataSourceBean1);
+		if(objAdhocReportBean.getDataSource2()!=null) {
+			DataSourceBean objDataSourceBean2=new DataSourceBean();
+			objDataSourceBean2.setDataSourceId(objAdhocReportBean.getDataSource2().getDataSourceId());
+			objAdhocReportBean.setDataSource2(objDataSourceBean2);
+		}
+		if(objAdhocReportBean.getNoOfDataSources().equalsIgnoreCase("Two")) {
+			DataSourceFieldEntity objDataSourceFieldEntity1=new DataSourceFieldEntity();
+			DataSourceFieldEntity objDataSourceFieldEntity2=new DataSourceFieldEntity();
+			
+			objDataSourceFieldEntity1.setDataSourceFieldId(objAdhocReportBean.getDataSourceId1RfId().getDataSourceFieldId());
+			objAdhocReportBean.setDataSourceId1RfId(objDataSourceFieldEntity1);
+			
+			objDataSourceFieldEntity2.setDataSourceFieldId(objAdhocReportBean.getDataSourceId2RfId().getDataSourceFieldId());
+			objAdhocReportBean.setDataSourceId2RfId(objDataSourceFieldEntity2);
+		}
+		
+		return objAdhocReportBean;
+	}
+	@Override
+	@Transactional
+	public	DataSourceFieldTO getAdhocReportFields(AdhocReportFieldTO payloadBean) {
+		List<Long> objDataSourceFieldIdList=new ArrayList<>();
+		objDataSourceFieldIdList.add(0L);
+		DataSourceFieldTO objDataSourceFieldTO=new DataSourceFieldTO();
+		List<AdhocReportFieldTO> objList=adhocReportDao.getAdhocReportField(payloadBean);
+		for(AdhocReportFieldTO iterateObject:objList) {
+			objDataSourceFieldIdList.add(iterateObject.getDataSourceFieldId());
+		}
+		
+		objDataSourceFieldTO.setPickListTargetList(objList);
+		objDataSourceFieldTO.setPickListSourceList(adhocReportDao.getDataSourceFieldsByDataSourceId(payloadBean,objDataSourceFieldIdList));
+		return objDataSourceFieldTO;
+	}
+	
+	@Override
+	@Transactional
+	public	List<DataSourceFieldTO> getDataSourceFields(AdhocReportFieldTO payloadBean) {
+		List<Long> objDataSourceFieldIdList=new ArrayList<>();
+		objDataSourceFieldIdList.add(0L);
+		return adhocReportDao.getDataSourceFieldsByDataSourceId(payloadBean,objDataSourceFieldIdList);
+	}
+	
+	@Override
+	@Transactional
+	public String addAdhocReportFields( List<AdhocReportFieldBean> objAdhocReportFieldBeanList) {
+		String resultString = "";
+		boolean resultFlag = false;
+		for(AdhocReportFieldBean objAdhocReportFieldBean:objAdhocReportFieldBeanList) {
+			if(objAdhocReportFieldBean.getAdhocReportFieldId()==null) {
+				if(adhocReportDao.addAdhocReportField(mapper.map(objAdhocReportFieldBean, AdhocReportFieldEntity.class)))
+					resultString= "ADDED";
+			}
+			else {
+				if(adhocReportDao.updateAdhocReportField(objAdhocReportFieldBean.getFieldSequence(),objAdhocReportFieldBean.getAdhocReportFieldId()))
+					resultString= "UPDATED";
+			}
+		}
+		return resultString;
+		
+	}
+	
+	@Override
+	@Transactional
+	public	List<AdhocReportFieldTO> getAdhocReportFieldByDataSourceId(AdhocReportFieldTO payloadBean) {
+		return adhocReportDao.getAdhocReportField(payloadBean);
+	}
+	
+	@Override
+	@Transactional
+	public String updateAdhocReport(AdhocReportBean objAdhocReportBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.isAdhocReportNameExist(objAdhocReportBean.getReportName(),objAdhocReportBean.getAdhocReportId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		
+		TransactionData latestData = adhocReportDao.fetchTransactionDataById(objAdhocReportBean.getAdhocReportId());
+		if (latestData.getTransactionCount() > (objAdhocReportBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		setAuditInfoOfAdhocReportBean(objAdhocReportBean,"editFlag");
+		if(adhocReportDao.updateAdhocReport(mapper.map(objAdhocReportBean, AdhocReportEntity.class)))
+			return "UPDATED";
+		return null;
+	}
+	
+	private void setAuditInfoOfAdhocReportBean(AdhocReportBean AdhocReportBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			AdhocReportBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			AdhocReportBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			AdhocReportBean.setCreatedDate(new Date());
+		} else {
+			AdhocReportBean.setTransactionCount(AdhocReportBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			AdhocReportBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			AdhocReportBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	//Adhoc parameter functionality
+
+	
+	@Override
+	@Transactional
+	public List<AdhocReportParameterTO> fetchAdhocParameterDetail(@RequestBody AdhocReportFieldTO payloadBean){
+		return adhocReportDao.fetchAdhocParameterDetail(payloadBean);
+	}
+	
+	@Override
+	@Transactional
+	public List<ApplicationParameterTO> fetchListTypeAppParameters(){
+		return adhocReportDao.fetchListTypeAppParameters();
+	}
+	
+	@Override
+	@Transactional
+	public List<DataSourceFieldTO> fetchFixedListDynamicSQLDetailOfDataSourceField(AdhocReportFieldTO payloadBean) {
+		// TODO Auto-generated method stub
+		List<DataSourceFieldTO> objList=null;
+		objList=adhocReportDao.fetchFixedListDynamicSQLDetailOfDataSourceField(payloadBean.getDataSourceId1(), 1L);
+		if(payloadBean.getDataSourceId2()!=null) {
+			objList.addAll(
+			adhocReportDao.fetchFixedListDynamicSQLDetailOfDataSourceField(payloadBean.getDataSourceId2(), 2L));
+		}
+		return objList;
+	}
+	
+	@Override
+	@Transactional
+	public String addAdhocReportParameter(AdhocReportParameterBean objAdhocReportParameterBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.isAdhocReportParameterNameExist(objAdhocReportParameterBean.getParameterName(),objAdhocReportParameterBean.getAdhocReportParameterId(),objAdhocReportParameterBean.getAdhocReport().getAdhocReportId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		if(adhocReportDao.addAdhocReportParameter(mapper.map(objAdhocReportParameterBean, AdhocReportParameterEntity.class)))
+			return "ADDED";
+		return null;
+		}
+	
+	@Override
+	@Transactional
+	public AdhocReportParameterBean findAdhocReportParameterById(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		AdhocReportParameterBean objAdhocReportParameterBean=mapper.map(adhocReportDao.findAdhocReportParameterById(payloadBean.getId()),AdhocReportParameterBean.class);
+		objAdhocReportParameterBean.getAdhocReport().setDataSource1(null);
+		objAdhocReportParameterBean.getAdhocReport().setDataSource2(null);
+		objAdhocReportParameterBean.getAdhocReport().setDataSourceId1RfId(null);
+		objAdhocReportParameterBean.getAdhocReport().setDataSourceId2RfId(null);
+		if(objAdhocReportParameterBean.getDataSourceField()!=null)
+		objAdhocReportParameterBean.getDataSourceField().setDataSource(null);
+		return objAdhocReportParameterBean;
+	}
+	
+	@Override
+	@Transactional
+	public String updateAdhocReportParameter(AdhocReportParameterBean objAdhocReportParameterBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.isAdhocReportParameterNameExist(objAdhocReportParameterBean.getParameterName(),objAdhocReportParameterBean.getAdhocReport().getAdhocReportId(),objAdhocReportParameterBean.getAdhocReportParameterId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		if(adhocReportDao.updateAdhocReportParameter(mapper.map(objAdhocReportParameterBean, AdhocReportParameterEntity.class)))
+			return "UPDATED";
+		return null;
+		}
+	
+	@Override
+	@Transactional
+	public String deleteAdhocReportParameter(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportParameter(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	
+	//End adhoc parameter functionality
+	
+	//Start of adhoc selection criteria
+	@Override
+	@Transactional
+	public List<AdhocFilterTO> fetchAdhocSelectionCriteriaDetail(AdhocReportFieldTO payloadBean){
+		return adhocReportDao.fetchAdhocSelectionCriteriaDetail(payloadBean);
+	}
+	
+	@Override
+	@Transactional
+	public String addAdhocReportSelectionCriteria(AdhocReportFilterBean objAdhocReportFilterBean){
+		if(adhocReportDao.addAdhocReportSelectionCriteria(mapper.map(objAdhocReportFilterBean, AdhocReportFilterEntity.class)))
+			return "ADDED";
+		return null;
+	}
+	
+	@Override
+	@Transactional
+	public AdhocReportFilterBean findAdhocReportSelectionCriteriaById(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		AdhocReportFilterBean objAdhocReportFilterBean=mapper.map(adhocReportDao.findAdhocReportSelectionCriteriaById(payloadBean.getId()),AdhocReportFilterBean.class);
+		objAdhocReportFilterBean.setAdhocReport(null);
+		objAdhocReportFilterBean.getDataSourceField().setDataSource(null);
+		if(objAdhocReportFilterBean.getAdhocReportParameter()!=null) {
+			objAdhocReportFilterBean.getAdhocReportParameter().setAdhocReport(null);
+			objAdhocReportFilterBean.getAdhocReportParameter().setParameterID(null);
+			objAdhocReportFilterBean.getAdhocReportParameter().setDataSourceField(null);
+			
+		}
+		return objAdhocReportFilterBean;
+	}
+	
+	@Override
+	@Transactional
+	public String updateAdhocReportSelectionCriteria(AdhocReportFilterBean objAdhocReportFilterBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		if(adhocReportDao.updateAdhocReportSelectionCriteria(mapper.map(objAdhocReportFilterBean, AdhocReportFilterEntity.class)))
+			return "UPDATED";
+		return null;
+		}
+	
+	@Override
+	@Transactional
+	public String deleteAdhocReportSelectionCriteria(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportSelectionCriteria(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	
+	//End of selection Criteria
+	
+	//Start of Sorting criteria
+	@Override
+	@Transactional
+	public	DataSourceFieldTO getAdhocReportSortingFields(AdhocReportFieldTO payloadBean) {
+		List<Long> objDataSourceFieldIdList=new ArrayList<>();
+		objDataSourceFieldIdList.add(0L);
+		DataSourceFieldTO objDataSourceFieldTO=new DataSourceFieldTO();
+		objDataSourceFieldTO.setSortCriteria("ASC");
+		List<AdhocReportFieldTO> objList=adhocReportDao.getAdhocReportSortingField(payloadBean);
+		for(AdhocReportFieldTO iterateObject:objList) {
+			objDataSourceFieldIdList.add(iterateObject.getDataSourceFieldId());
+			objDataSourceFieldTO.setSortCriteria(iterateObject.getSortCriteria());
+		}
+		
+		objDataSourceFieldTO.setPickListTargetList(objList);
+		objDataSourceFieldTO.setPickListSourceList(adhocReportDao.getDataSourceFieldsByDataSourceId(payloadBean,objDataSourceFieldIdList));
+		return objDataSourceFieldTO;
+	}
+	
+	@Override
+	@Transactional
+	public String addAdhocReportSortFields( List<AdhocReportSortBean> objAdhocReportSortBeanList) {
+		String resultString = "";
+		boolean resultFlag = false;
+		for(AdhocReportSortBean objAdhocReportSortBean:objAdhocReportSortBeanList) {
+			if(objAdhocReportSortBean.getAdhocReportSortingId()==null) {
+				if(adhocReportDao.addAdhocReportSortField(mapper.map(objAdhocReportSortBean, AdhocReportSortEntity.class)))
+					resultString= "ADDED";
+			}
+			else {
+				if(adhocReportDao.updateAdhocReportSortField(objAdhocReportSortBean.getSortCriteria(),objAdhocReportSortBean.getSortSequence(),objAdhocReportSortBean.getAdhocReportSortingId()))
+					resultString= "UPDATED";
+			}
+		}
+		return resultString;
+		
+	}
+	
+
+	@Override
+	@Transactional
+	public String deleteAdhocReportSortField(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportSortField(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	
+	
+	
+
+	@Override
+	@Transactional
+	public String deleteAdhocReportDataSourceField(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportDataSourceField(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	//End of sorting criteria
+	
+	//Start of adhoc report access right
+	
+	@Override
+	@Transactional
+	public	DataSourceFieldTO getAdhocReportAccessRightDetail(AdhocReportFieldTO payloadBean) {
+		List<Long> objDataSourceFieldIdList=new ArrayList<>();
+		objDataSourceFieldIdList.add(0L);
+		DataSourceFieldTO objDataSourceFieldTO=new DataSourceFieldTO();
+		List<RoleEntityTO> objList=adhocReportDao.fetchAdhocReportSelectedRoles(payloadBean);
+		for(RoleEntityTO iterateObject:objList) {
+			objDataSourceFieldIdList.add(iterateObject.getRoleID());
+		}
+		
+		objDataSourceFieldTO.setAdhocReportAccessRightList(objList);
+		objDataSourceFieldTO.setRoleList(adhocReportDao.fetchRoleDetails(objDataSourceFieldIdList));
+		return objDataSourceFieldTO;
+	}	
+	
+	@Override
+	@Transactional
+	public String addAdhocReportAccessRights(List<AdhocReportAccessRightBean> objAdhocReportAccessRightBeanList) {
+		String resultString = "";
+		boolean resultFlag = false;
+		for(AdhocReportAccessRightBean objAdhocReportAccessRightBean:objAdhocReportAccessRightBeanList) {
+			if(objAdhocReportAccessRightBean.getAdhocReportRightId()==null) {
+				if(adhocReportDao.addAdhocReportAccessRights(mapper.map(objAdhocReportAccessRightBean, AdhocReportAccessRightEntity.class)))
+					resultString= "ADDED";
+			}
+		}
+		return resultString;
+	}
+	@Override
+	@Transactional
+	public String deleteAdhocReportRoleAccessRight(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportRoleAccessRight(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public String deleteAdhocReportRoleAccessRightByReportID(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportRoleAccessRightByReportID(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public	DataSourceFieldTO getSelectedUsersAccessRightDetail(AdhocReportFieldTO payloadBean) {
+		List<Long> objDataSourceFieldIdList=new ArrayList<>();
+		objDataSourceFieldIdList.add(0L);
+		DataSourceFieldTO objDataSourceFieldTO=new DataSourceFieldTO();
+		List<UserEntityTO> objList=adhocReportDao.fetchAdhocReportSelectedUsers(payloadBean);
+		for(UserEntityTO iterateObject:objList) {
+			objDataSourceFieldIdList.add(iterateObject.getUserID());
+		}
+		
+		objDataSourceFieldTO.setTargetUserList(objList);
+		objDataSourceFieldTO.setUserList(adhocReportDao.fetchUsersDetailsByRoleId(objDataSourceFieldIdList,payloadBean.getRoleID()));
+		return objDataSourceFieldTO;
+	}	
+	
+	@Override
+	@Transactional
+	public String deleteAdhocReportUserAccessRight(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = adhocReportDao.deleteAdhocReportRoleAccessRight(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+		//End of adhoc report access right
+	
+	@Override
+	@Transactional
+	public String fetchAccessRightOfUserToExecuteReport(AdhocReportTO payloadBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		if(payloadBean.getAccessTypeCategory().equalsIgnoreCase("Selected Users"))
+		{
+			resultFlag=adhocReportDao.fetchAdhocReportSelectedSpecificUser(payloadBean);
+		}else if(payloadBean.getAccessTypeCategory().equalsIgnoreCase("Selected Role(s)")) {
+			
+			AdhocReportFieldTO beanTO=new AdhocReportFieldTO();
+			beanTO.setAdhocReportId(payloadBean.getAdhocReportId());
+			List<RoleEntityTO> roleList= adhocReportDao.fetchAdhocReportSelectedRoles(beanTO);
+			
+			List<UserProfileTO> objUsersRoleList=adhocReportDao.fetchAccountUserDetails(payloadBean.getUserId());
+			for(UserProfileTO objUserProfileTO:objUsersRoleList) {
+				for(RoleEntityTO objRoleEntityTO:roleList) {
+					if(objRoleEntityTO.getRoleID().equals(objUserProfileTO.getRoleID())) {
+						resultFlag=true;
+						break;
+					}
+				}
+			}
+		}
+		if (resultFlag)
+			return "ACCESS_GRANTED";
+		else
+			return "ACCESS_DENIED";
+	}
+	
+	@Override
+	@Transactional
+	public List <Object[]> fetchAdhocReportSQLData(AdhocReportTO payloadBean){
+		String selectionFieldOfSQL="select ",tableName=" from ",whereClause="",sqlString="",orderBy="";
+		StringJoiner stringJoiner=new StringJoiner(",");
+		AdhocReportFieldTO beanTO=new AdhocReportFieldTO();
+		beanTO.setAdhocReportId(payloadBean.getAdhocReportId());
+		List<AdhocReportFieldTO> fetchingFields=adhocReportDao.selectionAdhocReportFields(beanTO);
+		for(AdhocReportFieldTO objAdhocReportFieldTO:fetchingFields) {
+			if(objAdhocReportFieldTO.getFieldDataType().contains("datetime")) {
+				stringJoiner.add("convert(varchar,"+objAdhocReportFieldTO.getFieldActualName()+",6)");
+			}
+			else
+			stringJoiner.add(objAdhocReportFieldTO.getFieldActualName());
+		}
+		selectionFieldOfSQL+=stringJoiner.toString();
+		//Fetch Tables
+		AdhocReportFieldTO objAdhocReportFieldTO=adhocReportDao.fetchTablesAdhocReportSQL(beanTO);
+		tableName+=objAdhocReportFieldTO.getViewTableName1();
+		if(objAdhocReportFieldTO.getViewTableName2()!=null) {
+			
+		}
+		
+		List<AdhocFilterTO> objFilterList=adhocReportDao.fetchAdhocSelectionCriteriaDetailOfSQL(beanTO);
+		if(objFilterList!=null && !objFilterList.isEmpty()) {
+			whereClause=" where ";
+		}
+		for(AdhocFilterTO objAdhocFilterTO:objFilterList) {
+			if(objAdhocFilterTO.isStartBracketFlag()) {
+				whereClause+="(";
+			}
+			whereClause+=objAdhocFilterTO.getFieldActualName()+" "+objAdhocFilterTO.getFilterCriteria();
+			if(objAdhocFilterTO.getStaticValue()!=null) {
+				whereClause+=" '"+objAdhocFilterTO.getStaticValue()+"'";
+			}
+			if(objAdhocFilterTO.getAndOrOperator()!=null) {
+				whereClause+=" "+objAdhocFilterTO.getAndOrOperator()+" ";
+			}
+			
+			if(objAdhocFilterTO.isEndBracketFlag()) {
+				whereClause+=")";
+			}
+		}
+		stringJoiner=new StringJoiner(",");
+		List<AdhocReportFieldTO> objOrderList=adhocReportDao.getAdhocReportSQLSortingField(beanTO);
+		if(objOrderList!=null && !objOrderList.isEmpty()) {
+			orderBy=" order by ";
+		}
+		for(AdhocReportFieldTO orderByFields:objOrderList) {
+			stringJoiner.add(orderByFields.getFieldActualName());
+		}
+		orderBy+=stringJoiner.toString();
+		System.out.println("Length of String Joiner is :::::"+objFilterList.size());
+		sqlString=selectionFieldOfSQL+tableName+whereClause+orderBy;
+		System.out.println("SQL String is ::::::::: "+sqlString);
+		/*if(objFilterList.size()==1) {
+			Object[] objecList= adhocReportDao.executeAdhocReportNativeSQL1(sqlString);
+			= new Object[1000];
+			
+		}else {*/
+			return adhocReportDao.executeAdhocReportNativeSQL(sqlString);
+		//}
+		
+		//System.out.println(listOfResultSet+"Length of Result set is ::::: "+listOfResultSet.size());
+		/*for(Object[] list: listOfResultSet)
+		{
+			System.out.println("--------------------------------------------------------------------");
+			System.out.println("Length of Result set object array is :::::: "+list);
+			 for(int cnt=0;cnt<list.length;cnt++) {
+				 System.out.println("Length of Result set object array is :::::: "+list[cnt]);
+			 }
+			 System.out.println("--------------------------------------------------------------------");
+	     }*/
+		//return listOfResultSet;
+	}
+	
+	@Override
+	@Transactional
+	public List<AdhocReportFieldTO>	fetchAdhocReportCols(AdhocReportTO payloadBean){
+		AdhocReportFieldTO beanTO=new AdhocReportFieldTO();
+		beanTO.setAdhocReportId(payloadBean.getAdhocReportId());
+		return adhocReportDao.adhocReportCols(beanTO);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	@Override
+	@Transactional
+	public List<String> getViewAndTableDetail(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return adhocReportDao.getViewAndTableDetail(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<DataSourceFieldTO> getViewTableDescription(String name) {
+		// TODO Auto-generated method stub
+		return adhocReportDao.getViewTableDescription(name);
+	}
+	
+	@Override
+	@Transactional
+	public String addDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request) {
+		String resultString = "";
+		boolean resultFlag = false;
+		DataSourceBean objDataSourceBean=objDataSourceTO.getObjDataSourceBean();
+		resultFlag = adhocReportDao.isDataSourceNameExist(objDataSourceBean.getDataSourceName(),objDataSourceBean.getDataSourceId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		objDataSourceBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfo(objDataSourceBean,"newFlag");
+		Long dataSourceId=adhocReportDao.addDataSource(mapper.map(objDataSourceBean, DataSourceEntity.class));
+		if(dataSourceId!=null) {
+			resultString="ADDED";
+			objDataSourceBean.setDataSourceId(dataSourceId);
+			for(DataSourceFieldTO objDataSourceFieldTO:objDataSourceTO.getObjDataSourceFieldTOList()) {
+				DataSourceFieldBean objDataSourceFieldBean=new DataSourceFieldBean();
+				objDataSourceFieldBean.setDataSource(objDataSourceBean);
+				objDataSourceFieldBean.setFieldActualName(objDataSourceFieldTO.getFieldActualName());
+				objDataSourceFieldBean.setFieldDisplayName(objDataSourceFieldTO.getFieldDisplayName());
+				objDataSourceFieldBean.setFieldStatus(objDataSourceFieldTO.getFieldStatus());
+				objDataSourceFieldBean.setFieldDataType(objDataSourceFieldTO.getFieldDataType());
+				objDataSourceFieldBean.setFieldLength(objDataSourceFieldTO.getFieldLength());
+				objDataSourceFieldBean.setRefrenceField(objDataSourceFieldTO.isReferenceField());
+				objDataSourceFieldBean.setFieldSequence(objDataSourceFieldTO.getOrdinalPostion());
+				objDataSourceFieldBean.setFixList(objDataSourceFieldTO.getFixList());
+				objDataSourceFieldBean.setDynamicSQL(objDataSourceFieldTO.getDynamicSQL());
+				objDataSourceFieldBean.setCreatedBy(objDataSourceBean.getCreatedBy());
+				objDataSourceFieldBean.setIpAddress(request.getRemoteAddr());
+				setAuditInfoDataSourceFieldBean(objDataSourceFieldBean,"newFlag");
+				if(adhocReportDao.addDataSourceField(mapper.map(objDataSourceFieldBean,DataSourceFieldEntity.class))) {
+					resultString="ADDED";
+				}
+			}
+		}
+		return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public DataSourceTO editDataSource(Long dataSourceId) {
+		// TODO Auto-generated method stub
+		DataSourceTO objDataSourceTO = new DataSourceTO();
+		List<DataSourceFieldTO> objDataSourceFieldListTO=new ArrayList<>();
+		DataSourceBean objDataSourceBean=mapper.map(adhocReportDao.findDataSourceById(dataSourceId),DataSourceBean.class);
+		for(DataSourceFieldBean objDataSourceFieldBean:objDataSourceBean.getDataSouceFeild()) {
+			DataSourceFieldTO objDataSourceFieldTO = new DataSourceFieldTO();
+			objDataSourceFieldTO.setDataSourceFieldId(objDataSourceFieldBean.getDataSourceFieldId());
+			objDataSourceFieldTO.setFieldActualName(objDataSourceFieldBean.getFieldActualName());
+			objDataSourceFieldTO.setFieldDisplayName(objDataSourceFieldBean.getFieldDisplayName());
+			objDataSourceFieldTO.setFieldStatus(objDataSourceFieldBean.getFieldStatus());
+			objDataSourceFieldTO.setFieldDataType(objDataSourceFieldBean.getFieldDataType());
+			objDataSourceFieldTO.setFieldLength(objDataSourceFieldBean.getFieldLength());
+			objDataSourceFieldTO.setReferenceField(objDataSourceFieldBean.isRefrenceField());
+			objDataSourceFieldTO.setOrdinalPostion(objDataSourceFieldBean.getFieldSequence());
+			objDataSourceFieldTO.setFixList(objDataSourceFieldBean.getFixList());
+			objDataSourceFieldTO.setDynamicSQL(objDataSourceFieldBean.getDynamicSQL());
+			objDataSourceFieldTO.setTransactionCount(objDataSourceFieldBean.getTransactionCount());
+			objDataSourceFieldTO.setEditFlag(false);
+			objDataSourceFieldListTO.add(objDataSourceFieldTO);
+		}
+		
+		objDataSourceBean.setDataSouceFeild(null);
+		
+		objDataSourceTO.setObjDataSourceBean(objDataSourceBean);
+		objDataSourceTO.setObjDataSourceFieldTOList(objDataSourceFieldListTO);
+		
+		return objDataSourceTO;
+	}
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String updateDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request) throws TransactionFailedException{
+		String resultString = "";
+		boolean resultFlag = false;
+		DataSourceBean objDataSourceBean=objDataSourceTO.getObjDataSourceBean();
+		resultFlag = adhocReportDao.isDataSourceNameExist(objDataSourceBean.getDataSourceName(),objDataSourceBean.getDataSourceId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		TransactionData latestData = adhocReportDao.fetchTransactionDataById(objDataSourceBean.getDataSourceId());
+		if (latestData.getTransactionCount() > (objDataSourceBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		objDataSourceBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfo(objDataSourceBean,"editFlag");
+		//adhocReportDao.updateDataSource(mapper.map(objDataSourceBean, DataSourceEntity.class));
+		if(adhocReportDao.updateDataSource(mapper.map(objDataSourceBean, DataSourceEntity.class))) {
+			resultString="ADDED";
+			//objDataSourceBean.setDataSourceId(dataSourceId);
+			for(DataSourceFieldTO objDataSourceFieldTO:objDataSourceTO.getObjDataSourceFieldTOList()) {
+				if(objDataSourceFieldTO.getDataSourceFieldId()!=null) {
+					DataSourceFieldBean objDataSourceFieldBean=mapper.map(adhocReportDao.findDataSourceFieldById(objDataSourceFieldTO.getDataSourceFieldId()),DataSourceFieldBean.class);
+					if (objDataSourceFieldBean.getTransactionCount() > (objDataSourceFieldTO.getTransactionCount())) {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+					}
+					if (objDataSourceFieldBean.getRecordType() == 'D') {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+					}
+					
+					//objDataSourceFieldEntity.setDataSource(objDataSourceBean);
+					//objDataSourceFieldEntity.setFieldActualName(objDataSourceFieldTO.getFieldActualName());
+					objDataSourceFieldBean.setFieldDisplayName(objDataSourceFieldTO.getFieldDisplayName());
+					//objDataSourceFieldBean.setFieldStatus(objDataSourceFieldTO.getFieldStatus());
+					//objDataSourceFieldBean.setFieldDataType(objDataSourceFieldTO.getFieldDataType());
+					//objDataSourceFieldBean.setFieldLength(objDataSourceFieldTO.getFieldLength());
+					objDataSourceFieldBean.setRefrenceField(objDataSourceFieldTO.isReferenceField());
+					objDataSourceFieldBean.setFixList(objDataSourceFieldTO.getFixList());
+					objDataSourceFieldBean.setDynamicSQL(objDataSourceFieldTO.getDynamicSQL());
+					//objDataSourceFieldBean.setFieldSequence(objDataSourceFieldTO.getOrdinalPostion());
+					objDataSourceFieldBean.setLastModifiedBy(objDataSourceBean.getLastModifiedBy());
+					objDataSourceFieldBean.setIpAddress(request.getRemoteAddr());
+					setAuditInfoDataSourceFieldBean(objDataSourceFieldBean,"editFlag");
+					if(adhocReportDao.updateDataSourceField(mapper.map(objDataSourceFieldBean, DataSourceFieldEntity.class)))
+						resultString="UPDATED";
+				}else {
+					DataSourceFieldBean objDataSourceFieldBean=new DataSourceFieldBean();
+					objDataSourceFieldBean.setDataSource(objDataSourceBean);
+					objDataSourceFieldBean.setFieldActualName(objDataSourceFieldTO.getFieldActualName());
+					objDataSourceFieldBean.setFieldDisplayName(objDataSourceFieldTO.getFieldDisplayName());
+					//objDataSourceFieldBean.setFieldStatus(objDataSourceFieldTO.getFieldStatus());
+					objDataSourceFieldBean.setFieldDataType(objDataSourceFieldTO.getFieldDataType());
+					objDataSourceFieldBean.setFieldLength(objDataSourceFieldTO.getFieldLength());
+					objDataSourceFieldBean.setRefrenceField(objDataSourceFieldTO.isReferenceField());
+					objDataSourceFieldBean.setFieldSequence(objDataSourceFieldTO.getOrdinalPostion());
+					objDataSourceFieldBean.setCreatedBy(objDataSourceBean.getCreatedBy());
+					objDataSourceFieldBean.setFixList(objDataSourceFieldTO.getFixList());
+					objDataSourceFieldBean.setDynamicSQL(objDataSourceFieldTO.getDynamicSQL());
+					objDataSourceFieldBean.setIpAddress(request.getRemoteAddr());
+					setAuditInfoDataSourceFieldBean(objDataSourceFieldBean,"newFlag");
+					if(adhocReportDao.addDataSourceField(mapper.map(objDataSourceFieldBean,DataSourceFieldEntity.class))) {
+						resultString="ADDED";
+					}
+				}
+				
+			}
+		}
+		return resultString;
+	}
+	
+	
+	@Override
+	@Transactional
+	public List<String> verifyDynamicSQL(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return adhocReportDao.verifyDynamicSQL(payloadBean);
+	}
+
+
+	
+	
+	private void setAuditInfo(DataSourceBean objDataSourceBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			objDataSourceBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			objDataSourceBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			objDataSourceBean.setCreatedDate(new Date());
+		} else {
+			objDataSourceBean.setTransactionCount(objDataSourceBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			objDataSourceBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			objDataSourceBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	private void setAuditInfoDataSourceFieldBean(DataSourceFieldBean objDataSourceFieldBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			objDataSourceFieldBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			objDataSourceFieldBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			objDataSourceFieldBean.setCreatedDate(new Date());
+		} else {
+			objDataSourceFieldBean.setTransactionCount(objDataSourceFieldBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			objDataSourceFieldBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			objDataSourceFieldBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails(Long siteID) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	@Transactional
+	public String addAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+
+		//resultFlag = adhocReportDao.isDataSourceNameExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationName(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = adhocReportDao.isAssignWorkStationCodeExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationCode(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+		resultFlag = adhocReportDao.isAssignWorkStationIpAddressExist(objWorksStationAssignmentBean.getWorkStationIpAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "IPAddressAlreadyExist";
+		}
+		resultFlag = adhocReportDao.isAssignWorkStationMACAddressExist(objWorksStationAssignmentBean.getWorkStationMacAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "MACAddressAlreadyExist";
+		}
+
+		setAuditInfo(objWorksStationAssignmentBean, "newFlag");
+		WorksStationAssignmentEntity objWorksStationAssignmentEntity = mapper.map(objWorksStationAssignmentBean,WorksStationAssignmentEntity.class);
+		resultFlag = adhocReportDao.addAssignWorkStation(objWorksStationAssignmentEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+	private void setAuditInfo(WorksStationAssignmentBean WorksStationAssignmentBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			WorksStationAssignmentBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			WorksStationAssignmentBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			WorksStationAssignmentBean.setCreatedDate(new Date());
+		} else {
+			WorksStationAssignmentBean.setTransactionCount(WorksStationAssignmentBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			WorksStationAssignmentBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			WorksStationAssignmentBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+
+	@Override
+	@Transactional
+	public WorksStationAssignmentBean findWorkStationById(Long workStationID) {
+		// TODO Auto-generated method stub
+		WorksStationAssignmentBean objWorksStationAssignmentBean=mapper.map(adhocReportDao.findWorkStationById(workStationID), WorksStationAssignmentBean.class);
+		SiteBean objSiteBean=new SiteBean();
+		objSiteBean.setSiteID(objWorksStationAssignmentBean.getSite().getSiteID());
+		objSiteBean.setSiteName(objWorksStationAssignmentBean.getSite().getSiteName());
+		objSiteBean.setSiteCode(objWorksStationAssignmentBean.getSite().getSiteCode());
+		objSiteBean.setSiteStatus(objWorksStationAssignmentBean.getSite().getSiteStatus());
+		objSiteBean.setTransactionCount(objWorksStationAssignmentBean.getSite().getTransactionCount());
+		
+		objWorksStationAssignmentBean.setSite(objSiteBean);
+		
+		PharmacyLocationBean objPharmacyLocationBean=new PharmacyLocationBean();
+		objPharmacyLocationBean.setPharmacyLocationId(objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		objPharmacyLocationBean.setPharmacyLocationName(objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationName());
+		
+		objWorksStationAssignmentBean.setPharmacyLocation(objPharmacyLocationBean);
+		return objWorksStationAssignmentBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean) {
+			String resultString = "";
+			boolean resultFlag = false;
+
+			//resultFlag = adhocReportDao.isAssignWorkStationNameExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationName(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "NameAlreadyExist";
+			}
+
+			resultFlag = adhocReportDao.isAssignWorkStationCodeExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationCode(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "CodeAlreadyExist";
+			}
+			resultFlag = adhocReportDao.isAssignWorkStationIpAddressExist(objWorksStationAssignmentBean.getWorkStationIpAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "IPAddressAlreadyExist";
+			}
+			resultFlag = adhocReportDao.isAssignWorkStationMACAddressExist(objWorksStationAssignmentBean.getWorkStationMacAdd(),objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "MACAddressAlreadyExist";
+			}
+			// Optimistic Locking for Hibernate
+			TransactionData latestData = adhocReportDao.fetchTransactionDataById(objWorksStationAssignmentBean.getWorkStationID());
+			if (latestData.getTransactionCount() > (objWorksStationAssignmentBean.getTransactionCount())) {
+				return "TransactionFailed";
+			}
+			if (latestData.getRecordType() == 'D') {
+				return "recordDeleted";
+			}
+
+			setAuditInfo(objWorksStationAssignmentBean, "editFlag");
+			WorksStationAssignmentEntity WorksStationAssignmentEntity = mapper.map(objWorksStationAssignmentBean,WorksStationAssignmentEntity.class);
+			resultFlag = adhocReportDao.updateAssignWorkStation(WorksStationAssignmentEntity);
+			if (resultFlag) {
+				return "UPDATED";
+			}
+			return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id) {
+		return adhocReportDao.fetchPharmacyLocationRobots(id);
+	}
+
+	
+
+	
+
+
+	
+
+	
+	
+
+	
+	
+}

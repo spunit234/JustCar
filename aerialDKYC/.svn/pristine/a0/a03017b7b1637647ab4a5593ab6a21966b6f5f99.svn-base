@@ -1,0 +1,100 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.SiteEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+@Entity
+@Table(name="cycle_count_items")
+@Setter
+@Getter
+@NoArgsConstructor
+public class CycleCountItemsEntity extends AbstractEntity{
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="CYCLE_COUNT_ITEM_ID")
+	private Long cycleCountItemID;
+	
+	@ManyToOne
+	@JoinColumn(name="CYCLE_COUNT_ID")
+	private CycleCountEntity cycleCountID;
+
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity itemId;
+	
+	@Column(name="QUANTITY_ON_HAND")
+	private Long quantityOnHand;
+	
+	@Column(name="COUNTED_QUANTITY")
+	private Long countedQuantity;
+	
+	
+	@Column(name="QUANTITY_MATCHED")
+	private String quantityMatched;
+
+	
+	@Column(name="NOTES")
+	private String notes;
+	
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+	
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+	
+	
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	
+	public ItemEntity getItemId() {
+		return itemId==null?itemId=new ItemEntity():itemId;
+	}
+
+	public void setItemId(ItemEntity itemId) {
+		this.itemId = itemId;
+	}
+	
+	public CycleCountEntity getCycleCountID() {
+		return cycleCountID==null?cycleCountID=new CycleCountEntity():cycleCountID;
+	}
+
+	public void setCycleCountID(CycleCountEntity cycleCountID) {
+		this.cycleCountID = cycleCountID;
+	}
+
+}

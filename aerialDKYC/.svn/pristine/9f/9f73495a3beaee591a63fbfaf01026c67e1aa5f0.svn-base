@@ -1,0 +1,249 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ConfigureDashBoardBean;
+import com.edios.pms.dao.ConfigureDashboardDao;
+import com.edios.pms.entity.DashboardEntity;
+import com.edios.pms.entity.DashboardWidgetEntity;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.entity.to.DashboardWidgetTO;
+import com.edios.pms.entity.to.WidgetEntityTO;
+
+@Repository
+@SuppressWarnings({ "deprecation", "unchecked" })
+public class ConfigureDashboardDaoImpl extends BaseDaoImpl<DashboardEntity> implements ConfigureDashboardDao{
+
+	
+	@Override
+	public List<DashboardTO> getDashboardList(String customParameter) {
+		List<DashboardTO> DashboardTOList=null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		try {
+			sqlQuery="SELECT dashboard.dashboardName AS dashBoardName,dashboard.dashboardCode AS dashBoardCode,dashboard.dashboardStatus AS dashBoardStatus,"
+					+ "dashboard.dashboardID AS dashboardID,dashboard.transactionCount AS transactionCount FROM DashboardEntity dashboard WHERE dashboard.dashboardStatus="
+					+ "'"+customParameter+"' AND dashboard.recordType<>'D' ORDER BY dashboard.dashboardName";	
+			DashboardTOList = (List<DashboardTO>) session.createQuery(sqlQuery)	.setResultTransformer(Transformers.aliasToBean(DashboardTO.class)).list();
+			
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return DashboardTOList;
+	}
+
+
+	@Override
+	public ConfigureDashBoardBean getDataByID(PayloadBean payloadBean) {
+		DashboardEntity dashboardEntity = null;
+		List<WidgetEntityTO> widgetEntityTO=null;
+		List <DashboardWidgetTO> dashboardWidgetTO=null;
+		ConfigureDashBoardBean  configureDashBoardBean=new ConfigureDashBoardBean();
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		try {
+			sqlQuery = "from  DashboardEntity  as de  where de.dashboardID=:dashboardID ";
+			dashboardEntity = (DashboardEntity) entityManager.createQuery(sqlQuery)
+				.setParameter("dashboardID", payloadBean.getId()).getSingleResult();
+			configureDashBoardBean.setDashboardEntity(dashboardEntity);
+			
+			sqlQuery="SELECT we.widgetID AS widgetID,we.widgetName AS widgetName From WidgetEntity we WHERE we.widgetStatus='Active' and we.recordType <>'D' and we.widgetID NOT IN(SELECT dw.widget FROM DashboardWidgetEntity dw WHERE dw.dashboard="
+					+ ""+ payloadBean.getId()+") ORDER BY we.widgetSequence ";
+			widgetEntityTO = (List<WidgetEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(WidgetEntityTO.class)).list();	
+			configureDashBoardBean.setWidgetEntityTO(widgetEntityTO);
+			
+			sqlQuery="SELECT dash.transactionCount AS transactionCount,dash.dashboardWidgetID AS dashboardWidgetID,widget.widgetID AS widgetID,dash.widgetSequence AS widgetSequence,widget.widgetName AS widgetName "
+					+ "FROM DashboardWidgetEntity dash LEFT JOIN dash.widget widget WHERE dash.dashboard="+ payloadBean.getId()+" ORDER BY dash.widgetSequence ";
+			
+			dashboardWidgetTO = (List<DashboardWidgetTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(DashboardWidgetTO.class)).list();	
+			configureDashBoardBean.setDashboardWidgetTO(dashboardWidgetTO);
+			
+			
+			
+		} catch (NoResultException noResultException) {
+			return null;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return configureDashBoardBean;
+	}
+	
+	@Override
+	public TransactionData fetchTransactionDataById(Long id) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			
+			sqlQuery = "select widget.transactionCount AS transactionCount, widget.recordType as recordType "
+					+ " from  DashboardWidgetEntity widget where widget.dashboardWidgetID="+id+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+	@Override
+	public boolean deleteDashboardWidget(Long id) {
+		boolean result = true;
+		try {
+			String hql = "DELETE FROM DashboardWidgetEntity widget WHERE widget.dashboardWidgetID="+id+"";
+			Session session = (Session) entityManager.getDelegate();
+			Query query = session.createQuery(hql);
+		   query.executeUpdate();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+
+	@Override
+	public List<WidgetEntityTO> getAllWidget() {
+		String sqlQuery = "";
+		List<WidgetEntityTO> widgetEntityTO=null;
+		Session session = (Session) entityManager.getDelegate();
+			try {
+		sqlQuery="SELECT we.widgetID AS widgetID,we.widgetName AS widgetName From WidgetEntity we WHERE we.widgetStatus='Active' and we.recordType <>'D' ORDER BY we.widgetSequence";
+		widgetEntityTO = (List<WidgetEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(WidgetEntityTO.class)).list();	
+			}catch (Exception e) {
+				e.printStackTrace();
+				return widgetEntityTO;
+			}
+		return widgetEntityTO;
+	}
+
+
+	@Override
+	public String uniqueCheck(PayloadBean payloadBean) {
+		String message="";
+		try {
+			 if(entityManager.createQuery(
+					"SELECT dashboard.dashboardName AS dashBoardName FROM DashboardEntity dashboard WHERE dashboard.dashboardName='"+payloadBean.getCustomParameter()+"'")
+					.getSingleResult() == null ? false : true) {
+				 message+="DashBoard Name";
+				}
+		}catch (Exception e) {
+			
+		}
+		try { 
+			 if(entityManager.createQuery(
+						"SELECT dashboard.dashboardCode AS dashBoardCode FROM DashboardEntity dashboard WHERE dashboard.dashboardCode='"+payloadBean.getCustom1()+"'")
+						.getSingleResult() == null ? false : true) {
+				 if(message.length()>1) {
+					 message+=" and ";
+				 }
+					 message+="DashBoard Code";
+				}		 
+		}catch (Exception e) {
+			
+		}
+		 if(message.length()>1) {
+			 message+=" already exist";
+		 }
+		return message;
+	}
+
+
+	@Override
+	public Long addDashBoard(DashboardEntity dashboardEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		return (Long) session.save(dashboardEntity);
+	}
+
+
+	@Override
+	public String addDashboardWidget(DashboardWidgetEntity dashboardWidgetEntity) {
+		try {
+			entityManager.persist(dashboardWidgetEntity);
+			return "ADDED";
+		}catch (Exception e) {
+			e.printStackTrace();
+			return "";
+		}
+	}
+
+
+	@Override
+	public boolean updateDashBoard(DashboardEntity dashboardEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(dashboardEntity);
+		return true;
+	}
+
+
+	@Override
+	public String updateDashboardWidget(DashboardWidgetEntity dashboardWidgetEntity) {
+		//Session session = (Session) entityManager.getDelegate();
+//		session.merge(dashboardWidgetEntity);
+		String sqlQuery="";
+		try {
+			sqlQuery="Update DashboardWidgetEntity Dash Set Dash.widgetSequence="+dashboardWidgetEntity.getWidgetSequence()+",Dash.lastModifiedDate=:lastModifiedDate,"
+					+ "Dash.lastModifiedBy="+dashboardWidgetEntity.getLastModifiedBy()+",Dash.transactionCount="+dashboardWidgetEntity.getTransactionCount()+" WHERE "
+					+ "Dash.dashboardWidgetID="+dashboardWidgetEntity.getDashboardWidgetID()+" ";
+			entityManager.createQuery(sqlQuery).setParameter("lastModifiedDate", new Date(), TemporalType.TIMESTAMP).executeUpdate();
+		}catch (Exception e) {
+			e.printStackTrace();
+		return "";
+		}
+		
+		return "UPDATED";
+	}
+
+
+	@Override
+	public TransactionData fetchDashTransactionDataById(Long id) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			
+			sqlQuery = "select dash.transactionCount AS transactionCount, dash.recordType as recordType "
+					+ " from  DashboardEntity dash where dash.dashboardID="+id+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+	@Override
+	public boolean deleteDashboard(Long id) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			String hql="DELETE FROM DashboardWidgetEntity widget WHERE widget.dashboard="+id+"";
+			Query query = session.createQuery(hql);
+			   query.executeUpdate();
+			 hql = "DELETE FROM DashboardEntity dash WHERE dash.dashboardID="+id+"";
+			query = session.createQuery(hql);
+		   query.executeUpdate();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+}

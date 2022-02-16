@@ -1,0 +1,150 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.ReceiveOrderDao;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.to.ItemOrderDetailEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+
+@Repository
+public class ReceiveOrderDaoImpl extends BaseDaoImpl<ItemOrderEntity> implements ReceiveOrderDao {
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	public List<ItemOrderDetailEntityTO> findReceivedItemOrderDetails(String listOfID) {
+
+		List<ItemOrderDetailEntityTO> objItemOrderDetailBeanList = null;
+		String sqlQuery = "";
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			System.out.println("List is "+listOfID);
+			//sqlQuery ="select itemOrder.itemOrderId as itemOrderId,itemOrder.indentNo as indentNo,DATE_FORMAT(itemOrder.orderDate,'" + dateFormat + "' ) as orderDate,"
+			sqlQuery= "select itemOrderProcessing.itemOrderProcessingId as itemOrderProcessingId,itemOrderProcessing.transactionCount as transactionCount,sum(itemOrderProcessing.receivedQuantity) as receivedQuantity,itemOrderDetails.itemOrderDetailId as itemOrderDetailId,itemStockDetail.itemStockId as itemStockId,itemStockDetail.lotNo as lotNo,"
+					+ "itemStockDetail.expiryDate as expiryDate,sum(itemOrderProcessing.distributedQuantity) as distributedQuantity,count(itemOrderProcessing.distributedQuantity) as itemsCount,"
+					+ "itemDetail.itemName as itemName,itemDetail.itemCode as itemCode,itemPackDetails.packSize as packSize,itemOrderDetails.orderQuantity as orderQuantity,itemOrderProcessing.notes as notes"
+					+ " from ItemOrderProcessingEntity itemOrderProcessing"
+					+ " right join itemOrderProcessing.itemOrderDetail itemOrderDetails"
+					+ " left join itemOrderDetails.item itemDetail"
+					+ " left join itemOrderDetails.itemPackSize itemPackDetails"
+					+ " left join itemOrderProcessing.itemStock itemStockDetail"
+					+ " where itemOrderDetails.itemOrderDetailId in ("+listOfID+")  "
+					+ "group by itemOrderDetails.itemOrderDetailId,itemOrderProcessing.itemOrderProcessingId,itemOrderProcessing.transactionCount,itemOrderDetails.itemOrderDetailId,itemStockDetail.itemStockId,itemStockDetail.lotNo,"
+					+ "itemStockDetail.expiryDate,itemDetail.itemName,itemDetail.itemCode,itemPackDetails.packSize,itemOrderDetails.orderQuantity,itemOrderProcessing.notes";
+			objItemOrderDetailBeanList =  session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(ItemOrderDetailEntityTO.class)).list();
+			
+		
+		
+		return objItemOrderDetailBeanList;
+	
+	}
+
+	@Override
+	public List<ItemOrderDetailEntityTO> getParticluarReceivedItemOrderDeatils(Long itemOrderDetailId) {
+
+
+		List<ItemOrderDetailEntityTO> objItemOrderDetailBeanList = null;
+		String sqlQuery = "";
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			//sqlQuery ="select itemOrder.itemOrderId as itemOrderId,itemOrder.indentNo as indentNo,DATE_FORMAT(itemOrder.orderDate,'" + dateFormat + "' ) as orderDate,"
+			sqlQuery= "select itemOrderProcessing.itemOrderProcessingId as itemOrderProcessingId,itemOrderProcessing.transactionCount as transactionCount,itemOrderProcessing.receivedQuantity as receivedQuantity,itemStockDetail.itemStockId as itemStockId,itemStockDetail.lotNo as lotNo,"
+					+ "itemStockDetail.expiryDate as expiryDate,itemOrderProcessing.distributedQuantity as distributedQuantity,"
+					+ "itemDetail.itemName as itemName,itemDetail.itemCode as itemCode,itemPackDetails.packSize as packSize,itemOrderDetails.orderQuantity as orderQuantity,itemOrderProcessing.notes as notes"
+					+ " from ItemOrderProcessingEntity itemOrderProcessing"
+					+ " left join itemOrderProcessing.itemOrderDetail itemOrderDetails"
+					+ " left join itemOrderDetails.item itemDetail"
+					+ " left join itemOrderDetails.itemPackSize itemPackDetails"
+					+ " left join itemOrderProcessing.itemStock itemStockDetail"
+						+ " where itemOrderDetails.itemOrderDetailId ="+itemOrderDetailId;
+			objItemOrderDetailBeanList =  session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(ItemOrderDetailEntityTO.class)).list();
+			
+		
+		
+		return objItemOrderDetailBeanList;
+	
+	
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataOfItemOrderProcessingEntityById(Long id) {
+			TransactionData transactionData = null;
+			String sqlQuery = "";
+			
+				Session session = (Session) entityManager.getDelegate();
+				sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType"
+						+ " from  ItemOrderProcessingEntity table where table.itemOrderProcessingId=:itemOrderProcessingId";
+				transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemOrderProcessingId", id)
+						.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+			
+			return transactionData;
+		
+	}
+	
+	@Override
+	public boolean updateItemOrder(ItemOrderEntity ItemOrderEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(ItemOrderEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean addItemStockDetails(ItemStockEntity ItemStockEntity) {
+		entityManager.persist(ItemStockEntity);
+		return true;
+	}
+
+	@Override
+	public ItemTransactionEntity fetchLatestItemRecordForPharmacyLocation(Long pharmacy_location_id, Long itemId) {
+
+
+		ItemTransactionEntity objItemTransactionEntity = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="from ItemTransactionEntity itemTransactionEntity"
+						+ " where itemTransactionEntity.recordType <>'D' and itemTransactionEntity.itemTransactionId=(select max(itemTransactionId) from ItemTransactionEntity ite where ite.pharmacyLocation.pharmacyLocationId=:pharmacyLocationId and ite.item.itemId =:itemId)";
+			objItemTransactionEntity = (ItemTransactionEntity) session.createQuery(sqlQuery)
+					.setParameter("pharmacyLocationId", pharmacy_location_id)
+					.setParameter("itemId", itemId).getSingleResult();
+					//.setResultTransformer(Transformers.aliasToBean(ItemTransactionEntity.class)).getSingleResult();
+		}catch(NoResultException noResultException)	{
+			objItemTransactionEntity=new ItemTransactionEntity();
+		}
+			
+		
+		return objItemTransactionEntity;
+	
+	
+	}
+
+	@Override
+	public boolean addItemTransactionEntityDetails(ItemTransactionEntity ItemTransactionEntity) {
+
+		entityManager.persist(ItemTransactionEntity);
+		return true;
+	}
+	@Override
+	public boolean updateItemTransactionEntityDetails(ItemTransactionEntity ItemTransactionEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(ItemTransactionEntity);
+		return true;
+	}
+	
+}

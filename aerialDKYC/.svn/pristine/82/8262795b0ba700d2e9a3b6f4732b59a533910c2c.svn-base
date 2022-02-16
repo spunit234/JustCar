@@ -1,0 +1,48 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.to.ItemOrderProcessingTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+
+public interface ReportDao extends BaseDao <ItemEntity > {
+
+	List<ReportsTO> fetchExpiredItemDetails(PayloadBean payloadBean);
+	
+	List<ReportsTO> fetchOutOfStockItemDetails(PayloadBean payloadBean);
+	
+	List<ReportsTO> fetchMinimumQuantityItemDetails(PayloadBean payloadBean);
+	
+	PharmacyLocationEntityTO getUserPharmacyLocation(Long userID);
+	
+	List<ReportsTO> fetchProcessedOrderDetails(PayloadBean payloadBean);
+	
+	List<ReportsTO> fetchProcessedItemOrderIdDetails(PayloadBean payloadBean);
+	
+	List<ReportsTO> fetchProcessedItemOrderDetails(String itemOrderDetailID);
+	
+	List<ItemStockEntityTO> getRecevicedConsumed(PayloadBean payloadBean);
+	
+	List<ReportsTO> fetchQuantityOnHandDetails(PayloadBean payloadBean);
+
+	/*List<AssetSubCategoryTO> subCategoryAutoLookUp();
+
+	List<AssetSubCategoryItemTO> itemsAutoLookUp();
+
+	List<StokeItemReportTO> getStokeItemsReport(ReportCriteria reportCriteria);
+
+	List<StokeItemReportTO> getIssuedReturnedReport(ReportCriteria reportCriteria);*/
+	List<ItemStockAdjustmentEntityTO> getAdjustedList(PayloadBean payloadBean);
+
+	List<ItemOrderProcessingTO> getOrderList(PayloadBean payloadBean);
+
+	List<PatientEntityTO> getPatientList(PayloadBean payloadBean);
+
+}

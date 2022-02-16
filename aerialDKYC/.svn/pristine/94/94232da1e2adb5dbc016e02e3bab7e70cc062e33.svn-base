@@ -1,0 +1,36 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CycleCountItemBean extends AbstractBean {
+
+	private static final long serialVersionUID = -8619729682840925584L;
+	
+	private Long cycleCountItemId;
+	private Long countedQuantity;
+	private Long createdBy;
+	private Date createdDate;
+	private String ipAddress;
+	private Long itemId;
+	private Long lastModifiedBy;
+	private Date lastModifiedDate;
+	private String notes;
+	private String quantityMatched;
+	private Long quantityOnHand;
+	private Character recordType;
+	private Long transactionCount;
+	private Long userActivityId;
+	private CycleCountBean cycleCount;
+
+}

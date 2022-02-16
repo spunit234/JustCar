@@ -1,0 +1,95 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.InventoryCountItemsEntity;
+import com.edios.pms.entity.InventoryCountMismatchEntity;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+
+public interface PhysicalCountDao  extends BaseDao<InventoryCountEntity> {
+
+	List<PhysicalCountEntityTo> fetchPhysicalCountItems(PayloadBean payloadBean, Long locationID);
+
+	Long fetchPharmacyLocationID(Long id);
+
+	Long addPhysicalCountAndCountItems(InventoryCountEntity inventoryCountEntity);
+
+	boolean addPhysicalCountItems(InventoryCountItemsEntity inventoryCountItemsEntity);
+
+	List<PhysicalCountEntityTo> searchPhysicalCount(PayloadBean payloadBean, Long locationID);
+
+	InventoryCountEntity searchPhysicalCountById(Long long1);
+
+	List<PhysicalCountEntityTo> searchPhysicalCountItemsById(List<Long> itemIdList, Long long1, Long locationID);
+
+	TransactionData fetchTransactionDataById(Long invCountId);
+
+	boolean updateCycleCount(InventoryCountEntity inventoryCountEntity);
+
+	InventoryCountItemsEntity fetchPhysicalCountItemsEntityById(Long invCountItemId);
+
+	boolean updatePhysicalCountItems(InventoryCountItemsEntity inventoryCountItemsEntity);
+
+	Long fetchItemCount(Long locationID);
+
+	List<PhysicalCountEntityTo> fetchStockItems(Long itemId, Long pharmacyLocationId);
+
+	Long insertPhysicalCountItems(InventoryCountItemsEntity inventoryCountItemsEntity);
+
+	Long checkExistingRecord(Long itemId, Long invCountId);
+
+	Long checkExistingRecordInCountItemMismacth(Long invCountItemPK);
+
+	Long deletePhysicalCountItemsById(Long itemId, Long invCountId);
+
+	Long deletePhysicalCountMisMatchItemsById(Long invCountItemPK);
+
+	Long insertPhysicalCountMismatchItems(InventoryCountMismatchEntity inventoryCountMismatchEntity);
+
+	List<Long> checkAllExistingRecordsInInventoryCountItems(Long invCountId);
+
+	List<Long> checkAllExistingRecordsInInventoryCountMisMacthItems(List<Long> invCountItemsPkList);
+
+	void deleteAllExistingRecordsInInventoryCountMisMacthItems(List<Long> invCountItemsPkList);
+
+	void deleteAllExistingRecordsInInventoryCountItems(List<Long> invCountItemsMismatchPkList);
+
+	List<Long> fetchItemIdByInvCount(Long id);
+
+	Long fetchInvCountItemsPk(PhysicalCountEntityTo physicalCountEntityTo);
+
+	List<PhysicalCountEntityTo> fetchStockItemsOnEdit(Long itemId, Long pharmacyLocationId, Long invCountPK, List<Long> itemStockList);
+
+	List<Long> fetchItemStockIdFromInvCountMismatch(Long invCountItemsPK);
+
+	List<InventoryCountMismatchEntity> fetchInventoryMismatchItemsByIds(List<Long> invCountItemsPKList);
+
+	Long insertStockAdjustment(ItemStockAdjustmentEntity itemStockAdjustmentEntity);
+
+	List<PhysicalCountEntityTo> searchPhysicalCountItems(Long id);
+
+	void deleteExisingInventoryMismacthedItems(Long invCountId);
+
+	void deleteExisingInventoryCountItems(Long invCountId);
+
+	List<InventoryCountMismatchEntity> fetchInventoryMismatchItem(Long invCountId);
+	
+	void deleteExisingInventoryMismacthedItemsForInvCountItem(Long invCountItemId);
+
+	void deleteExisingInventoryrInvCountItem(Long invCountItemId);
+
+	//void insertPhysicalCountItemsBulk(InventoryCountBean inventoryCountBean);
+
+	
+
+	
+
+	
+
+}

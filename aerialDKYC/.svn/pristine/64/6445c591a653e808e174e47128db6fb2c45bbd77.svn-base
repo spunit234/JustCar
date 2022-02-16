@@ -1,0 +1,19 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+
+public interface ExportNonDashboardReportDao extends BaseDao<InventoryCountEntity>{
+
+	List<ReportsTO> fetchInvMimatchedItems(Long invCountId);
+
+	List<PatientDispensedItemsTO> exportDispensedMedicationToPatient(PatientDispensedItemsTO objPatientDispensedItemsTO);
+	
+	PatientEntityTO getPatientAndPrescribedDetails(Long patientPrescriptionId) ;
+
+}

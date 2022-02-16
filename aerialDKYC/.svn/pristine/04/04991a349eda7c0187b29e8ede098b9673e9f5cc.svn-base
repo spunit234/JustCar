@@ -1,0 +1,12 @@
+package com.edios.pms.manager;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+
+public interface UserActivityDetailsManager extends AbstractManager {
+
+	String insertScreenActivity(PayloadBean payloadBean);
+	
+	
+
+}

@@ -1,0 +1,68 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.common.ApplicationParameterEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="ADHOC_REPORT_PARAMETERS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class AdhocReportParameterEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ADHOC_REPORT_PARAMETER_ID")
+	private Long adhocReportParameterId;
+	
+	@ManyToOne
+	@JoinColumn(name="ADHOC_REPORT_ID")
+	private AdhocReportEntity adhocReport;
+	
+	@Column(name="PARAMETER_NAME")
+	private String parameterName;
+	
+	@Column(name="PARAMETER_TYPE")
+	private String parameterType;
+	
+	@Column(name="PARAMETER_SEQUENCE")
+	private Long parameterSequence;
+	
+	@ManyToOne
+	@JoinColumn(name = "LIST_PARAMETER_ID")
+	private ApplicationParameterEntity parameterID;
+	
+	@Column(name="DISPLAY_SIZE")
+	private String displaySize;
+	
+	@Column(name="DATA_LENGTH")
+	private Long dataLength;
+	
+	@Column(name="DECIMAL_LENGTH")
+	private Long decimalLength;
+	
+	@Column(name="MANDATORY")
+	private String mandatory;
+	
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_FIELD_ID")
+	private DataSourceFieldEntity dataSourceField;
+
+}

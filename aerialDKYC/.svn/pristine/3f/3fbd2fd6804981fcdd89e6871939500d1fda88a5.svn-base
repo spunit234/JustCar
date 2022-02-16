@@ -1,0 +1,36 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CompoundCompositeItemBean;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+
+public interface PreparedCompoundItemManager extends AbstractManager {
+	
+	
+	
+	String addPreparedCompoundItem(CompoundCompositeItemBean objCompoundCompositeItemBean, HttpServletRequest request);
+	
+	List<CompoundItemEntityTO> fetchConfiguredCompoundItemdetails(PayloadBean payloadBean);
+	
+	List<CompoundItemEntityTO> fetchItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean);
+	
+	List<CompoundItemEntityTO> fetchConfigureItemDetails(PayloadBean payloadBean);
+	/*CompoundCompositeItemBean findCompoundItemBeanDetailsById(Long compoundItemId);
+	
+	String updateCompoundItemDetails(CompoundCompositeItemBean CompoundCompositeItemBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	String deleteCompoundItemDetailsById(DeleteRecords deleteRecords);*/
+	
+	
+}

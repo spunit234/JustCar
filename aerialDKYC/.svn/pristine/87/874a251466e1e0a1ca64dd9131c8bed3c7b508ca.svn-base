@@ -1,0 +1,79 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+
+
+/**
+ * The persistent class for the ` item_drug_substitutions` database table.
+ * 
+ */
+@Entity
+@Table(name="item_drug_substitutions")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemDrugSubstitutionEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="DRUG_SUBSTITUTION_ID")
+	private Long drugSubstitutionId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="DRUG_SUBSTITUTION_STATUS")
+	private String drugSubstitutionStatus;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="INACTIVATED_DATE")
+	private Date inactivatedDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to _item
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity item;
+
+	//bi-directional many-to-one association to _item
+	@ManyToOne
+	@JoinColumn(name="DRUG_SUBSTITUTION_ITEM_ID")
+	private ItemEntity subItem;
+
+	
+
+}

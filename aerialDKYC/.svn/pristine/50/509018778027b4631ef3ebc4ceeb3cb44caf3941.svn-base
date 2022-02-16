@@ -1,0 +1,531 @@
+package com.edios.pms.controller;
+
+
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.entity.to.ApplicationParameterTO;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.AdhocReportAccessRightBean;
+import com.edios.pms.bean.AdhocReportBean;
+import com.edios.pms.bean.AdhocReportFieldBean;
+import com.edios.pms.bean.AdhocReportFilterBean;
+import com.edios.pms.bean.AdhocReportParameterBean;
+import com.edios.pms.bean.AdhocReportSortBean;
+import com.edios.pms.entity.to.AdhocFilterTO;
+import com.edios.pms.entity.to.AdhocReportFieldTO;
+import com.edios.pms.entity.to.AdhocReportParameterTO;
+import com.edios.pms.entity.to.AdhocReportTO;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.manager.AdhocReportManager;
+
+
+@RestController
+public class AdhocReportController extends AbstractController {
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	AdhocReportManager adhocReportManager;
+
+	
+	@PostMapping("/search-adhoc-reports-on-criteria")
+	public ResponseEntity<List<AdhocReportTO>> getAdhocReportsDetails(@RequestBody PayloadBean payloadBean) {
+		List<AdhocReportTO> objAdhocReportTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objAdhocReportTOList = adhocReportManager.getAdhocReportsDetails(payloadBean);
+			return new ResponseEntity<List<AdhocReportTO>>(objAdhocReportTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/add-adhoc-report")
+	public BaseResponse addAdhocReport(@RequestBody AdhocReportBean objAdhocReportBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			objAdhocReportBean.setIpAddress(request.getRemoteAddr());
+		String resultString = adhocReportManager.addAdhocReport(objAdhocReportBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Report Name" }, "", Locale.US));
+		} 
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/edit-adhoc-report")
+	public ResponseEntity<AdhocReportBean> editAdhocReport(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			AdhocReportBean objAdhocReportBean = adhocReportManager.editAdhocReport(payloadBean);
+			return new ResponseEntity<AdhocReportBean>(objAdhocReportBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	@PostMapping("/get-adhoc-report-data-source-fields")
+	public ResponseEntity<DataSourceFieldTO> getAdhocReportFields(@RequestBody AdhocReportFieldTO payloadBean) {
+		DataSourceFieldTO objDataSourceFieldTO=null;
+		objDataSourceFieldTO = adhocReportManager.getAdhocReportFields(payloadBean);
+			return new ResponseEntity<DataSourceFieldTO>(objDataSourceFieldTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/get-data-source-fields")
+	public ResponseEntity<List<DataSourceFieldTO>> getDataSourceFields(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<DataSourceFieldTO> objDataSourceFieldTO=null;
+		objDataSourceFieldTO = adhocReportManager.getDataSourceFields(payloadBean);
+			return new ResponseEntity<List<DataSourceFieldTO>>(objDataSourceFieldTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/add-adhoc-report-fields")
+	public BaseResponse addAdhocReportFields(@RequestBody List<AdhocReportFieldBean> objAdhocReportFieldBeanList) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = adhocReportManager.addAdhocReportFields(objAdhocReportFieldBeanList);
+		if (resultString.equalsIgnoreCase("ADDED") || resultString.equalsIgnoreCase("UPDATED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+		return baseResponse;
+	}
+	
+	/*@PostMapping("/get-adhoc-report-data-source-fields")
+	public ResponseEntity<List<AdhocReportFieldTO>> getAdhocReportFieldByDataSourceId(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<AdhocReportFieldTO> objList=null;
+		objList = adhocReportManager.getAdhocReportFieldByDataSourceId(payloadBean);
+			return new ResponseEntity<List<AdhocReportFieldTO>>(objList, HttpStatus.OK);
+		
+	}*/
+	
+	@PostMapping("/delete-adhoc-report-field")
+	public BaseResponse deleteAdhocReportDataSourceField(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportDataSourceField(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PutMapping("/update-adhoc-report")
+	public BaseResponse updateAdhocReport(@RequestBody AdhocReportBean objAdhocReportBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			objAdhocReportBean.setIpAddress(request.getRemoteAddr());
+			String resultString = adhocReportManager.updateAdhocReport(objAdhocReportBean);
+			if (resultString.equalsIgnoreCase("UPDATED") || resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Report Name" }, "", Locale.US));
+			}
+			else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	//Adhoc Parameter functionality
+
+	
+	@PostMapping("/fetch-adhoc-report-parameters-detail")
+	public ResponseEntity<List<AdhocReportParameterTO>> fetchAdhocParameterDetail(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<AdhocReportParameterTO> objAdhocReportParameterTOList = null;
+		objAdhocReportParameterTOList = adhocReportManager.fetchAdhocParameterDetail(payloadBean);
+			return new ResponseEntity<List<AdhocReportParameterTO>>(objAdhocReportParameterTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/get-list-type-app-parameters")
+	public ResponseEntity<List<ApplicationParameterTO>> fetchListTypeAppParameters(@RequestBody PayloadBean payloadBean) {
+		List<ApplicationParameterTO> applicationParameterTO = null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			applicationParameterTO = adhocReportManager.fetchListTypeAppParameters();
+			return new ResponseEntity<List<ApplicationParameterTO>>(applicationParameterTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/get-fixed-list-dynamic-sql-data-source-field")
+	public ResponseEntity<List<DataSourceFieldTO>> fetchFixedListDynamicSQLDetailOfDataSourceField(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<DataSourceFieldTO> applicationParameterTO = null;
+		applicationParameterTO = adhocReportManager.fetchFixedListDynamicSQLDetailOfDataSourceField(payloadBean);
+			return new ResponseEntity<List<DataSourceFieldTO>>(applicationParameterTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/add-adhoc-report-parameter")
+	public BaseResponse addAdhocReportParameter(@RequestBody AdhocReportParameterBean objAdhocReportParameterBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = adhocReportManager.addAdhocReportParameter(objAdhocReportParameterBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Report Name" }, "", Locale.US));
+		} 
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/edit-adhoc-report-parameter")
+	public ResponseEntity<AdhocReportParameterBean> editAdhocReportParameter(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			AdhocReportParameterBean objAdhocReportParameterBean = adhocReportManager.findAdhocReportParameterById(payloadBean);
+			return new ResponseEntity<AdhocReportParameterBean>(objAdhocReportParameterBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	@PutMapping("/update-adhoc-report-parameter")
+	public BaseResponse updateAdhocReportParameter(@RequestBody AdhocReportParameterBean objAdhocReportParameterBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.updateAdhocReportParameter(objAdhocReportParameterBean);
+			if (resultString.equalsIgnoreCase("UPDATED") || resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Parameter Name" }, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception exception) {
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/delete-adhoc-report-parameter")
+	public BaseResponse deleteAdhocReportParameter(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportParameter(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	
+	//End of adhoc parameter funcionality
+	
+	//Start of adhoc selection criteria
+	@PostMapping("/fetch-adhoc-report-selection-criteria-detail")
+	public ResponseEntity<List<AdhocFilterTO>> fetchAdhocSelectionCriteriaDetail(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<AdhocFilterTO> objAdhocFilterTOList = null;
+		objAdhocFilterTOList = adhocReportManager.fetchAdhocSelectionCriteriaDetail(payloadBean);
+			return new ResponseEntity<List<AdhocFilterTO>>(objAdhocFilterTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/add-adhoc-report-selection-criteria")
+	public BaseResponse addAdhocReportSelectionCriteria(@RequestBody AdhocReportFilterBean objAdhocReportFilterBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = adhocReportManager.addAdhocReportSelectionCriteria(objAdhocReportFilterBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/edit-adhoc-report-selection-criteria")
+	public ResponseEntity<AdhocReportFilterBean> editAdhocReportSelectionCriteria(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			AdhocReportFilterBean objAdhocReportFilterBean = adhocReportManager.findAdhocReportSelectionCriteriaById(payloadBean);
+			return new ResponseEntity<AdhocReportFilterBean>(objAdhocReportFilterBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	@PutMapping("/update-adhoc-report-selection-criteria")
+	public BaseResponse updateAdhocReportSelectionCriteria(@RequestBody AdhocReportFilterBean objAdhocReportFilterBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.updateAdhocReportSelectionCriteria(objAdhocReportFilterBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} 
+			return baseResponse;
+		} catch (Exception exception) {
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/delete-adhoc-report-selection-criteria")
+	public BaseResponse deleteAdhocReportSelectionCriteria(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportSelectionCriteria(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/get-adhoc-report-sorting-fields")
+	public ResponseEntity<DataSourceFieldTO> getAdhocReportSortingFields(@RequestBody AdhocReportFieldTO payloadBean) {
+		DataSourceFieldTO objDataSourceFieldTO=null;
+		objDataSourceFieldTO = adhocReportManager.getAdhocReportSortingFields(payloadBean);
+			return new ResponseEntity<DataSourceFieldTO>(objDataSourceFieldTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/add-adhoc-sort-fields")
+	public BaseResponse addAdhocReportSortFields(@RequestBody List<AdhocReportSortBean> objAdhocReportSortBeanList) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = adhocReportManager.addAdhocReportSortFields(objAdhocReportSortBeanList);
+		if (resultString.equalsIgnoreCase("ADDED") || resultString.equalsIgnoreCase("UPDATED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/delete-adhoc-sort-field")
+	public BaseResponse deleteAdhocReportSortField(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportSortField(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	//End of adhoc selection criteria
+	
+	//Start of adhoc access right
+	@PostMapping("/add-adhoc-access-rights")
+	public BaseResponse addAdhocReportAccessRights(@RequestBody List<AdhocReportAccessRightBean> objAdhocReportAccessRightBeanList) {
+		BaseResponse baseResponse = null;
+		try {
+		String resultString = adhocReportManager.addAdhocReportAccessRights(objAdhocReportAccessRightBeanList);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		}catch(Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+		return baseResponse;
+	}
+	
+	@PostMapping("/get-adhoc-report-access-right-detail")
+	public ResponseEntity<DataSourceFieldTO> getAdhocReportAccessRightDetail(@RequestBody AdhocReportFieldTO payloadBean) {
+		DataSourceFieldTO objDataSourceFieldTO=null;
+		objDataSourceFieldTO = adhocReportManager.getAdhocReportAccessRightDetail(payloadBean);
+			return new ResponseEntity<DataSourceFieldTO>(objDataSourceFieldTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/delete-adhoc-access-right")
+	public BaseResponse deleteAdhocReportRoleAccessRight(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportRoleAccessRight(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/delete-adhoc-access-right-by-report-id")
+	public BaseResponse deleteAdhocReportRoleAccessRightByReportID(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportRoleAccessRightByReportID(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/get-selected-users-access-right-detail")
+	public ResponseEntity<DataSourceFieldTO> getSelectedUsersAccessRightDetail(@RequestBody AdhocReportFieldTO payloadBean) {
+		DataSourceFieldTO objDataSourceFieldTO=null;
+		objDataSourceFieldTO = adhocReportManager.getSelectedUsersAccessRightDetail(payloadBean);
+			return new ResponseEntity<DataSourceFieldTO>(objDataSourceFieldTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/delete-user-access-right")
+	public BaseResponse deleteAdhocReportUserAccessRight(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.deleteAdhocReportUserAccessRight(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	
+	@PostMapping("/report-execution-access-right")
+	public BaseResponse fetchAccessRightOfUserToExecuteReport(@RequestBody AdhocReportTO payloadBean) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.fetchAccessRightOfUserToExecuteReport(payloadBean);
+				baseResponse = new BaseResponse(HttpStatus.OK, resultString, "");
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/fetch-adhoc-report-sql-data")
+	public ResponseEntity<List> fetchAdhocReportSQLData(@RequestBody AdhocReportTO payloadBean) {
+		List  applicationParameterTO = null;
+		try {
+			applicationParameterTO = adhocReportManager.fetchAdhocReportSQLData(payloadBean);
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+			return new ResponseEntity<List >(applicationParameterTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/fetch-adhoc-report-sql-cols")
+	public ResponseEntity<List<AdhocReportFieldTO>> fetchAdhocReportCols(@RequestBody AdhocReportTO payloadBean) {
+		List<AdhocReportFieldTO> applicationParameterTO = null;
+		applicationParameterTO = adhocReportManager.fetchAdhocReportCols(payloadBean);
+			return new ResponseEntity<List<AdhocReportFieldTO>>(applicationParameterTO, HttpStatus.OK);
+		
+	}
+	
+	//End of adhoc access right
+	/*
+	
+	
+	
+	
+	@PutMapping("/update-data-source")
+	public BaseResponse updateDataSource(@RequestBody DataSourceTO objDataSourceTO, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = adhocReportManager.updateDataSource(objDataSourceTO,request);
+			if (resultString.equalsIgnoreCase("UPDATED") || resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Data Source Name" }, "", Locale.US));
+			}
+			else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	
+	
+	@PostMapping("/verify-dynamic-sql")
+	public ResponseEntity<List<String>> verifyDynamicSQL(@RequestBody PayloadBean payloadBean) {
+		List<String> objList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objList = adhocReportManager.verifyDynamicSQL(payloadBean);
+			return new ResponseEntity<List<String>>(objList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}*/
+	
+	
+	
+}

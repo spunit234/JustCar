@@ -1,0 +1,163 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.dao.AssignDashboardNameDao;
+import com.edios.pms.entity.UserDashboardEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+@Repository
+public class AssignDashboardNameDaoImpl extends BaseDaoImpl<UserDashboardEntity> implements AssignDashboardNameDao{
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	public List<PharmacyLocationEntityTO> searchDashboardName(PayloadBean payloadBean) {
+		System.out.println("&&&&&&&&&&&&&&&&&&&&"+payloadBean.getId());
+		 List<PharmacyLocationEntityTO> pharmacyLocationTos=null;
+		try {
+		Session session=(Session)entityManager.getDelegate();
+		if(payloadBean.getId()==null) {
+		String sqlQuery="select use.userID as userId, use.loginName as userLoginName, dash.dashboardID as dashboardID,"
+				+ "dash.dashboardCode as dashboardCode, userDash.userDashboardID as userDashboardID, "
+				+ "use.firstName as userFirstName,use.lastName as userLastName, site.siteName as siteName,dash.dashboardName as dashboardName,"
+				+ "userDash.transactionCount as TransactionCount from UserDashboardEntity as userDash right join userDash.user as use "
+				+ "left join userDash.dashboard as dash inner join SiteEntity as site on use.defaultSiteID=site.siteID where  use.recordType<>'D' and use.userStatus='Active'"
+				+ " order by  use.loginName  ";
+		pharmacyLocationTos=(List<PharmacyLocationEntityTO>)session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+		}
+		else {
+			
+			String sqlQuery="select use.userID as userId, use.loginName as userLoginName, dash.dashboardID as dashboardID,"
+					+ "dash.dashboardCode as dashboardCode, userDash.userDashboardID as userDashboardID, "
+					+ "use.firstName as userFirstName,use.lastName as userLastName, site.siteName as siteName,dash.dashboardName as dashboardName,"
+					+ "userDash.transactionCount as TransactionCount from UserDashboardEntity as userDash right join userDash.user as use "
+					+ "left join userDash.dashboard as dash inner join SiteEntity as site on use.defaultSiteID=site.siteID where site.siteID=:siteID "
+					+  " and use.recordType<>'D' and use.userStatus='Active' order by  use.loginName ";
+			System.out.println("############################## "+sqlQuery);
+			pharmacyLocationTos=(List<PharmacyLocationEntityTO>)session.createQuery(sqlQuery).setParameter("siteID",payloadBean.getId()).
+					setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+		}
+		}
+	
+		 catch (Exception exception) {
+				exception.printStackTrace();
+				return null;
+			}
+			return pharmacyLocationTos;
+		}
+
+	@Override
+	public List<DashboardBean> dashboardNamesAutolookup(PayloadBean payloadBean) {
+		Session session=(Session) entityManager.getDelegate();
+		String sqlQuery="select dash.dashboardID as dashboardID,dash.dashboardName as dashboardName from DashboardEntity dash "
+				+ " where dash.recordType<>'D' and dash.dashboardStatus='Active' order by  dash.dashboardName ";
+		
+		return (List<DashboardBean>)session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(DashboardBean.class)).list();
+	}
+
+	@Override
+	public List<PharmacyLocationEntityTO> searchDashboardCode(PayloadBean payloadBean) {
+		System.out.println("&&&&&&&&&&&&&&&&&&&&" + payloadBean.getId());
+		List<PharmacyLocationEntityTO> pharmacyLocationTo = null;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+
+			String sqlQuery = "select dash.dashboardCode as dashboardCode from DashboardEntity dash "
+					+ " where dash.dashboardID=:dashboardID and dash.recordType<>'D'";
+			pharmacyLocationTo = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("dashboardID", payloadBean.getId())
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return pharmacyLocationTo;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long userDashboardID) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  UserDashboardEntity table where table.userDashboardID=:userDashboardID";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("userDashboardID", userDashboardID)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateDashboardUser(UserDashboardEntity userDashboardEntity) {
+		boolean result = true;
+		try {
+			
+			Session session = (Session) entityManager.getDelegate();
+			session.update(userDashboardEntity);
+			
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean addPharmacyLocation(UserDashboardEntity userDashboardEntity) {
+		boolean result = true;
+		try {
+			// entityManager.persist(pharmacyLocationUserEntity);
+			Session session = (Session) entityManager.getDelegate();
+			Long pkOfUser = (Long) session.save(userDashboardEntity);
+			if (pkOfUser != null) {
+				result = true;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+
+		return result;
+	}
+
+	@Override
+	public boolean deletePharmacyUser(Long userDashboardID) {
+		boolean result = true;
+		try {
+			
+			Session session=(Session)entityManager.getDelegate();
+			session.createQuery(
+					"delete from UserDashboardEntity where userDashboardID=:userDashboardID").setParameter("userDashboardID",userDashboardID)
+					.executeUpdate();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
+	
+	
+
+	
+
+}

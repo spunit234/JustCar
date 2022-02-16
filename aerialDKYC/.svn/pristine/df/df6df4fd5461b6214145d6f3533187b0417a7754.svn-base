@@ -1,0 +1,103 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.cdf.bean.security.UserBean;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.to.ItemOrderDetailEntityTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class AssignPharmacyLocationScreenBean extends AbstractBean {
+	
+	@Override
+	public String toString() {
+		return "AssignPharmacyLocationScreenBean [pharmacyLocationId=" + pharmacyLocationId + ", pharmacyLocation="
+				+ pharmacyLocation + ", pharmacyLocationUserId=" + pharmacyLocationUserId + ", userId=" + userId
+				+ ", dublicateUserId=" + dublicateUserId + ", userFirstName=" + userFirstName + ", userLoginName="
+				+ userLoginName + ", userLastName=" + userLastName + ", siteName=" + siteName
+				+ ", pharmacyLocationCode=" + pharmacyLocationCode + ", createdBy=" + createdBy + ", createdDate="
+				+ createdDate + ", ipAddress=" + ipAddress + ", lastModifiedBy=" + lastModifiedBy
+				+ ", lastModifiedDate=" + lastModifiedDate + ", recordType=" + recordType + ", transactionCount="
+				+ transactionCount + ", userActivityId=" + userActivityId + "]";
+	}
+
+	private PharmacyLocationBean pharmacyLocationId;
+	
+	private PharmacyLocationBean pharmacyLocation;
+	
+	private Long  pharmacyLocationUserId;
+	 private UserBean userId;
+	
+	 private Long dublicateUserId;
+	 private String userFirstName;
+
+	private String userLoginName;
+
+	private String userLastName;
+
+	private String siteName;
+
+	private String pharmacyLocationCode;
+	
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+	
+	public UserBean getUserId() {
+	return userId == null ? userId = new UserBean() : userId;
+}
+
+	public void setUserId(UserBean userId) {
+	this.userId = userId;
+}
+	
+	public UserBean getUser() {
+		return user == null ? user = new UserBean() : user;
+	}
+
+		public void setUser(UserBean user) {
+		this.user = user;
+	}
+	
+	//Balraj
+	private UserBean user;
+	private Long  userDashboardID;
+	private DashboardBean dashboard;;
+	
+	private Long loginDetailId;
+	private String screenName;
+	private String activityName;
+	private Boolean activityFlag;
+//	public PharmacyLocationBean getPharmacyLocationId() {
+//	return pharmacyLocationId == null ? pharmacyLocationId = new PharmacyLocationBean() : pharmacyLocationId;
+//}
+//
+//	public void setPharmacyLocationId(PharmacyLocationBean pharmacyLocationId) {
+//	this.pharmacyLocationId = pharmacyLocationId;
+//}
+
+
+	
+}

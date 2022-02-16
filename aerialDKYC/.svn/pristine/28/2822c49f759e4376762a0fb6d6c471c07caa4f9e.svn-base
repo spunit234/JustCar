@@ -1,0 +1,25 @@
+package com.edios.pms.entity.to;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class DashboardTO {
+	private Long dashboardID;
+	private Long userID;  
+	private String dashBoardName;
+	private String dashBoardCode;  
+	private String widgetScreenURL;
+	private String widgetName;
+	private String widgetImageFileName;
+	private String widgetImageColour;	
+	private String dashBoardStatus;  
+	private Long transactionCount;
+
+}

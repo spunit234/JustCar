@@ -1,0 +1,51 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.WorksStationAssignmentBean;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.DataSourceTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+
+public interface DataSourceManager extends AbstractManager {
+	
+	List<DataSourceTO> getDataSourcesDetails(PayloadBean payloadBean);
+	
+	List<String> getViewAndTableDetail(@RequestBody PayloadBean payloadBean);
+	
+	List<DataSourceFieldTO> getViewTableDescription(String name);
+	
+	String addDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request);
+	
+	DataSourceTO editDataSource(Long dataSourceId);
+	
+	String updateDataSource(DataSourceTO objDataSourceTO, HttpServletRequest request) throws TransactionFailedException;
+	
+	String deleteDataSourceField(DeleteRecords deleteRecords);
+	
+	List verifyDynamicSQL(PayloadBean payloadBean);
+	
+	
+	
+	List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails( Long siteID);	
+	
+	String addAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean); 
+	
+	WorksStationAssignmentBean findWorkStationById(Long workStationID);
+	
+	String updateAssignWorkStation(WorksStationAssignmentBean WorksStationAssignmentBean);
+	
+	
+	
+	List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id);
+	
+}

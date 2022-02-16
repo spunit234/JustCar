@@ -1,0 +1,195 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.bean.security.SiteBean;
+import com.edios.cdf.entity.security.SiteEntity;
+import com.edios.cdf.entity.to.SiteEntityTO;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemOrderDetailBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.WorksStationAssignmentBean;
+import com.edios.pms.dao.WorksStationAssignmentDao;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.edios.pms.entity.to.WorksStationAssignmentTO;
+import com.edios.pms.manager.WorksStationAssignmentManager;
+
+@Service("worksStationAssignmentManagerImpl")
+public class WorksStationAssignmentManagerImpl extends AbstractManagerImpl<WorksStationAssignmentBean,WorksStationAssignmentEntity > implements WorksStationAssignmentManager {
+
+	@Autowired
+	WorksStationAssignmentDao worksStationAssignmentDao;
+	
+	
+	@Override
+	@Transactional
+	public List<WorksStationAssignmentTO> getWorkStationAssigmentDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return worksStationAssignmentDao.getWorkStationAssigmentDetails(payloadBean);
+	}
+
+	
+	private void setAuditInfoOfItemOrderDetailBean(ItemOrderDetailBean ItemOrderDetailBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemOrderDetailBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemOrderDetailBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemOrderDetailBean.setCreatedDate(new Date());
+		} else {
+			ItemOrderDetailBean.setTransactionCount(ItemOrderDetailBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemOrderDetailBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemOrderDetailBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+
+	@Override
+	@Transactional
+	public List<SiteEntityTO> fetchSiteDetails() {
+		// TODO Auto-generated method stub
+		return worksStationAssignmentDao.fetchSiteDetails();
+	}
+
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails(Long siteID) {
+		// TODO Auto-generated method stub
+		return worksStationAssignmentDao.fetchPharmacyLocationForSiteDetails(siteID);
+	}
+
+
+	@Override
+	@Transactional
+	public String addAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+
+		resultFlag = worksStationAssignmentDao.isAssignWorkStationNameExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationName(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = worksStationAssignmentDao.isAssignWorkStationCodeExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationCode(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+
+		setAuditInfo(objWorksStationAssignmentBean, "newFlag");
+		WorksStationAssignmentEntity objWorksStationAssignmentEntity = mapper.map(objWorksStationAssignmentBean,WorksStationAssignmentEntity.class);
+		resultFlag = worksStationAssignmentDao.addAssignWorkStation(objWorksStationAssignmentEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+	private void setAuditInfo(WorksStationAssignmentBean WorksStationAssignmentBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			WorksStationAssignmentBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			WorksStationAssignmentBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			WorksStationAssignmentBean.setCreatedDate(new Date());
+		} else {
+			WorksStationAssignmentBean.setTransactionCount(WorksStationAssignmentBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			WorksStationAssignmentBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			WorksStationAssignmentBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+
+	@Override
+	@Transactional
+	public WorksStationAssignmentBean findWorkStationById(Long workStationID) {
+		// TODO Auto-generated method stub
+		WorksStationAssignmentBean objWorksStationAssignmentBean=mapper.map(worksStationAssignmentDao.findWorkStationById(workStationID), WorksStationAssignmentBean.class);
+		SiteBean objSiteBean=new SiteBean();
+		objSiteBean.setSiteID(objWorksStationAssignmentBean.getSite().getSiteID());
+		objSiteBean.setSiteName(objWorksStationAssignmentBean.getSite().getSiteName());
+		objSiteBean.setSiteCode(objWorksStationAssignmentBean.getSite().getSiteCode());
+		objSiteBean.setSiteStatus(objWorksStationAssignmentBean.getSite().getSiteStatus());
+		objSiteBean.setTransactionCount(objWorksStationAssignmentBean.getSite().getTransactionCount());
+		
+		objWorksStationAssignmentBean.setSite(objSiteBean);
+		
+		PharmacyLocationBean objPharmacyLocationBean=new PharmacyLocationBean();
+		objPharmacyLocationBean.setPharmacyLocationId(objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+		objPharmacyLocationBean.setPharmacyLocationName(objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationName());
+		
+		objWorksStationAssignmentBean.setPharmacyLocation(objPharmacyLocationBean);
+		return objWorksStationAssignmentBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateAssignWorkStation(WorksStationAssignmentBean objWorksStationAssignmentBean) {
+			String resultString = "";
+			boolean resultFlag = false;
+
+			resultFlag = worksStationAssignmentDao.isAssignWorkStationNameExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationName(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "NameAlreadyExist";
+			}
+
+			resultFlag = worksStationAssignmentDao.isAssignWorkStationCodeExist(objWorksStationAssignmentBean.getWorkStationID(),objWorksStationAssignmentBean.getWorkStationCode(),objWorksStationAssignmentBean.getSite().getSiteID(),objWorksStationAssignmentBean.getPharmacyLocation().getPharmacyLocationId());
+			if (resultFlag) {
+				return "CodeAlreadyExist";
+			}
+			
+			// Optimistic Locking for Hibernate
+			TransactionData latestData = worksStationAssignmentDao.fetchTransactionDataById(objWorksStationAssignmentBean.getWorkStationID());
+			if (latestData.getTransactionCount() > (objWorksStationAssignmentBean.getTransactionCount())) {
+				return "TransactionFailed";
+			}
+			if (latestData.getRecordType() == 'D') {
+				return "recordDeleted";
+			}
+
+			setAuditInfo(objWorksStationAssignmentBean, "editFlag");
+			WorksStationAssignmentEntity WorksStationAssignmentEntity = mapper.map(objWorksStationAssignmentBean,WorksStationAssignmentEntity.class);
+			resultFlag = worksStationAssignmentDao.updateAssignWorkStation(WorksStationAssignmentEntity);
+			if (resultFlag) {
+				return "UPDATED";
+			}
+			return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public synchronized String deleteAssignWorkStation(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = worksStationAssignmentDao.fetchTransactionDataById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		resultFlag = worksStationAssignmentDao.deleteAssignWorkStation(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	@Override
+	@Transactional
+	public List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id) {
+		return worksStationAssignmentDao.fetchPharmacyLocationRobots(id);
+	}
+	
+	
+}

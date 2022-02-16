@@ -1,0 +1,65 @@
+package com.edios.pms.dao.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.StockReportDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+
+@Repository
+public class StockReportDaoImpl extends BaseDaoImpl<ItemStockEntity> implements StockReportDao {
+	
+	@Autowired
+	MessageSource messageSource;
+
+	@Override
+	public List<PhysicalCountReportTO> fetchStockReport(PayloadBean payloadBean, Long locationID) {
+		List<PhysicalCountReportTO> physicalCountReportTOList = new ArrayList<>();
+		try {
+			Session session = (Session) entityManager.getDelegate();
+		
+				String sqlQuery = "select item.itemCode as itemCode , item.itemName as itemName,itemStoc.lotNo as lotNo,"
+						+ " pack.packSize as packSize,itemStoc.expiryDate"
+						+ " as expiryDate,itemStoc.quantityOnHand as quantityOnHand, "
+						+ " itemStockInv.shelfLocations as shelfLocation,itemStockInv.defaultShelfLocations as defaultShelfLoc, "
+						+ " itemStockInv.secondDefaultShelfLocations as defaultShelfLoc2 from ItemStockEntity as itemStoc left join itemStoc.item as item "
+						+ " left join ItemInventorySettingEntity as itemStockInv on itemStockInv.item=itemStoc.item and itemStockInv.pharmacyLocation=itemStoc.pharmacyLocation"
+						+ " left join itemStoc.itemPackSize as pack "
+						+ " where  item.recordType<>'D' and itemStoc.recordType<>'D'"
+						+ " and itemStoc.pharmacyLocation.pharmacyLocationId="+locationID+" ";
+				
+				if (payloadBean.getItemName()!=null) {
+					sqlQuery+=" and item.itemName like '%"+payloadBean.getItemName().trim()+"%' ";
+				}
+
+				sqlQuery+=" order by item.itemName";
+				
+				physicalCountReportTOList = (List<PhysicalCountReportTO>) session.createQuery(sqlQuery)
+						.setResultTransformer(Transformers.aliasToBean(PhysicalCountReportTO.class)).list();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return physicalCountReportTOList;
+	}
+
+	@Override
+	public Long fetchPharmacyLocationID(Long id) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery ="select locationUser.pharmacyLocation.pharmacyLocationId FROM PharmacyLocationUserEntity locationUser where locationUser.userId.userID="+id+" "
+				+ "and locationUser.recordType<>'D'";
+		return (Long) session.createQuery(sqlQuery).getSingleResult();
+	}
+
+}

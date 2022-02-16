@@ -1,0 +1,143 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.dao.PharmacyDao;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyStoreTO;
+import com.edios.pms.manager.PharmacyStoreManager;
+
+
+@Service("PharmacyStoreManager")
+public class PharmacyStoreManagerImpl extends AbstractManagerImpl<PharmacyStoreBean,PharmacyStoreEntity> implements PharmacyStoreManager{
+	
+	@Autowired
+	PharmacyDao pharmacyDao;
+	
+	private static final Long TRANSACTION_BEGIN = 1l;
+
+	private static final Character RECORDTYPE_INSERT = 'I';
+
+	private static final Character RECORDTYPE_UPDATE = 'U';
+
+	@Override
+	@Transactional
+	public List<PharmacyStoreTO> fetchPharmacyLookUp() {
+
+		return pharmacyDao.fetchPharmacyLookUp();
+	}
+
+	@Override
+	@Transactional
+	public String addPharmacy(PharmacyStoreBean pharmacyStoreBean) {
+		String resultString = "";
+		boolean resultFlag = false;	
+		resultFlag = pharmacyDao.checkStoreName(pharmacyStoreBean.getPharmacyStoreName(), pharmacyStoreBean.getPharmacyStoreId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = pharmacyDao.checkStoreCode(pharmacyStoreBean.getPharmacyStoreCode(), pharmacyStoreBean.getPharmacyStoreId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+		setAuditInfo(pharmacyStoreBean, "newFlag");
+		PharmacyStoreEntity pharmacyStoreEntity = mapper.map(pharmacyStoreBean, PharmacyStoreEntity.class);
+		resultFlag = pharmacyDao.addPharmacy(pharmacyStoreBean,pharmacyStoreEntity);
+		if (resultFlag) {
+			resultString = "ADDED";
+		}
+		return resultString;
+	}
+
+	private void setAuditInfo(PharmacyStoreBean pharmacyStoreBean, String string) {
+
+		if (string.equalsIgnoreCase("newFlag")) {
+			pharmacyStoreBean.setTransactionCount(TRANSACTION_BEGIN);
+			pharmacyStoreBean.setRecordType(RECORDTYPE_INSERT);
+			pharmacyStoreBean.setCreatedDate(new Date());
+		} else {
+			pharmacyStoreBean.setTransactionCount(pharmacyStoreBean.getTransactionCount() + TRANSACTION_BEGIN);
+			pharmacyStoreBean.setRecordType(RECORDTYPE_UPDATE);
+			pharmacyStoreBean.setLastModifiedDate(new Date());
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<PharmacyStoreTO> fetchPharmacy(PayloadBean payloadbean) {
+		
+		return pharmacyDao.fetchPharmacy(payloadbean);
+	}
+
+	@Override
+	@Transactional
+	public PharmacyStoreBean findPharmacyById(PayloadBean payloadbean) {
+		PharmacyStoreEntity pharmacyStoreEntity=pharmacyDao.findPharmacyById(payloadbean);
+		PharmacyStoreBean pharmacyStoreBean = mapper.map(pharmacyStoreEntity, PharmacyStoreBean.class);
+		return pharmacyStoreBean;
+	}
+
+	@Override
+	@Transactional
+	public String deletePharmacy(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = pharmacyDao.fetchTransactionDataById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		resultFlag = pharmacyDao.deletePharmacy(deleteRecords);
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String updatePharmacy(PharmacyStoreBean pharmacyStoreBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		
+		resultFlag = pharmacyDao.checkStoreName(pharmacyStoreBean.getPharmacyStoreName(), pharmacyStoreBean.getPharmacyStoreId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = pharmacyDao.checkStoreCode(pharmacyStoreBean.getPharmacyStoreCode(), pharmacyStoreBean.getPharmacyStoreId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+		TransactionData latestData = pharmacyDao.fetchTransactionDataById(pharmacyStoreBean.getPharmacyStoreId());
+		if (latestData.getTransactionCount() > (pharmacyStoreBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		setAuditInfo(pharmacyStoreBean,"Update");
+		PharmacyStoreEntity pharmacyStoreEntity= mapper.map(pharmacyStoreBean, PharmacyStoreEntity.class);
+		resultFlag = pharmacyDao.updatePharmacy(pharmacyStoreEntity,pharmacyStoreBean);
+		if (resultFlag)
+			return "UPDATED";
+
+		return resultString;
+	}
+
+	
+
+}

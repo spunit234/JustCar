@@ -1,0 +1,126 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.ClassificationItemsBean;
+import com.edios.pms.bean.FinalizeClassificationItemBean;
+import com.edios.pms.entity.ClassificationItemDetailsEntity;
+import com.edios.pms.entity.to.ClassificationItemDetailsEntityTO;
+import com.edios.pms.entity.to.ClassificationItemsEntityTO;
+import com.edios.pms.manager.ClassificationItemsManager;
+
+@RestController
+public class ClassificationItemsController extends AbstractController {
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	ClassificationItemsManager classificationItemsManager;
+	
+	@PostMapping("/search-classification-item")
+	public ResponseEntity<List<ClassificationItemsEntityTO>> searchClassificationItems(@RequestBody PayloadBean payloadBean){
+		List<ClassificationItemsEntityTO> classificationItemsEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			classificationItemsEntityTOList=classificationItemsManager.fetchClassificationItems(payloadBean);
+			return new ResponseEntity<List<ClassificationItemsEntityTO>>(classificationItemsEntityTOList, HttpStatus.OK);
+		}return  new ResponseEntity<List<ClassificationItemsEntityTO>>(classificationItemsEntityTOList, HttpStatus.UNAUTHORIZED);
+	}
+	
+	@PostMapping("/add-classification-item")
+	public  ResponseEntity<List<ClassificationItemDetailsEntity>> addClassificationItem(@RequestBody ClassificationItemsBean classificationItemsBean,HttpServletRequest request) {
+		List<ClassificationItemDetailsEntity> classificationItemDetailsEntityList=null;
+		try {
+			classificationItemDetailsEntityList = classificationItemsManager.addClassificationItem(classificationItemsBean,request);
+			 return new ResponseEntity<List<ClassificationItemDetailsEntity>>(classificationItemDetailsEntityList, HttpStatus.OK);
+			}catch(Exception exception) {
+				exception.printStackTrace();
+				return new ResponseEntity<List<ClassificationItemDetailsEntity>>(classificationItemDetailsEntityList, HttpStatus.OK);
+			}
+	}
+	
+	@PostMapping("/get-classification-item")
+	public ResponseEntity<ClassificationItemsBean> getClassificationItem(@RequestBody PayloadBean payloadBean){
+		ClassificationItemsBean classificationItemsBeans =null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			classificationItemsBeans=classificationItemsManager.getClassificationItem(payloadBean);
+			return new ResponseEntity<ClassificationItemsBean>(classificationItemsBeans,HttpStatus.OK);
+		}
+		return new ResponseEntity<ClassificationItemsBean>(classificationItemsBeans,HttpStatus.UNAUTHORIZED);
+	}
+	@PostMapping("/get-classificationList-item")
+	public  ResponseEntity<List<ClassificationItemDetailsEntityTO>> getClassificationListItem(@RequestBody PayloadBean payloadBean) {
+		List <ClassificationItemDetailsEntityTO> classificationItemDetailsEntityList=null;
+		try {
+			classificationItemDetailsEntityList = classificationItemsManager.getClassificationListItem(payloadBean);
+			 return new ResponseEntity<List<ClassificationItemDetailsEntityTO>>(classificationItemDetailsEntityList, HttpStatus.OK);
+			}catch(Exception exception) {
+				exception.printStackTrace();
+				return new ResponseEntity<List<ClassificationItemDetailsEntityTO>>(classificationItemDetailsEntityList, HttpStatus.OK);
+			}
+	}
+	@PostMapping("/discard-classification")
+	public BaseResponse discardClassification(@RequestBody PayloadBean payloadBean) {
+		BaseResponse baseResponse = null; 
+		try {
+			String resultString = classificationItemsManager.discardClassification(payloadBean);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}else if(resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} 
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;}
+		}
+	@PostMapping("/finalize-classification")
+	public BaseResponse finalizeClassification(@RequestBody FinalizeClassificationItemBean finalizeClassificationItemBean) {
+		BaseResponse baseResponse = null; 
+		String resultString="";
+		try {
+			 resultString = classificationItemsManager.finalizeClassification(finalizeClassificationItemBean);
+			if (resultString.equalsIgnoreCase("FINALIZED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "FINALIZED","");
+			}else if(resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} 
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;}
+		}
+	
+	@PostMapping("/save-draft-classification")
+	public BaseResponse saveToDraft(@RequestBody PayloadBean payloadBean) {
+		BaseResponse baseResponse = null; 
+		try {
+			String resultString = classificationItemsManager.saveToDraft(payloadBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}else if(resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} 
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;}
+		}
+}

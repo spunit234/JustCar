@@ -1,0 +1,450 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.NoResultException;
+import javax.servlet.http.HttpServletRequest;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.dao.ReturnItemsToStoreDao;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.CycleCountItemsEntity;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.ItemReturnDetailEntity;
+import com.edios.pms.entity.ItemReturnEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.entity.to.ReturnItemsToStoreEntityTO;
+@RestController
+public class ReturnItemsToStoreDaoImpl extends BaseDaoImpl<ItemReturnEntity> implements ReturnItemsToStoreDao{
+	@Autowired
+	MessageSource message;
+
+
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	
+	@Override
+	public List<ReturnItemsToStoreEntityTO> getReturnItemsDetails(PayloadBean payloadBean) {
+
+		List<ReturnItemsToStoreEntityTO> objItemOrderEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+		System.out.println(payloadBean.getCustomParameter());
+		
+		if(payloadBean.getCustomParameter()!=null && !payloadBean.getCustomParameter().trim().equals("")) {
+			whereClause+=" and itemReturn.itemReturnNo='"+payloadBean.getCustomParameter()+"' ";
+		}
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select itemReturn.itemReturnId as itemReturnId,itemReturn.itemReturnNo as itemReturnNo,itemReturn.returnDate as returnDate,"
+					+ "pharmacyLoc.pharmacyLocationName as rfPharmacyLocationName,pharmacyStore.pharmacyStoreName as rtPharmacyStoreName,"
+					+ "itemReturn.returnStatus as returnStatus"
+					+ " from ItemReturnEntity itemReturn"
+					+ " left join itemReturn.rfPharmacyLocation pharmacyLoc"
+					+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLoc.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " left join itemReturn.rtPharmacyStore pharmacyStore"
+						+ " where itemReturn.recordType<>'D' and pharmacyLocationUser.userId.userID=:userID and itemReturn.returnStatus=:returnStatus "+whereClause+" order by itemReturn.itemReturnId asc";
+			objItemOrderEntityTOList = (List<ReturnItemsToStoreEntityTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId()).setParameter("returnStatus", payloadBean.getSearchParameter())
+					.setResultTransformer(Transformers.aliasToBean(ReturnItemsToStoreEntityTO.class)).list();
+			
+			
+		
+		return objItemOrderEntityTOList;
+	
+	}
+
+
+	@Override
+	public List<ItemStockEntityTO> getItemStockDetailsByIdAndLocation(ItemStockEntityTO payloadBean) {
+
+		List<ItemStockEntityTO> objItemStockEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select itemStock.itemStockId as itemStockId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+					+ "itemStock.itemPackSize.packSize as packSize,itemStock.quantityOnHand as quantityOnHand,"
+					+ "itemStock.quantityBlocked as quantityBlocked,item.itemName as itemName,item.itemCode as itemCode"
+					+ " from ItemStockEntity itemStock"
+					+ " left join itemStock.item item"
+						+ " where itemStock.recordType<>'D' and itemStock.pharmacyLocation.pharmacyLocationId=:pharmacyLocationId and item.itemId=:itemId order by itemStock.itemStockId asc";
+			objItemStockEntityTOList = (List<ItemStockEntityTO>) session.createQuery(sqlQuery).setParameter("itemId", payloadBean.getItemId()).setParameter("pharmacyLocationId", payloadBean.getPharmacyLocationId())
+					.setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).list();
+			
+			
+		
+		return objItemStockEntityTOList;
+	
+	}
+
+
+	@Override
+	public Long addItemReturnBeanDetail(ItemReturnEntity objItemReturnEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		 session.persist(objItemReturnEntity);
+		 objItemReturnEntity.setItemReturnNo(message.getMessage("ItemReturnNo", null, "", Locale.US)+objItemReturnEntity.getItemReturnId());
+	return objItemReturnEntity.getItemReturnId();
+	}
+
+
+	@Override
+	public boolean addItemReturnDetailBeanDetail(ItemReturnDetailEntity objItemReturnDetailEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		 session.persist(objItemReturnDetailEntity);
+		 return true;
+	}
+
+
+	@Override
+	public ItemReturnEntity findItemReturnDetailsById(Long id) {
+		return entityManager.find(ItemReturnEntity.class, id);
+	}
+
+
+	@Override
+	public List<ItemStockEntityTO> getItemStockDetailsByIdByReturnId(ItemStockEntityTO payloadBean) {
+
+		List<ItemStockEntityTO> objItemStockEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+		if(payloadBean.getItemName().isEmpty() || payloadBean.getItemName().equals("")) {
+			whereClause=" ";
+			
+		}
+		else {
+			whereClause=" and itemStock.itemStockId not in ("+payloadBean.getItemName()+") ";
+		}
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select itemStock.itemStockId as itemStockId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+					+ "itemStock.itemPackSize.packSize as packSize,itemStock.quantityOnHand as quantityOnHand,"
+					+ "itemStock.quantityBlocked as quantityBlocked,item.itemName as itemName,item.itemCode as itemCode"
+					+ " from ItemStockEntity itemStock"
+					+ " left join itemStock.item item"
+						+ " where itemStock.recordType<>'D' and itemStock.pharmacyLocation.pharmacyLocationId=:pharmacyLocationId and item.itemId=:itemId"+whereClause+"order by itemStock.itemStockId asc";
+			objItemStockEntityTOList = (List<ItemStockEntityTO>) session.createQuery(sqlQuery).setParameter("itemId", payloadBean.getItemId()).setParameter("pharmacyLocationId", payloadBean.getPharmacyLocationId())
+					.setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).list();
+			
+			
+		
+		return objItemStockEntityTOList;
+	
+	}
+
+
+	@Override
+	public boolean deleteReturnItemDetailsById(Long Id) {
+		String sqlQuery="";
+		int count=0;
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="delete from ItemReturnDetailEntity"
+				+ " where itemReturnDetailId=:itemReturnDetailId";
+		 count=session.createQuery(sqlQuery).setParameter("itemReturnDetailId", Id)
+				.executeUpdate();
+		 if(count>0)
+			 return true;
+		 else
+			 return false;
+	}
+
+
+	@Override
+	public TransactionData fetchTransactionDataItemReturnDetailEntityById(Long Id) {
+		TransactionData transactionData=null;
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+				+ " from  ItemReturnDetailEntity table where table.itemReturnDetailId=:itemReturnDetailId";
+		transactionData = (TransactionData) session.createQuery(sqlQuery)
+				.setParameter("itemReturnDetailId", Id)
+				.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		
+		return transactionData;
+	}
+
+
+	@Override
+	public ItemReturnDetailEntity fetchItemReturnDetailEntityDetailbyId(Long Id) {
+		// TODO Auto-generated method stub
+		return entityManager.find(ItemReturnDetailEntity.class, Id);
+	}
+
+
+	@Override
+	public TransactionData fetchTransactionDataItemReturnEntityById(Long Id) {
+		TransactionData transactionData=null;
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+				+ " from  ItemReturnEntity table where table.itemReturnId=:itemReturnId";
+		transactionData = (TransactionData) session.createQuery(sqlQuery)
+				.setParameter("itemReturnId", Id)
+				.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		
+		return transactionData;
+	}
+
+
+	@Override
+	public boolean updateItemReturnEntityDetail(ItemReturnEntity objItemReturnEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objItemReturnEntity);
+		return true;
+	}
+
+
+	@Override
+	public boolean updateItemReturnDetailBeanDetail(ItemReturnDetailEntity objItemReturnDetailEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objItemReturnDetailEntity);
+		return true;
+	}
+
+
+	@Override
+	public List<Long> fetchItemDetailsForFinalizedReturnOrder(Long Id) {
+		List<Long> returnIdList=null;
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery = "select item.itemId"
+				+ " from ItemReturnDetailEntity table"
+				+ " left join table.itemStock itemStock"
+				+ " left join itemStock.item item"
+				+ " where table.itemReturn.itemReturnId=:itemReturnId"
+				+ " group by item.itemId";
+		returnIdList = (List<Long>) session.createQuery(sqlQuery)
+				.setParameter("itemReturnId", Id).list();
+		return returnIdList;
+	}
+	@Override
+	public List<ReportsTO> fetchQuantityOnHandDetails(PayloadBean payloadBean,List<Long> itemIdList) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select 'Selected' as itemReturnStatus,itemDetail.itemId as itemId,itemDetail.itemName as itemName,itemDetail.itemCode as itemCode"
+				+ " ,sum(itemStock.quantityOnHand) as quantityOnHand,sum(itemStock.quantityInStock) as quantityReceived,sum(itemStock.totalCost) as quantityReceivedCost,"
+				+ " sum(ceiling(itemStock.quantityOnHand/itemPackSizeDetail.packSize)*itemStock.unitCost) as quantityOnHandCost"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemStock.itemPackSize itemPackSizeDetail"
+				+ " where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID and itemDetail.itemId in:itemIdList group by"
+				+ " itemDetail.itemId,itemDetail.itemId,itemDetail.itemName,itemDetail.itemCode having sum(itemStock.quantityOnHand)!=0 order by itemName asc";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId()).setParameterList("itemIdList", itemIdList)
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+	
+	@Override
+	public List<ReportsTO> fetchQuantityOnHandDetailsForSavedDraftStatus(PayloadBean payloadBean,List<Long> itemIdList) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select itemDetail.itemId as itemId,itemDetail.itemName as itemName,itemDetail.itemCode as itemCode"
+				+ " ,sum(itemStock.quantityOnHand) as quantityOnHand,sum(itemStock.quantityInStock) as quantityReceived,sum(itemStock.totalCost) as quantityReceivedCost,"
+				+ " sum(ceiling(itemStock.quantityOnHand/itemPackSizeDetail.packSize)*itemStock.unitCost) as quantityOnHandCost"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemStock.itemPackSize itemPackSizeDetail"
+				+ " where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID and itemDetail.itemId not in:itemIdList group by"
+				+ " itemDetail.itemId,itemDetail.itemId,itemDetail.itemName,itemDetail.itemCode having sum(itemStock.quantityOnHand)!=0 order by itemName asc";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId()).setParameterList("itemIdList", itemIdList)
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+
+/*
+	@Override
+	public CycleCountEntity searchCycleCountById(Long id) {
+		CycleCountEntity cycleCountEntity = null;
+		String sqlQuery = "";
+		try {
+			sqlQuery = "from  CycleCountEntity as ee  where ee.cycleCountID=:cycleCountID ";
+			cycleCountEntity = (CycleCountEntity) entityManager.createQuery(sqlQuery)
+				.setParameter("cycleCountID", id).getSingleResult();
+		} catch (NoResultException noResultException) {
+			return null;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntity;
+	}
+
+
+	@Override
+	public List<CycleCountEntityTO> searchCycleCountItems(PayloadBean payloadBean) {
+List<CycleCountEntityTO> cycleCountEntityTOsList = new ArrayList<>();
+		
+		String sqlQuery = "";
+		try {
+			String datformat=message.getMessage("dateFormat", null,"",Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode ,cycleCountItem.cycleCountItemID as cycleCountItemID,"
+					+ "COALESCE(SUM(itemStock.quantityOnHand),0)  AS quantityOnHand , cycleCountItem.quantityMatched AS quantityMatched,"
+					+ "cycleCountItem.countedQuantity as countedQuantity,cycleCountItem.notes as notes,cycleCountItem.transactionCount as transactionCount "
+					+ "from CycleCountItemsEntity as cycleCountItem  Right join cycleCountItem.itemId as item "
+					+ "left join ItemStockEntity as itemStock on item.itemId=itemStock.item.itemId"
+					+ " WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D' and (cycleCountItem.cycleCountID.cycleCountID=:cycleCountID or cycleCountItem.cycleCountID.cycleCountID is null) and itemStock.itemStockStatus='InStock'  and itemStock.recordType<>'D' group by item.itemId having COALESCE(SUM(itemStock.quantityOnHand),0)>0 ORDER BY  item.itemName ";
+			
+				cycleCountEntityTOsList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").setParameter("cycleCountID", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+				
+			String	sqlquery2="select count(item.itemId) as noOfItems from ItemEntity as item WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D'";
+				Object obj=(Object)	session.createQuery(sqlquery2).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").getSingleResult();
+			  
+				cycleCountEntityTOsList.get(0).setNoOfItems(Long.parseLong(obj.toString()));
+			  
+			  
+		
+			  
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntityTOsList;
+	}
+
+	@Override
+	public List<CycleCountEntityTO> fetchItemDetailForNewCycleCount(PayloadBean payloadBean) {
+List<CycleCountEntityTO> cycleCountEntityTOsList = new ArrayList<>();
+		
+		String sqlQuery = "";
+		try {
+			String datformat=message.getMessage("dateFormat", null,"",Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId , item.itemName as itemName, item.itemCode As itemCode,"
+					+ "SUM(itemStock.quantityOnHand)  AS quantityOnHand"
+					+ " from ItemStockEntity as itemStock  right join itemStock.item item "
+					+ " WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D' and itemStock.itemStockStatus='InStock'  and itemStock.recordType<>'D' group by item.itemId having COALESCE(SUM(itemStock.quantityOnHand),0)>0  ORDER BY  item.itemName ";
+			
+				cycleCountEntityTOsList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+				
+			String	sqlquery2="select count(item.itemId) as noOfItems from ItemEntity as item WHERE item.itemClass=:itemClass and item.itemStatus=:itemStatus  and item.recordType<>'D'";
+				Object obj=(Object)	session.createQuery(sqlquery2).setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemStatus", "Active").getSingleResult();
+			  if(obj!=null && !cycleCountEntityTOsList.isEmpty())
+				cycleCountEntityTOsList.get(0).setNoOfItems(Long.parseLong(obj.toString()));
+			  
+			  
+		
+			  
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return cycleCountEntityTOsList;
+	}
+	@Override
+	public Long addCycleCountAndCountItems(CycleCountEntity cycleCountEntity) {
+		//boolean result = true;
+		Long pkOfUser=null;
+		try {
+			// entityManager.persist(pharmacyLocationUserEntity);
+			Session session = (Session) entityManager.getDelegate();
+			 pkOfUser = (Long) session.save(cycleCountEntity);
+			if (pkOfUser != null) {
+				return pkOfUser;
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+
+		return pkOfUser;
+	}
+
+
+	@Override
+	public boolean addCycleCountItems(CycleCountItemsEntity cycleCountItemsEntity) {
+				Session session = (Session) entityManager.getDelegate();
+					 session.persist(cycleCountItemsEntity);
+				return true;
+	}
+
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long cycleCountID) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  CycleCountEntity table where table.cycleCountID=:cycleCountID";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("cycleCountID", cycleCountID)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+	@Override
+	public boolean updateCycleCount(CycleCountEntity cycleCountEntity) {
+		boolean result = true;
+		try {
+			
+			Session session = (Session) entityManager.getDelegate();
+			session.update(cycleCountEntity);
+			
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+
+	@Override
+	public boolean updateCycleCountItems(CycleCountItemsEntity cycleCountItemsEntity) {
+		boolean result = true;
+		
+			
+			Session session = (Session) entityManager.getDelegate();
+			session.update(cycleCountItemsEntity);
+			return true;
+	}
+
+		
+		
+		
+
+
+	@Override
+	public TransactionData fetchTransactionDataById2(Long cycleCountItemID) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  CycleCountItemsEntity table where table.cycleCountItemID=:cycleCountItemID";
+			transactionData = (TransactionData) session.createQuery(sqlQuery)
+					.setParameter("cycleCountItemID", cycleCountItemID)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+	@Override
+	public CycleCountItemsEntity fetchCycleCountItemsEntityById(Long id) {
+		// TODO Auto-generated method stub
+		return entityManager.find(CycleCountItemsEntity.class, id);
+	}
+
+*/
+
+}

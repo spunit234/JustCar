@@ -1,0 +1,94 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+
+@Entity
+@Table(name="cycle_counts")
+@Setter
+@Getter
+@NoArgsConstructor
+public class CycleCountEntity  extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="CYCLE_COUNT_ID")
+	private Long cycleCountID;
+
+	@Column(name="CHECKED_BY")
+	private String checkedBy;
+
+	@Column(name="COUNTED_BY")
+	private String countedBy;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="CYCLE_COUNT_DATE")
+	private Date cycleCountDate;
+
+	@Column(name="CYCLE_COUNT_MATCHED")
+	private String cycleCountMatched;
+
+	@Column(name="CYCLE_COUNT_NAME")
+	private String cycleCountName;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="ITEM_CLASS")
+	private String itemClass;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="NO_OF_ITEMS")
+	private Long noOfItems;
+
+	@Column(name="NOTES")
+	private String notes;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to CycleCountItem
+//	@OneToMany(mappedBy="cycleCount")
+//	private List<CycleCountItemEntity> cycleCountItems;
+
+
+}

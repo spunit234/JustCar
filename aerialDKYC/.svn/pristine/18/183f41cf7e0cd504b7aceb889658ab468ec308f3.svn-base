@@ -1,0 +1,280 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.PreparedCompoundItemDao;
+import com.edios.pms.entity.CompoundItemDetailEntity;
+import com.edios.pms.entity.CompoundItemEntity;
+import com.edios.pms.entity.PreparedCompoundItemDetailEntity;
+import com.edios.pms.entity.PreparedCompoundItemEntity;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.PreparedCompoundItemEntityTO;
+
+@Repository
+public class PreparedCompoundItemDaoImpl extends BaseDaoImpl<PreparedCompoundItemEntity> implements PreparedCompoundItemDao {
+	@Autowired
+	MessageSource messageSource;
+	
+
+	@Override
+	public boolean isPreparedCompoundItemNameExist(Long compoundItemId,Long preparedItemId) {
+		try {
+			return entityManager.createQuery(
+					"select table.preparedItemId as preparedItemId from PreparedCompoundItemEntity table where "
+							+ " table.compoundItem.compoundItemId=" + compoundItemId+" and table.preparedItemId!="+preparedItemId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} 
+	}
+
+	@Override
+	public Long addPreparedCompoundItemEntity(PreparedCompoundItemEntity objPreparedCompoundItemEntity) {
+		entityManager.persist(objPreparedCompoundItemEntity);
+		return objPreparedCompoundItemEntity.getPreparedItemId();
+	}
+
+	@Override
+	public boolean addPreparedCompoundItemDetailEntity(PreparedCompoundItemDetailEntity objPreparedCompoundItemDetailEntity) {
+		entityManager.persist(objPreparedCompoundItemDetailEntity);
+		return true;
+	}
+
+	@Override
+	public List<CompoundItemEntityTO> fetchConfiguredCompoundItemdetails(PayloadBean payloadBean) {
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select compoundItem.compoundItemId as compoundItemId,item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode,item.measurementUnit as measurementUnit,"
+					+ "compoundItem.compoundQuantity as compoundQuantity,packSizeDetail.packSize as packSize,packSizeDetail.packSizeId as packSizeId,compoundItem.unitCost as unitCost"
+					+ " from CompoundItemEntity compoundItem"
+					+ " left join compoundItem.item item"
+					+ " left join compoundItem.itemPackSize packSizeDetail"
+						+ " where compoundItem.recordType<>'D'";
+			objCompoundItemEntityTOList = (List<CompoundItemEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(CompoundItemEntityTO.class)).list();
+			
+			
+		
+		return objCompoundItemEntityTOList;
+	}
+	
+	@Override
+	public List<CompoundItemEntityTO> fetchConfiguredCompoundItemDetailsByCompoundItemId(Long compounItemId) {
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemName as itemName,compoundItemDetail.mixedQuantity as mixedQuantity"
+					+ " from CompoundItemDetailEntity compoundItemDetail"
+					+ " left join compoundItemDetail.compoundItem compoundItem"
+					+ " left join compoundItemDetail.item item"
+						+ " where compoundItemDetail.recordType<>'D' and compoundItem.compoundItemId="+compounItemId+" ORDER BY item.itemName ";
+			objCompoundItemEntityTOList = (List<CompoundItemEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(CompoundItemEntityTO.class)).list();
+			
+			
+		
+		return objCompoundItemEntityTOList;
+	}
+
+	@Override
+	public List<CompoundItemEntityTO> fetchItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean) {
+		SimpleDateFormat objSimpleDateFormat= new SimpleDateFormat("yyyy-MM-dd");
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemName as itemName,item.itemCode as itemCode,compoundItemDetail.mixedQuantity as mixedQuantity"
+					+ ",sum(itemStock.quantityOnHand) as quantityOnHand,itemStock.itemStockId as itemStockId,itemStock.itemPackSize.packSize as packSize,itemStock.lotNo as lotNo"
+					+ ",itemStock.expiryDate as expiryDate"
+					+ " from CompoundItemDetailEntity compoundItemDetail"
+					+ " left join compoundItemDetail.compoundItem compoundItem"
+					+ " left join compoundItemDetail.item item"
+					+ " inner join ItemStockEntity itemStock on itemStock.item.itemId=item.itemId"
+					+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " where compoundItemDetail.itemPackSize=itemStock.itemPackSize and compoundItemDetail.recordType<>'D' and SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10)>'"+objSimpleDateFormat.format(new Date())+"'"
+					+ " and compoundItem.compoundItemId="+payloadBean.getId() +" and pharmacyLocationUser.userId.userID=:userID and item.itemId="+payloadBean.getCustomParameter()
+							+ " group by item.itemName,item.itemCode,compoundItemDetail.mixedQuantity,itemStock.itemStockId,itemStock.itemPackSize.packSize,itemStock.lotNo,itemStock.expiryDate";
+			objCompoundItemEntityTOList = (List<CompoundItemEntityTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getUserId())
+					.setResultTransformer(Transformers.aliasToBean(CompoundItemEntityTO.class)).list();
+			
+			
+		
+		return objCompoundItemEntityTOList;
+	}
+	@Override
+	public List<CompoundItemEntityTO> fetchConfigureItemDetails(PayloadBean payloadBean) {
+		SimpleDateFormat objSimpleDateFormat= new SimpleDateFormat("yyyy-MM-dd");
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode,compoundItemDetail.mixedQuantity as mixedQuantity,compoundItemDetail.mixedQuantity as requiredQuantity"
+					+ ",sum(itemStock.quantityOnHand) as quantityOnHand,itemStock.itemPackSize.packSize as packSize"
+					+ " from CompoundItemDetailEntity compoundItemDetail"
+					+ " left join compoundItemDetail.compoundItem compoundItem"
+					+ " left join compoundItemDetail.item item"
+					+ " inner join ItemStockEntity itemStock on itemStock.item.itemId=item.itemId"
+					+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " where compoundItemDetail.itemPackSize=itemStock.itemPackSize and compoundItemDetail.recordType<>'D' and SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10)>'"+objSimpleDateFormat.format(new Date())+"'"
+					+ " and compoundItem.compoundItemId="+payloadBean.getId() +" and pharmacyLocationUser.userId.userID=:userID"
+							+ " group by item.itemId,item.itemName,item.itemCode,compoundItemDetail.mixedQuantity,itemStock.itemPackSize.packSize";
+			objCompoundItemEntityTOList = (List<CompoundItemEntityTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getUserId())
+					.setResultTransformer(Transformers.aliasToBean(CompoundItemEntityTO.class)).list();
+			
+			
+		
+		return objCompoundItemEntityTOList;
+	}
+	
+	@Override
+	public PreparedCompoundItemEntity findPreparedCompoundItemBeanDetailsById(Long preparedItemId) {
+		return entityManager.find(PreparedCompoundItemEntity.class, preparedItemId);
+	}
+
+	@Override
+	public List<PreparedCompoundItemEntityTO> getPreparedCompoundItemDetails(ConfigureCompoundItemsTO payloadBean) {
+		List<PreparedCompoundItemEntityTO> objCompoundItemEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+		if(payloadBean.getItem()!=null) {
+			whereClause=" and item.itemId = "+payloadBean.getItem().getItemId();
+		}	
+		 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+    	 String fromDate= formatter.format(payloadBean.getConfigurationFromDate())+" 00:00:00";  
+		 String toDate= formatter.format(payloadBean.getConfigurationTODate())+" 23:59:59";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select preparedItemDetail.preparedItemId as preparedItemId,item.itemName as itemName,item.itemCode as itemCode,"
+					+ "preparedItemDetail.preparartionDate as preparationDate,preparedItemDetail.expiryDate as expiryDate,"
+					+ "preparedItemDetail.lotNo as lotNo,preparedItemDetail.preparedCompoundItemQuantity as preparedQuantity"
+					+ " from PreparedCompoundItemEntity preparedItemDetail"
+					+ " right join preparedItemDetail.compoundItem compoundItemBean"
+					+ " left join compoundItemBean.item item"
+						+ " where preparedItemDetail.recordType<>'D' and preparedItemDetail.preparedItemStatus=:preparedItemStatus and preparedItemDetail.preparartionDate between '"+fromDate+"' and '"+toDate+"' "+whereClause+" order by preparedItemDetail.preparedItemId asc";
+			objCompoundItemEntityTOList = (List<PreparedCompoundItemEntityTO>) session.createQuery(sqlQuery).setParameter("preparedItemStatus", payloadBean.getSearchParameter())
+					.setResultTransformer(Transformers.aliasToBean(PreparedCompoundItemEntityTO.class)).list();
+			
+			
+		
+		return objCompoundItemEntityTOList;
+	}
+
+	@Override
+	public List<CompoundItemEntityTO> editItemDetailsToPreparedConfigureCompoundItem(Long preparedItemId,Long itemId) {
+		SimpleDateFormat objSimpleDateFormat= new SimpleDateFormat("yyyy-MM-dd");
+		List<CompoundItemEntityTO> objCompoundItemEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select preparedItemDetail.preparedItemDetailId as preparedItemDetailId,item.itemName as itemName,item.itemCode as itemCode,"
+					+ "preparedItemDetail.unitMixedQuantity as mixedQuantity"
+					+ ",sum(itemStock.quantityOnHand) as quantityOnHand,itemStock.itemStockId as itemStockId,itemStock.itemPackSize.packSize as packSize,"
+					+ "itemStock.lotNo as lotNo"
+					+ ",itemStock.expiryDate as expiryDate,preparedItemDetail.preparedMixedQuantity as requiredQuantity,preparedItemDetail.transactionCount as preItemDetailtransactionCount"
+					+ " from PreparedCompoundItemDetailEntity preparedItemDetail"
+					+ " left join preparedItemDetail.preparedCompoundItem preparedItem"
+					+ " left join preparedItemDetail.itemStock itemStock"
+					+ " left join itemStock.item item"
+					+ " where preparedItemDetail.recordType<>'D' and SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10)>'"+objSimpleDateFormat.format(new Date())+"'"
+					+ " and preparedItem.preparedItemId="+preparedItemId +" and item.itemId="+itemId
+							+ " group by preparedItemDetail.preparedItemDetailId,item.itemName,item.itemCode,preparedItemDetail.unitMixedQuantity,itemStock.itemStockId,itemStock.itemPackSize.packSize,itemStock.lotNo,itemStock.expiryDate,preparedItemDetail.preparedMixedQuantity,preparedItemDetail.transactionCount";
+			objCompoundItemEntityTOList = (List<CompoundItemEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(CompoundItemEntityTO.class)).list();
+			
+			
+		
+		return objCompoundItemEntityTOList;
+	}
+
+	
+	@Override
+	public boolean deletePreparedCompoundItemDetailsById(DeleteRecords deleteRecords) {
+		String sqlQuery="";
+		int count=0;
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="delete from PreparedCompoundItemDetailEntity"
+				+ " where preparedItemDetailId=:preparedItemDetailId";
+		 count=session.createQuery(sqlQuery).setParameter("preparedItemDetailId", deleteRecords.getId())
+				.executeUpdate();
+		 if(count>0)
+			 return true;
+		 else
+			 return false;
+	}
+	
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long id) {
+
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType"
+					+ " from  PreparedCompoundItemEntity table where table.preparedItemId=:preparedItemId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("preparedItemId", id)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		
+		return transactionData;
+	
+	}
+	
+	@Override
+	public boolean updatePreparedCompoundItemEntity(PreparedCompoundItemEntity objPreparedCompoundItemEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(objPreparedCompoundItemEntity);
+		return true;
+	}
+	@Override
+	public boolean mergePreparedCompoundItemEntity(PreparedCompoundItemEntity objPreparedCompoundItemEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objPreparedCompoundItemEntity);
+		return true;
+	}
+
+	@Override
+	public boolean updatePreparedCompoundItemDetailEntity(PreparedCompoundItemDetailEntity objPreparedCompoundItemDetailEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objPreparedCompoundItemDetailEntity);
+		return true;
+	}
+
+	@Override
+	public PreparedCompoundItemDetailEntity findPreparedCompoundItemDetailEntityDetailsById(Long preparedItemDetailId) {
+		return entityManager.find(PreparedCompoundItemDetailEntity.class, preparedItemDetailId);
+	}
+	
+	
+
+	@Override
+	public boolean checkLotNoExistenceForItemInUserPharmacyLocation(PayloadBean payloadBean) {
+		try {
+			return entityManager.createQuery(
+					"select itemStock.itemStockId as itemStockId from ItemStockEntity itemStock"
+					+ " left join itemStock.item item"
+					+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " where pharmacyLocationUser.userId.userID="+payloadBean.getUserId()
+							+ " and item.itemId="+payloadBean.getId()+" and itemStock.lotNo='"+payloadBean.getSearchParameter()+"'")
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} 
+	}
+	
+	
+	
+	
+	
+}

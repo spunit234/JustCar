@@ -1,0 +1,57 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.Locale;
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.CycleCountReportDao;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+
+
+@Repository
+public class CycleCountReportDaoImpl extends BaseDaoImpl<CycleCountEntity> implements CycleCountReportDao {
+	
+	@Autowired
+	MessageSource messageSource;
+	
+
+	@Override
+	public List<CycleCountEntityTO> fetchCycleCountReport(PayloadBean payloadBean) {
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+	   	String fromDate= formatter.format(payloadBean.getFromDate());  
+	   	String toDate= formatter.format(payloadBean.getToDate());
+		List<CycleCountEntityTO> cycleCountEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery =  "select cycleCount.cycleCountDate as cycleCountDate, cycleCount.cycleCountName as cycleCountName,"
+				+ "cycleCount.itemClass as itemClass,item.itemName as itemName,item.itemCode as itemCode,countItem.quantityOnHand as quantityOnHand,"
+				+ "countItem.countedQuantity as countedQuantity,countItem.quantityMatched as quantityMatched,countItem.notes as notes,cycleCount.countedBy"
+				+ " as countedBy,cycleCount.checkedBy as checkedBy from CycleCountItemEntity as countItem left join countItem.cycleCount as cycleCount"
+				+ " left join countItem.item as item where countItem.recordType<>'D' and cycleCount.itemClass='"+payloadBean.getCustomParameter()+"' and "
+				+ " cycleCount.cycleCountDate>='"+fromDate+"' and cycleCount.cycleCountDate<='"+toDate+"' ";
+		
+		if (payloadBean.getSearchParameter()!=null) {
+			sqlQuery+="and item.itemName like '%"+payloadBean.getSearchParameter()+"%' ";
+		}
+		if (payloadBean.getCustom1()!=null && !payloadBean.getCustom1().trim().equals("")) {
+			sqlQuery+="and countItem.quantityMatched='"+payloadBean.getCustom1()+"' ";
+		}
+		
+		
+		cycleCountEntityTOList = (List<CycleCountEntityTO>) session.createQuery(sqlQuery)
+				
+				.setResultTransformer(Transformers.aliasToBean(CycleCountEntityTO.class)).list();
+		
+		return cycleCountEntityTOList;
+	}
+	
+
+}

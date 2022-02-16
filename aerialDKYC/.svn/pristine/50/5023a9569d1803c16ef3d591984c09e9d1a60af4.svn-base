@@ -1,0 +1,105 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemStockEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+
+	private Long itemStockId;
+
+	private Long pharmacyLocationId;
+	
+	private Long pharmacyStoreId;
+	
+	private Long itemId;
+	
+	private Long packSizeId;
+	
+	private Long itemOrderId;
+	
+	private Long itemOrderDetailId;
+	
+	private Long quantityOnHand;
+	
+	private String lotNo;
+	
+	private String expiryDate;
+	
+	private Long packSize;
+	
+	private Long userID;
+	
+	private Long qOnP;
+	
+	private Long distributeQuantity;
+	
+	private boolean flag=true;
+	
+	private String itemOrderStatus;
+	
+	private Long itemStockTransactionCount;
+	
+	private Long itemOrderTransactionCount;
+	
+	private Double unitCost;
+	
+	private Double totalCost;
+	
+	private Long itemOrderProcessingId;
+	
+	private Long processingTransactionCount;
+	
+	private Long quantityReceived;
+	private  String itemCode;
+	private  String itemName;
+	private String itemStockStatus;
+	private Long transactionCount;
+	private String signatureKey;
+	private String onHoldNotes;
+	private String resumedNotes;
+	private Long adjustedQuantity;
+	private Long quantityAdjusted;
+	private Long quantityInStock;
+	private Long quantityTransferred;
+	private Long dispensedQuantity;
+	
+	private Long dispensedQuantitySum;
+	private Long dispensedQuantityMonth;
+	private String dispensedDateTime;
+	private Double totalReceivedCost;
+	
+	private String dateRange;
+	private String itemNameReport;
+	
+	private Long quantityBlocked;
+	private String dispensedMonth;
+	
+	DateFormatter formatter = new DateFormatter();
+
+	public void setExpiryDate(Date expiryDate) {
+		
+		this.expiryDate=formatter.formaDate(expiryDate);
+	}
+	
+	public void setDispensedDateTime(Date dispensedDateTime) {
+		this.dispensedDateTime=formatter.formaDate(dispensedDateTime);
+	}
+	
+	public void setDispensedMonth(Date dispensedMonth) {
+		this.dispensedMonth=formatter.formatMonth(dispensedMonth);
+	}
+	
+}

@@ -1,0 +1,12 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+
+public interface SlowMovingMedicationsDao {
+
+	List<PatientDispensedItemsTO> getSlowMovingMedication(PayloadBean payloadBean);
+
+}

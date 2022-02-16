@@ -1,0 +1,31 @@
+package com.edios.pms.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+
+public interface ItemStockAdjustmentApprovalDao extends BaseDao<ItemStockAdjustmentEntity> {
+
+	List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentRecords(ItemStockAdjustmentBean itemStockAdjustmentBean);
+
+	ItemStockAdjustmentEntityTO fetchItemStockAdjustmentInfo(Long id);
+
+	TransactionData fetchTransactionDataById(Long itemStockTransactionCount, Long itemStockId);
+
+	boolean updateItemStock(Long itemStockId, Long quantityOnHand, long l, Long lastModifiedBy, Long quantityAdjusted);
+
+	TransactionData fetchStockAdjustmentTransactionDataById(Long itemStockAdjustmentTransactionCount,
+			Long itemStockAdjustmentId);
+
+	boolean UpdateItemStockAdjustment(Long itemStockAdjustmentId, long l, Long lastModifiedBy, String adjustmentStatus, String approvalRejectionNotes,
+			Date adjustmentStatusDate);
+
+	List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentApprovedRecords(
+			ItemStockAdjustmentBean itemStockAdjustmentBean);
+
+}

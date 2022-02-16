@@ -1,0 +1,112 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.StockAdjustmentReportDao;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+
+@Repository
+public class StockAdjustmentReportDaoImpl extends BaseDaoImpl<ItemStockAdjustmentEntity>
+		implements StockAdjustmentReportDao {
+	@Autowired
+	MessageSource message;
+
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public List<ItemStockAdjustmentEntityTO> searchStockAdjustmentReport(PayloadBean payloadBean) {
+		List<ItemStockAdjustmentEntityTO> itemStockAdjustmentEntityTO = new ArrayList<>();
+		String sqlQuery = "";
+		try {
+			String datformat = message.getMessage("dateFormat", null, "", Locale.US);
+			String datefrom = null;
+			String dateto = null;
+			if (payloadBean.getFromDate() != null && payloadBean.getToDate() != null) {
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+				datefrom = formatter.format(payloadBean.getFromDate()) + " 00:00:00";
+				dateto = formatter.format(payloadBean.getToDate()) + " 23:59:59";
+			}
+
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select itemStocAdjust.adjustmentDate"
+					+ " as adjustmentDate ,itemStocAdjust.adjustmentQuantity As adjustmentQuantity ,"
+					+ "itemStocAdjust.witnessName AS witnessName,itemStocAdjust.adjustmentNotes AS adjustmentNotes,itemTable.itemName as itemName,itemTable.itemCode as itemCode,"
+					+ "concat(user.firstName,' ',COALESCE(user.lastName,'')) As adjustmentBy,itemStocAdjust.adjustmentStatus as adjustmentStatus,concat(approvedByUser.firstName,' ',COALESCE(approvedByUser.lastName,'')) As approvedBy "
+					+ "from ItemStockAdjustmentEntity itemStocAdjust "
+					+ "left join itemStocAdjust.itemStock as itemStock " + "left join itemStock.item as itemTable "
+					//+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " inner join UserEntity as user on itemStocAdjust.createdBy=user.userID left join itemStocAdjust.user as approvedByUser WHERE itemStocAdjust.recordType<>'D' and itemStocAdjust.adjustmentStatus='"+payloadBean.getSearchParameter()+"' "
+					+ "";
+			if (payloadBean.getItemName() == null || payloadBean.getItemName() == "") {
+				sqlQuery += " and itemStocAdjust.adjustmentDate >= '" + datefrom
+						+ "' AND  itemStocAdjust.adjustmentDate <= '" + dateto
+						+ "'  ORDER BY  itemStocAdjust.adjustmentDate desc";
+
+				return (List<ItemStockAdjustmentEntityTO>) session.createQuery(sqlQuery)
+						.setResultTransformer(Transformers.aliasToBean(ItemStockAdjustmentEntityTO.class)).list();
+			} else {
+				sqlQuery += " and itemStocAdjust.adjustmentDate >= '" + datefrom
+						+ "' AND  itemStocAdjust.adjustmentDate <= '" + dateto
+						+ "' and itemTable.itemName like '%"+ payloadBean.getItemName()+"%'  ORDER BY " + " itemStocAdjust.adjustmentDate desc";
+				itemStockAdjustmentEntityTO = (List<ItemStockAdjustmentEntityTO>) session.createQuery(sqlQuery)
+						.setResultTransformer(Transformers.aliasToBean(ItemStockAdjustmentEntityTO.class)).list();
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return itemStockAdjustmentEntityTO;
+		}
+		return itemStockAdjustmentEntityTO;
+	}
+
+	@Override
+	public List<PhysicalCountReportTO> searchPhysicalCountReport(PayloadBean payloadBean) {
+		List<PhysicalCountReportTO> physicalCountReportTOList = new ArrayList<>();
+		try {
+			String datformat = message.getMessage("dateFormat", null, "", Locale.US);
+
+			Session session = (Session) entityManager.getDelegate();
+			if (payloadBean.getItemName() == null || payloadBean.getItemName() == "") {
+				String sqlQuery = "select item.itemCode as itemCode , item.itemName as itemName,itemStoc.lotNo as lotNo,"
+						+ " itemStoc.expiryDate"
+						+ " as expiryDate,itemStoc.quantityOnHand as quantityOnHand, "
+						+ " itemStockInv.shelfLocations as shelfLocation,itemStockInv.defaultShelfLocations as defaultShelfLoc, "
+						+ " itemStockInv.secondDefaultShelfLocations as defaultShelfLoc2 from ItemStockEntity as itemStoc left join itemStoc.item as item "
+						+ " left join ItemInventorySettingEntity as itemStockInv on itemStockInv.item=item.itemId  where  item.recordType<>'D'  order by item.itemName ";
+
+				physicalCountReportTOList = (List<PhysicalCountReportTO>) session.createQuery(sqlQuery)
+//						.setParameter("itemClass", payloadBean.getItemClass())
+						.setResultTransformer(Transformers.aliasToBean(PhysicalCountReportTO.class)).list();
+			} else {
+				String sqlQuery = "select item.itemCode as itemCode , item.itemName as itemName,itemStoc.lotNo as lotNo,"
+						+ " itemStoc.expiryDate"
+						+ " as expiryDate,itemStoc.quantityOnHand as quantityOnHand, "
+						+ "itemStockInv.shelfLocations as shelfLocation,itemStockInv.defaultShelfLocations as defaultShelfLoc, "
+						+ "itemStockInv.secondDefaultShelfLocations as defaultShelfLoc2 from ItemStockEntity as itemStoc left join itemStoc.item as item "
+						+ "left join ItemInventorySettingEntity as itemStockInv on itemStockInv.item=item.itemId  where  "
+						+ " item.itemName=:itemName and item.recordType<>'D' order by item.itemName";
+
+				physicalCountReportTOList = (List<PhysicalCountReportTO>) session.createQuery(sqlQuery)
+//						.setParameter("itemClass", payloadBean.getItemClass())
+						.setParameter("itemName", payloadBean.getItemName())
+						.setResultTransformer(Transformers.aliasToBean(PhysicalCountReportTO.class)).list();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return physicalCountReportTOList;
+	}
+
+}

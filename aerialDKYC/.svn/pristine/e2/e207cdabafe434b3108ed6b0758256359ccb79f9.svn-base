@@ -1,0 +1,106 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.PatientDispensedItemEntity;
+import com.edios.pms.entity.PatientEntity;
+import com.edios.pms.entity.PatientPrescribedItemEntity;
+import com.edios.pms.entity.PatientPrescriptionEntity;
+import com.edios.pms.entity.to.DispenseMedicationsTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEncounterEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PatientPrescriptionEntityTO;
+
+public interface PatientDispensingDao extends BaseDao<PatientEntity> {
+	/*PharmacyLocationEntityTO getUserPharmacyLocation(Long userID);
+	
+	List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID);
+	
+	List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID);*/
+	
+	List<PatientEntityTO> getPatientDetails(PatientEntityTO payloadBean);
+	
+	PatientEntity getPatientDetailsById(Long patientId);
+	
+	List<PatientEncounterEntityTO> getPatientPatientEncounterDetailsById(PayloadBean payloadBean);
+	
+	List<PatientPrescriptionEntityTO> getPatientPatientPrescribedDetailsByEncounterId(Long encounterId);
+	
+	List<PatientDispensedItemsTO> getPerscribedItemsToBeDispensed(PatientDispensedItemsTO payloadBean);
+	
+	PatientDispensedItemEntity fetchPatientDispensedItemEntityById(Long dispensedItemId);
+	
+	boolean updatePatientDispensedItemEntity(PatientDispensedItemEntity objPatientDispensedItemEntity);
+	
+	boolean addPatientDispensedItemEntity(PatientDispensedItemEntity objPatientDispensedItemEntity);
+	
+	PatientPrescribedItemEntity fetchPrescribedItemEntityById(Long id);
+	
+	boolean updatePrescribedItemEntity(PatientPrescribedItemEntity objPatientPrescribedItemEntity);
+	
+	List<PatientPrescriptionEntityTO> fetchPrescribedItemStatus(Long prescriptionId);
+	
+	PatientPrescriptionEntity fetchPatientPrescriptionEntityById(Long id);
+	
+	boolean updatePatientPrescriptionEntity(PatientPrescriptionEntity objPatientPrescriptionEntity);
+	
+	TransactionData fetchTransactionDataOfPatientPrescription(Long patientPrescriptionId);
+	
+	boolean deletePatientDispensedItems(Long id);
+	
+	/*List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	Long addItemOrder(ItemOrderEntity ItemOrderEntity);
+	
+	boolean addItemOrderDetails(ItemOrderDetailEntity ItemOrderDetailEntity);
+	
+	List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean);
+	
+	ItemOrderEntity findItemOrderById(Long itemOrderId);
+	
+	List<ItemOrderDetailEntity> findItemOrderDetailsByItemOrderPK(Long itemOrderId);
+	
+	boolean updateItemOrder(ItemOrderEntity ItemOrderEntity);
+	
+	boolean updateItemOrderDetail(ItemOrderDetailEntity ItemOrderDetailEntity);
+	
+	TransactionData fetchTransactionDataById(Long id);
+	
+	TransactionData fetchTransactionDataOfItemOrderDetailById(Long id);*/
+	
+	PatientEntityTO getGenderDetailOfWorkStation(PayloadBean PayloadBean, HttpServletRequest request);
+	
+	List<DispenseMedicationsTO> getPendingSavedDraftPetientDetails(PayloadBean payloadBean) ;
+	
+	List<PatientEntityTO> getPatientDetailsByPrescriptionStatus(PayloadBean payloadBean);
+	
+	List<PatientEntityTO> getPatientDetailsUnderProccesing( PayloadBean payloadBean) ;
+	
+	List<PatientEntityTO> getPatientDetailsReadyToVerified( PayloadBean payloadBean);
+	
+	List<PatientEntityTO> getPatientDetailsReadyToDispensed( PayloadBean payloadBean);
+	
+	List<PatientEntityTO> getTroubledPatientDetails(PayloadBean payloadBean) ;
+	
+	boolean deleteDispensedItemDetailsById(Long dispensedItemId);
+	
+	PatientPrescriptionEntityTO getPatientPatientPrescribedDetailsByPrescribedItemId(Long prescribedItemId);
+	
+	PatientEntityTO getPatientAndPrescribedDetailsByEncounterId(Long encounterId);
+	
+	List<PatientDispensedItemsTO> getCompletedItemsDetailOfProcessedPatientPrescriptions(PayloadBean payloadBean);
+	
+	boolean updateDispensedItemStatusPending(String dispensedIds);
+	
+	ItemStockEntityTO fetchItemStockInfo(Long itemStockId);
+}

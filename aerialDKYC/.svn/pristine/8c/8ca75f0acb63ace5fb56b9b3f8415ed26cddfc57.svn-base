@@ -1,0 +1,57 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ClassificationItemDetailsEntityTO implements Serializable,Comparable<ClassificationItemDetailsEntityTO>{
+
+	private static final long serialVersionUID = -8185928745582432935L;
+
+	private Long classificationItemId;
+
+	private Long classificationItems;
+	
+	private Long itemId;
+	
+	private Long dispensedQuantity;
+	
+	private Double dispensedCost;
+	
+	private Double classificationPercentage;
+	
+	private Double cumulativePercentage;
+	
+	private String newItemClass;
+	
+	private String oldItemClass;
+
+	private Long transactionCount;
+	
+	private String itemName;
+	
+	private String itemCode;
+	
+	public ClassificationItemDetailsEntityTO(Double classificationPercentage) {
+		this.classificationPercentage=classificationPercentage;
+	}
+
+	@Override
+	public int compareTo(ClassificationItemDetailsEntityTO o) {
+		 if(classificationPercentage==o.classificationPercentage)    
+			 return 0;    
+			 else if(classificationPercentage<o.classificationPercentage)    
+			 return 1;    
+			 else    
+			 return -1;    
+	}
+
+}

@@ -1,0 +1,141 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemsBean extends AbstractBean{/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6646994670628610020L;
+	
+	
+
+	private Long itemId;
+	
+	private String itemCode;
+	
+	private String itemName;
+
+	private String din;
+		
+	private String gtin;
+	
+	private String dummyCode;
+	
+	private String itemGenericName;
+	
+	private String strength;
+	
+	private String strengthUnit;
+	
+//	private String itemClass;
+
+	private String volume;
+	
+
+	private String volumeUnit;
+	
+	
+	private String totalVolume;
+	
+	private String measurementUnit;
+	
+	private String form;
+	
+
+	private String route;
+	
+
+	private String combination;
+	
+	
+	private String itemStatus;
+	
+	
+	private String defaultSig;
+
+	
+	private String handlingInstructions;
+
+	
+	private String rxComments;
+
+	private String drugComments;
+
+
+	private String drugGroup;
+
+
+	private Date inactivatedDate;
+
+	
+	private String refrigerated;
+
+
+	private String narcotic;
+	
+	
+	private String reportable;
+
+	
+	private String controlled;
+
+
+	private String immunization;
+
+	
+	private String dispenseAsPack;
+
+
+	private String disableInventoryAdjust;
+
+	
+	private String orderAsPack;
+	
+
+	private String trackLotNumber;
+	
+
+	private String trackExpiry;
+
+
+	private Long transactionCount;
+
+	
+
+	private Integer userActivityId;
+
+	
+	private String ipAddress;
+
+
+	private Character recordType;
+
+	
+	private Integer createdBy;
+
+
+	private Date createdDate;
+
+
+	private Integer lastModifiedBy;
+
+
+	private Date lastModifiedDate;
+
+}

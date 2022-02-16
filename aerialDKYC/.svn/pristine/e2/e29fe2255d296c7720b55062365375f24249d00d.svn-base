@@ -1,0 +1,55 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.cdf.bean.security.UserBean;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class InventoryCountBean extends AbstractBean{
+	
+	private static final long serialVersionUID = -7701344515688962399L;
+
+	
+	private Long invCountId;
+	private String invCountName;
+	private String invCountType;
+	private Date invCountDate;
+	private String itemClass;
+	private Long noOfItems;
+	private Long countFrequency;
+	private String workingDays;
+	private Date countStartDate;
+	private String countMatched;
+	private String countedBy;
+	private String checkedBy;
+	private String countStatus;
+	private String notes;
+	private Long transactionCount;
+	private Long userActivityId;
+	private String ipAddress;
+	private Character recordType;
+	private Long createdBy;
+	private Long lastModifiedBy;
+	private Date createdDate;
+	private Date lastModifiedDate;
+	private PharmacyLocationBean pharmacyLocation;
+	private UserBean user;
+	
+	private List<PhysicalCountEntityTo>inventoryCountItemTOList; 
+	private List<PhysicalCountEntityTo>inventoryCountItemTOItemStockList; 
+	private List<CycleCountEntityTO> cycleCountItemTOList;
+	private String itemListId;
+	private String invCountItemList;
+}

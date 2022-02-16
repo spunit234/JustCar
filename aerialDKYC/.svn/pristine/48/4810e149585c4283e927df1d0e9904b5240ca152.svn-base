@@ -1,0 +1,75 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.CompoundItemDetailEntity;
+import com.edios.pms.entity.CompoundItemEntity;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+
+public interface CompoundItemDao extends BaseDao<CompoundItemEntity> {
+	/*PharmacyLocationEntityTO getUserPharmacyLocation(Long userID);
+	
+	List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID);
+	
+	List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID);*/
+	
+	List<ItemEntityTO> getCompoundItemDetails(PayloadBean payloadBean);
+	
+	List<ItemEntityTO> getItemDetailsWithCombinationStatus(PayloadBean payloadBean);
+	
+	boolean isCompoundItemNameExist(Long itemId,Long compoundItemId);
+	
+	Long addCompoundItemEntity(CompoundItemEntity objCompoundItemEntity);
+	
+	boolean addCompoundItemDetailEntity(CompoundItemDetailEntity objCompoundItemDetailEntity);
+	
+	List<CompoundItemEntityTO> getCompoundItemDetails(ConfigureCompoundItemsTO payloadBean);
+	
+	CompoundItemEntity findCompoundItemBeanDetailsById(Long compoundItemId);
+	
+	TransactionData fetchTransactionDataById(Long id);
+	
+	TransactionData fetchTransactionDataByCompoundItemDetailId(Long id);
+	
+	boolean updateCompoundItemEntity(CompoundItemEntity objCompoundItemEntity);
+	
+	boolean updateCompoundItemDetailEntity(CompoundItemDetailEntity objCompoundItemDetailEntity);
+	
+	boolean deleteCompoundItemDetailsById(DeleteRecords deleteRecords);
+	
+	/*List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandOfStoreDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	List<ReportsTO> fetchAutoOrdersMinimumQuantityItemDetails(PayloadBean payloadBean);
+	
+	Long addItemOrder(ItemOrderEntity ItemOrderEntity);
+	
+	boolean addItemOrderDetails(ItemOrderDetailEntity ItemOrderDetailEntity);
+	
+	List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean);
+	
+	ItemOrderEntity findItemOrderById(Long itemOrderId);
+	
+	List<ItemOrderDetailEntity> findItemOrderDetailsByItemOrderPK(Long itemOrderId);
+	
+	
+	
+	
+	
+	TransactionData fetchTransactionDataOfItemOrderDetailById(Long id);
+	
+	ItemStockEntityTO fetchDistributedQunatityByItemOrderDetailID( Long itemOrderDetailId);
+	
+	ReportsTO fetchRecorderQuantityOfItemCorrespondingPharmacyLocation(Long pharmacyLocationId,Long itemId);
+	
+	boolean deleteItemOrderDetailsById(DeleteRecords deleteRecords);*/
+}

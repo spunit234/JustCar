@@ -1,0 +1,61 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CycleCountEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+
+	//DO NOT CREATE DATE FORMATTER  IN THIS BEAN 
+	
+	private String itemCode;
+	private String itemName;
+	private Long quantityOnHand;
+	private Long countedQuantity;
+	private String quantityMatched;
+	private Long itemId;
+	private Long noOfItems;
+	private Long pharmacyLocationId;
+	private Boolean editFlag;
+	private String notes;
+	private String invCountName;
+	private Long invCountId;
+	private String invCountDate;
+	private String countedBy;
+	private String checkedBy;
+	private Long transactionCount;
+	private String countMatched;
+	private Long lastModifiedBy;
+	private String ipAddress;
+	private Long invCountItemId;
+	private String countStatus;
+	private String itemCountDate;
+	private Long createdBy;
+	
+	
+	private String lotNo;
+	private String expiryDate;
+	private Long packSize;
+	private Long itemStockId;
+	private String invCountItemIdList;
+	private String createdDate;
+
+		
+
+	
+
+	
+	
+}

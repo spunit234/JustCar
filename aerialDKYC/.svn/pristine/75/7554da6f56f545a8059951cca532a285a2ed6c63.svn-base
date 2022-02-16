@@ -1,0 +1,60 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemOrderDetailBean;
+import com.edios.pms.entity.ItemOrderDetailEntity;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyStoreEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+
+public interface CreateOrderDao extends BaseDao<ItemOrderEntity> {
+	PharmacyLocationEntityTO getUserPharmacyLocation(Long userID);
+	
+	List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID);
+	
+	List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID);
+	
+	List<ItemEntityTO> getItemDetails(PayloadBean payloadBean);
+	
+	List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandOfStoreDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	List<ReportsTO> fetchAutoOrdersMinimumQuantityItemDetails(PayloadBean payloadBean);
+	
+	Long addItemOrder(ItemOrderEntity ItemOrderEntity);
+	
+	boolean addItemOrderDetails(ItemOrderDetailEntity ItemOrderDetailEntity);
+	
+	List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean);
+	
+	ItemOrderEntity findItemOrderById(Long itemOrderId);
+	
+	List<ItemOrderDetailEntity> findItemOrderDetailsByItemOrderPK(Long itemOrderId);
+	
+	boolean updateItemOrder(ItemOrderEntity ItemOrderEntity);
+	
+	boolean updateItemOrderDetail(ItemOrderDetailEntity ItemOrderDetailEntity);
+	
+	TransactionData fetchTransactionDataById(Long id);
+	
+	TransactionData fetchTransactionDataOfItemOrderDetailById(Long id);
+	
+	ItemStockEntityTO fetchDistributedQunatityByItemOrderDetailID( Long itemOrderDetailId);
+	
+	ReportsTO fetchRecorderQuantityOfItemCorrespondingPharmacyLocation(Long pharmacyLocationId,Long itemId);
+	
+	boolean deleteItemOrderDetailsById(DeleteRecords deleteRecords);
+}

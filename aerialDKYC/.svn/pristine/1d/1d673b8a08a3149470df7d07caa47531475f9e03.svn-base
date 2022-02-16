@@ -1,0 +1,457 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.hibernate.type.StandardBasicTypes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.ReportDao;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.to.ItemOrderProcessingTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+import com.edios.pms.entity.to.ReportsTO;
+
+@Repository
+@SuppressWarnings({ "unchecked", "deprecation" })
+public class ReportDaoImpl extends BaseDaoImpl<ItemEntity> implements ReportDao {
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<ReportsTO> fetchExpiredItemDetails(PayloadBean payloadBean) {
+		SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyy-MM-dd");
+		Session session = (Session) entityManager.getDelegate();
+		Calendar calender=Calendar.getInstance();
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		int month=calender.get(Calendar.MONTH)+1; 
+		 int year=calender.get(Calendar.YEAR);
+		String whereClause="";
+		if(payloadBean.getSearchParameter().equals("Already Expired")) {
+			whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10)<'"+simpleDateFormat.format(new Date())+"'";
+		}else if(payloadBean.getSearchParameter().equals("Current Month")) {
+			if(month<=9)
+				whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) like ('%"+year+"-0"+(month)+"-%')";
+				else 
+					whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) like ('%"+year+"-"+(month)+"-%')";
+			
+		}
+		else if(payloadBean.getSearchParameter().equals("Next Month")) {
+			if(month==12) {
+				month=1;
+				year=year+1;
+			}
+			else
+				month+=1;
+			if(month<=9)
+			whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) like ('%"+year+"-0"+(month)+"-%')";
+			else 
+				whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) like ('%"+year+"-"+(month)+"-%')";
+		}
+		else if(payloadBean.getSearchParameter().equals("Next 3 Months")) {
+			calender.add(Calendar.MONTH, 1);
+			month=calender.get(Calendar.MONTH)+1;
+			//System.out.println(calender.get(Calendar.MONTH)+1);
+			if(month<=9)
+				whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) between '"+calender.get(Calendar.YEAR)+"-0"+(calender.get(Calendar.MONTH)+1)+"-01'";
+				else 
+					whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) between '"+calender.get(Calendar.YEAR)+"-"+(calender.get(Calendar.MONTH)+1)+"-01'";
+			
+			calender.add(Calendar.MONTH, 1);
+			calender.add(Calendar.MONTH, 1);
+			month=calender.get(Calendar.MONTH)+1;
+			//System.out.println(calender.getActualMaximum(Calendar.DAY_OF_MONTH));
+			if(month<=9)
+				whereClause+=" and '"+calender.get(Calendar.YEAR)+"-0"+(calender.get(Calendar.MONTH)+1)+"-"+calender.getActualMaximum(Calendar.DAY_OF_MONTH)+"'";
+				else 
+					whereClause+=" and '"+calender.get(Calendar.YEAR)+"-"+(calender.get(Calendar.MONTH)+1)+"-"+calender.getActualMaximum(Calendar.DAY_OF_MONTH)+"'";
+			/*if(month==12) {
+				month=1;
+				year=year+1;
+				if(month<=9)
+					whereClause="substr(itemStock.expiryDate,1,10) like ("+year+"-0"+month+1+"-,";
+					else 
+						whereClause="substr(itemStock.expiryDate,1,10) like ("+year+"-"+month+1+",";
+			}*/
+			
+		}
+		else if(payloadBean.getSearchParameter().equals("Date Range")) {
+			whereClause="SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10) between '"+simpleDateFormat.format(payloadBean.getFromDate())+"' and '"+simpleDateFormat.format(payloadBean.getToDate())+"'";
+		}
+		System.out.println("where clause is ::::"+whereClause);
+		String sqlQuery = "select itemDetail.itemName as itemName,itemDetail.itemCode as itemCode,itemStock.expiryDate as expiryDate,itemStock.lotNo as lotNo,"
+				+ " itemStock.quantityInStock as quantityReceived,itemStock.quantityOnHand as quantityOnHand,itemPackSizeDetail.packSize as packSize"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemStock.itemPackSize itemPackSizeDetail"
+				+ " where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID and "+whereClause;
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+
+	@Override
+	public List<ReportsTO> fetchOutOfStockItemDetails(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select itemDetail.itemName as itemName,itemDetail.itemCode as itemCode"
+				+ " ,sum(itemStock.quantityOnHand) as quantityOnHand"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemStock.itemPackSize itemPackSizeDetail"
+				+ " where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID group by itemDetail.itemId,itemDetail.itemName,itemDetail.itemCode having sum(itemStock.quantityOnHand)<="+payloadBean.getDaysCount()+" order by itemName asc";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+
+	@Override
+	public List<ReportsTO> fetchMinimumQuantityItemDetails(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select itemDetail.itemId as itemId,itemDetail.itemName as itemName,itemDetail.itemCode as itemCode"
+				+ " ,sum(itemStock.quantityOnHand) as quantityOnHand,iis.aoMinQuantity as aoMinQuantity"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " inner join ItemInventorySettingEntity iis on iis.item.itemId= itemDetail.itemId "
+				+ "  where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID and "
+				+ "iis.aoMinQuantity is not null and iis.pharmacyLocation.pharmacyLocationId=(select pharmacyLocation.pharmacyLocationId from PharmacyLocationUserEntity where userId.userID="+payloadBean.getId()+")"
+				+ " group by itemDetail.itemId,itemDetail.itemName,itemDetail.itemCode,iis.aoMinQuantity";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+
+	@Override
+	public PharmacyLocationEntityTO getUserPharmacyLocation(Long userID) {
+		List<PharmacyLocationEntityTO> objPharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select concat(pharmacyLoc.pharmacyLocationName,' ','(',site.siteName,')') as pharmacyLocationName from PharmacyLocationUserEntity plue left join plue.pharmacyLocation pharmacyLoc"
+					+ " left join pharmacyLoc.siteId site "
+					+ " left join plue.userId user"
+					+ " where user.userID =:userID";
+					objPharmacyLocationEntityTOList = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("userID", userID)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+			
+			if(objPharmacyLocationEntityTOList==null || objPharmacyLocationEntityTOList.isEmpty())
+			{
+				return null;
+			}
+			else {
+				return objPharmacyLocationEntityTOList.get(0);
+			}
+		
+		//return applicationParameterListTO;
+	}
+	
+
+	@Override
+	public List<ReportsTO> fetchProcessedOrderDetails(PayloadBean payloadBean) {
+		SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyy-MM-dd");
+		Session session = (Session) entityManager.getDelegate();
+		Calendar calender=Calendar.getInstance();
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		int month=calender.get(Calendar.MONTH)+1; 
+		 int year=calender.get(Calendar.YEAR);
+		String whereClause="";
+		String whereNativeClause="";
+		if(payloadBean.getSearchParameter().equals("Current Month")) {
+			if(month<=9) {
+				whereClause="SUBSTRING(CAST(itemOrder.orderDate AS string), 1, 10) like ('%"+year+"-0"+(month)+"-%')";
+				whereNativeClause="SUBSTRING(CAST(itemordere0_.ORDER_DATE AS varchar(255)), 1, 10) like ('%"+year+"-0"+(month)+"-%')";
+			}
+				else {
+					whereClause="SUBSTRING(CAST(itemOrder.orderDate AS string), 1, 10) like ('%"+year+"-"+(month)+"-%')";
+			whereNativeClause="SUBSTRING(CAST(itemordere0_.ORDER_DATE AS varchar(255)), 1, 10) like ('%"+year+"-"+(month)+"-%')";
+				}
+		}
+		else if(payloadBean.getSearchParameter().equals("Last Month")) {
+			if(month==1) {
+				month=12;
+				year=year-1;
+			}
+			else
+				month=month-1;
+			if(month<=9) {
+			whereClause="SUBSTRING(CAST(itemOrder.orderDate AS string), 1, 10) like ('%"+year+"-0"+(month)+"-%')";
+			whereNativeClause="SUBSTRING(CAST(itemordere0_.ORDER_DATE AS varchar(255)), 1, 10) like ('%"+year+"-0"+(month)+"-%')";
+			}
+			else 
+			{
+				whereClause="SUBSTRING(CAST(itemOrder.orderDate AS string), 1, 10) like ('%"+year+"-"+(month)+"-%')";
+				whereNativeClause="SUBSTRING(CAST(itemordere0_.ORDER_DATE AS varchar(255)), 1, 10) like ('%"+year+"-"+(month)+"-%')";
+			}
+		}
+		else if(payloadBean.getSearchParameter().equals("Date Range")) {
+			whereClause="SUBSTRING(CAST(itemOrder.orderDate AS string), 1, 10) between '"+simpleDateFormat.format(payloadBean.getFromDate())+"' and '"+simpleDateFormat.format(payloadBean.getToDate())+"'";
+			whereNativeClause="SUBSTRING(CAST(itemordere0_.ORDER_DATE AS  varchar(255)), 1, 10) between '"+simpleDateFormat.format(payloadBean.getFromDate())+"' and '"+simpleDateFormat.format(payloadBean.getToDate())+"'";
+		}
+		System.out.println("where clause is ::::"+whereClause);
+		String sqlQuery ="select itemOrder.itemOrderId as itemOrderId,itemOrder.indentNo as indentNo,itemOrder.orderDate as orderDate,"
+				+ "concat(u1.firstName,' ',coalesce(u1.lastName,'')) as orderCreatedBy,coalesce(pharmacyStore.pharmacyStoreName ,pharmacyLoc.pharmacyLocationName ) as orderProcessedLocation,"
+				+ "coalesce(concat(u3.firstName,' ',coalesce(u3.lastName,'')),concat(u2.firstName,' ',coalesce(u2.lastName,''))) as orderProcessedBy "
+				+ " from ItemOrderEntity itemOrder"
+				+ " inner join UserEntity u1 on u1.userID=itemOrder.createdBy"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemOrder.ofPharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemOrder.otPharmacyLocation pharmacyLoc"
+				+ " left join UserEntity u2 on u2.userID= pharmacyLoc.createdBy"
+				+ " left join itemOrder.otPharmacyStore pharmacyStore"
+				+ " left join UserEntity u3 on u3.userID= pharmacyStore.createdBy"
+				+ " where itemOrder.recordType<>'D' and pharmacyLocationUser.userId.userID=:userID and itemOrder.orderStatus='Processed' and "+whereClause+""
+				+ " group by itemOrder.itemOrderId,itemOrder.indentNo,itemOrder.orderDate "
+				+ " order by itemOrder.itemOrderId asc";
+		
+		/*String nativeSQL="select itemordere0_.ITEM_ORDER_ID as itemOrderId, itemordere0_.INDENT_NO as indentNo, itemordere0_.ORDER_DATE as orderDate,"
+				+ " pharmacylo3_.PHARMACY_LOCATION_NAME as orderProcessedLocation,pharmacyst4_.PHARMACY_STORE_NAME as orderProcessedStore,itemordere0_.ORDER_STATUS as col_5_0_,concat(u1.first_name,' ',coalesce(u1.last_name,'')) as orderCreatedBy"
+				+ " ,coalesce(concat(u3.first_name,' ',coalesce(u3.last_name,'')),concat(u2.first_name,' ',coalesce(u2.last_name,''))) as orderProcessedBy,count(iod.ITEM_ORDER_ID) as noOfItems "
+				 + " from item_orders itemordere0_"
+				 + " left join item_order_details iod on iod.ITEM_ORDER_ID=itemordere0_.ITEM_ORDER_ID "
+				  + " inner join users u1 on (u1.USER_ID=itemordere0_.created_By)"
+				 + " left outer join pharmacy_locations pharmacylo3_ on itemordere0_.OT_PHARMACY_LOCATION_ID=pharmacylo3_.PHARMACY_LOCATION_ID"
+						  + " left join users u2 on (u2.USER_ID=pharmacylo3_.created_By)"
+				 + " left outer join pharmacy_stores pharmacyst4_ on itemordere0_.OT_PHARMACY_STORE_ID=pharmacyst4_.PHARMACY_STORE_ID"
+				+ " left join users u3 on (u3.USER_ID=pharmacyst4_.created_By)"
+				  + " inner join pharmacy_location_users pharmacylo1_ on (itemordere0_.OF_PHARMACY_LOCATION_ID=pharmacylo1_.PHARMACY_LOCATION_ID)"
+				 + " where itemordere0_.RECORD_TYPE<>'D' and pharmacylo1_.USER_ID=:userID and itemordere0_.ORDER_STATUS='Processed' and "+whereNativeClause+" having count(iod.ITEM_ORDER_ID)!=0 order by itemordere0_.ITEM_ORDER_ID asc";
+
+		
+		return (List<ReportsTO>) session.createNativeQuery(nativeSQL).setParameter("userID", payloadBean.getId())
+				.addScalar("itemOrderId", StandardBasicTypes.LONG)
+				.addScalar("indentNo", StandardBasicTypes.STRING)
+				.addScalar("orderDate", StandardBasicTypes.STRING)
+				.addScalar("orderCreatedBy", StandardBasicTypes.STRING)
+				.addScalar("orderProcessedLocation", StandardBasicTypes.STRING)
+				.addScalar("orderProcessedStore", StandardBasicTypes.STRING)
+				.addScalar("orderProcessedBy", StandardBasicTypes.STRING)
+				.addScalar("noOfItems", StandardBasicTypes.LONG)
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();*/
+		
+		sqlQuery ="select itemOrder.itemOrderId as itemOrderId,itemOrder.indentNo as indentNo,itemOrder.orderDate as orderDate,"
+				+ "pharmacyStore.pharmacyStoreName as orderProcessedStore ,pharmacyLoc.pharmacyLocationName  as orderProcessedLocation,itemOrder.ofPharmacyLocation.pharmacyLocationName as orderCreatedBy,"
+				+ "count(itemOrderDetail.itemOrder.itemOrderId) as noOfItems "
+				+ " from ItemOrderDetailEntity itemOrderDetail"
+				+ " right join itemOrderDetail.itemOrder itemOrder"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemOrder.ofPharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemOrder.otPharmacyLocation pharmacyLoc"
+				+ " left join itemOrder.otPharmacyStore pharmacyStore"
+					+ " where itemOrder.recordType<>'D' and pharmacyLocationUser.userId.userID=:userID and itemOrder.orderStatus='Processed' and "+whereClause+""
+					+ " group by itemOrder.itemOrderId,itemOrder.indentNo,itemOrder.orderDate,pharmacyStore.pharmacyStoreName,pharmacyLoc.pharmacyLocationName,itemOrder.ofPharmacyLocation.pharmacyLocationName "
+							+ " order by itemOrder.itemOrderId asc";
+		
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+		
+	}
+
+	@Override
+	public List<ReportsTO> fetchProcessedItemOrderIdDetails(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery ="select itemOrderDetail.itemOrderDetailId as itemOrderDetailId"
+				+ " from ItemOrderDetailEntity itemOrderDetail"
+				+ " left join itemOrderDetail.itemOrder itemOrders"
+					+ " where itemOrderDetail.recordType<>'D' and itemOrders.itemOrderId=:itemOrderId  order by itemOrderDetail.itemOrderDetailId asc";
+		
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("itemOrderId", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	
+	}
+
+	/*@Override
+	public List<ReportsTO> fetchProcessedItemOrderDetails(String itemOrderDetailID) {
+		String dateFormat=messageSource.getMessage("dateFormat", null, "", Locale.US);
+		Session session = (Session) entityManager.getDelegate();
+		String sqlQuery ="select item.itemName as itemName,item.itemCode as itemCode,itemStock.lotNo as lotNo,DATE_FORMAT(itemStock.expiryDate,'" + dateFormat + "' ) as expiryDate,"
+				+ "packDetail.packSize as packSize,itemOrderDetail.orderQuantity as orderQuantity,itemStock.quantityInStock as quantityReceived,itemStock.quantityOnHand as quantityOnHand,itemStock.itemStockStatus as itemStockStatus"
+				+ " from ItemStockEntity itemStock"
+				+ " right join itemStock.itemOrderDetail itemOrderDetail"
+				+ " left join itemOrderDetail.item item"
+				+ " left join itemOrderDetail.itemPackSize packDetail"
+					+ " where itemStock.recordType<>'D' and itemStock.itemStockStatus='Active' and itemStock.itemOrderDetail.itemOrderDetailId in ("+itemOrderDetailID+") order by itemOrderDetail.itemOrderDetailId asc";
+		String sqlQuery="select itementity2_.ITEM_NAME as itemName, itementity2_.ITEM_CODE as itemCode, itemstocke0_.LOT_NO as lotNo,"
+		+ "itemstocke0_.EXPIRY_DATE as expiryDate, itempacksi3_.PACK_SIZE as packSize, itemorderd1_.ORDER_QUANTITY as orderQuantity,"
+		+ " itemstocke0_.QUANTITY_RECEIVED as quantityReceived, itemstocke0_.QUANTITY_ON_HAND as quantityOnHand, itemstocke0_.ITEM_STOCK_STATUS as itemStockStatus"
+		 + " from item_stock itemstocke0_"
+		 + " right outer join item_order_details itemorderd1_ on itemstocke0_.ITEM_ORDER_DETAIL_ID=itemorderd1_.ITEM_ORDER_DETAIL_ID"
+		 + " left outer join items itementity2_ on itemorderd1_.ITEM_ID=itementity2_.ITEM_ID"
+		  + " left outer join item_pack_sizes itempacksi3_ on itemorderd1_.PACK_SIZE_ID=itempacksi3_.PACK_SIZE_ID"
+		 + " where itemstocke0_.RECORD_TYPE<>'D' and itemstocke0_.ITEM_STOCK_STATUS='InStock' and"
+		 + " itemstocke0_.ITEM_ORDER_DETAIL_ID in ("+itemOrderDetailID+") order by itemorderd1_.ITEM_ORDER_DETAIL_ID asc";
+		return (List<ReportsTO>) session.createNativeQuery(sqlQuery)
+				.addScalar("itemName", StandardBasicTypes.STRING)
+				.addScalar("itemCode", StandardBasicTypes.STRING)
+				.addScalar("lotNo", StandardBasicTypes.STRING)
+				.addScalar("expiryDate", StandardBasicTypes.STRING)
+				.addScalar("quantityReceived", StandardBasicTypes.LONG)
+				.addScalar("orderQuantity", StandardBasicTypes.LONG)
+				.addScalar("packSize", StandardBasicTypes.LONG)
+				.addScalar("quantityOnHand", StandardBasicTypes.LONG)
+				.addScalar("itemStockStatus", StandardBasicTypes.STRING)
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	
+	}*/
+
+	public List<ItemStockEntityTO> getRecevicedConsumed(PayloadBean payloadBean) {
+		 List<ItemStockEntityTO> itemStockEntityTOList=null;
+			StringBuilder sqlQuery =new StringBuilder();
+			Session session = (Session) entityManager.getDelegate();
+			String fromDate = null;
+			String toDate = null;
+			String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+			if((payloadBean.getFromDate()!=null)) {
+			    	 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+			    	 fromDate= formatter.format(payloadBean.getFromDate())+" 00:00:00";  
+					 toDate= formatter.format(payloadBean.getToDate())+" 23:59:59";
+			}		 
+			try {
+				sqlQuery.append("SELECT itemStock.itemStockId AS itemStockId,item.itemName AS itemName,item.itemCode AS itemCode,itemStock.lotNo AS lotNo,itemStock.expiryDate as expiryDate, "
+						+ "itemStock.quantityInStock AS quantityInStock,itemStock.quantityOnHand AS quantityOnHand,sum(dispensed.dispensedQuantity) AS dispensedQuantity,itemStock.quantityTransferred"
+						+ " AS quantityTransferred,itemStock.quantityAdjusted AS quantityAdjusted,itemStock.quantityBlocked AS quantityBlocked,"
+						+ "itemStock.quantityReturned as quantityReturned"
+						+ " FROM PatientDispensedItemEntity dispensed"
+						+ " right JOIN  dispensed.itemStock as itemStock  LEFT JOIN itemStock.item item"
+						+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+						+ " WHERE itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID"
+						+ " AND coalesce(itemStock.lastModifiedDate,itemStock.createdDate)>'"+fromDate+"' AND coalesce(itemStock.lastModifiedDate,itemStock.createdDate)<'"+toDate+"' ");
+				if(payloadBean.getCustomParameter()!=null) {
+						sqlQuery.append(" AND item.itemName LIKE '%"+payloadBean.getCustomParameter()+"%'");
+				}
+				sqlQuery.append(" group by itemStock.itemStockId,item.itemName,item.itemCode,itemStock.lotNo,itemStock.expiryDate,"
+						+ "itemStock.quantityInStock,itemStock.quantityOnHand,itemStock.quantityTransferred,itemStock.quantityAdjusted,itemStock.quantityBlocked,itemStock.quantityReturned ORDER BY item.itemCode ASC");
+			itemStockEntityTOList = (List<ItemStockEntityTO>) session.createQuery(sqlQuery.toString()).setParameter("userID", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).list();	
+			}catch(Exception e ) {
+				e.printStackTrace();
+			}
+			
+		return itemStockEntityTOList;
+	}
+
+	@Override
+	public List<ReportsTO> fetchQuantityOnHandDetails(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select itemDetail.itemId as itemId,itemDetail.itemName as itemName,itemDetail.itemCode as itemCode"
+				+ " ,sum(itemStock.quantityOnHand) as quantityOnHand,sum(itemStock.quantityInStock) as quantityReceived,sum(itemStock.totalCost) as quantityReceivedCost,"
+				+ " sum(ceiling(itemStock.quantityOnHand/itemPackSizeDetail.packSize)*itemStock.unitCost) as quantityOnHandCost"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " left join itemStock.itemPackSize itemPackSizeDetail"
+				+ " where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID group by"
+				+ " itemDetail.itemId,itemDetail.itemId,itemDetail.itemName,itemDetail.itemCode having sum(itemStock.quantityOnHand)!=0 order by itemName asc";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+	
+	@Override
+	public List<ItemStockAdjustmentEntityTO> getAdjustedList(PayloadBean payloadBean) {
+	List<ItemStockAdjustmentEntityTO> itemStockAdjustmentEntityTOList=null;
+	String sql="";
+	String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+	Session session = (Session) entityManager.getDelegate();
+	try {
+		sql="SELECT adjustment.adjustmentDate AS adjustmentDate,adjustment.adjustmentQuantity as adjustmentQuantity,adjustment.witnessName As witnessName,"
+			+ "adjustment.adjustmentNotes AS adjustmentNotes,concat(user.firstName,' ',coalesce(user.lastName,'')) AS approvedBy ,concat(created.firstName,' ',coalesce(created.lastName,'')) AS adjustementBy"
+			+ " FROM ItemStockAdjustmentEntity adjustment LEFT JOIN adjustment.user user LEFT JOIN UserEntity created ON adjustment.createdBy = created.userID "
+			+ "WHERE adjustment.itemStock.itemStockId=:itemStockId AND adjustment.adjustmentStatus='Approved' ";
+		itemStockAdjustmentEntityTOList = (List<ItemStockAdjustmentEntityTO>) session.createQuery(sql).setParameter("itemStockId", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(ItemStockAdjustmentEntityTO.class)).list();	
+	}
+	catch(Exception e) 
+	{e.printStackTrace();
+	return itemStockAdjustmentEntityTOList;
+	}
+		return itemStockAdjustmentEntityTOList;
+	}
+
+	@Override
+	public List<PatientEntityTO> getPatientList(PayloadBean payloadBean) {
+		List<PatientEntityTO> patientEntityTOlist=null;
+		String sql="";
+		Session session = (Session) entityManager.getDelegate();
+		try {
+			sql="select concat(p.firstName,' ',coalesce(p.lastName,'')) AS patientName,concat(p.addressLine1,' ',coalesce(p.addressLine2,'')) AS address,"
+					+ "p.mobilePhone AS mobilePhone,dispensed.dispensedQuantity AS dispensedQuantity"
+					+ " FROM PatientDispensedItemEntity dispensed"
+					+ " left JOIN  dispensed.itemStock as itemStock"
+					+ " left join itemStock.item item"
+					+ " left join dispensed.patientPrescribedItem ppi"
+					+ " left join ppi.patientPrescription pp"
+					+ " left join pp.patientEncounter pe"
+					+ " left join pe.patient p"
+					+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " WHERE itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID and itemStock.itemStockId="+payloadBean.getDaysCount();
+				
+			patientEntityTOlist = (List<PatientEntityTO>) session.createQuery(sql).setParameter("userID", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(PatientEntityTO.class)).list();	
+		}
+		catch(Exception e) 
+		{e.printStackTrace();
+		return patientEntityTOlist;
+		}
+			return patientEntityTOlist;
+	}
+
+	
+	@Override
+	public List<ItemOrderProcessingTO> getOrderList(PayloadBean payloadBean) {
+		List<ItemOrderProcessingTO> itemOrderProcessingTOList=null;
+		String sql="";
+		Session session = (Session) entityManager.getDelegate();
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		try {
+			sql="SELECT ios.indentNo AS indentNo,ios.orderDate AS orderDate,iop.receivedQuantity AS receivedQuantity,ofPharmacyLocation.pharmacyLocationName AS  pharmacyLocationName "
+			+ " FROM ItemOrderProcessingEntity iop LEFT JOIN  iop.itemStock ist LEFT JOIN iop.itemOrderDetail iod LEFT JOIN "
+			+ "iod.itemOrder ios INNER JOIN PharmacyLocationUserEntity plu ON ist.pharmacyLocation = plu.pharmacyLocation LEFT JOIN ios.ofPharmacyLocation ofPharmacyLocation"
+			+ "  WHERE iop.itemStock="+payloadBean.getId()+" AND plu.userId="+Long.parseLong(payloadBean.getCustom1())+" AND ios.orderStatus='Processed'";
+			itemOrderProcessingTOList = (List<ItemOrderProcessingTO>) session.createQuery(sql).setResultTransformer(Transformers.aliasToBean(ItemOrderProcessingTO.class)).list();	
+		}
+		catch(Exception e) 
+		{e.printStackTrace();
+		return itemOrderProcessingTOList;
+		}
+			return itemOrderProcessingTOList;
+	}
+
+	@Override
+	public List<ReportsTO> fetchProcessedItemOrderDetails(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select itemDetail.itemName as itemName,itemDetail.itemCode as itemCode,itemStock.expiryDate as expiryDate,itemStock.lotNo as lotNo,"
+				+ "itemStock.quantityInStock as quantityReceived,itemStock.quantityOnHand as quantityOnHand,itemPackSizeDetail.packSize as packSize,"
+				+ "itemOrderDetail.orderQuantity as orderQuantity,sum(iop.distributedQuantity) as distributeQuantity"
+				+ " from ItemOrderProcessingEntity iop"
+				+ " right join iop.itemOrderDetail itemOrderDetail"
+				+ " left join iop.itemStock itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemOrderDetail.itemOrder itemOrder"
+				+ " left join itemStock.itemPackSize itemPackSizeDetail"
+				+ " where iop.recordType <>'D' and itemOrder.itemOrderId=:itemOrderId"
+				+ " group by iop.itemOrderDetail.itemOrderDetailId,itemDetail.itemName,itemDetail.itemCode,itemStock.expiryDate,itemStock.lotNo,"
+				+ "itemStock.quantityInStock,itemStock.quantityOnHand,itemPackSizeDetail.packSize,itemOrderDetail.orderQuantity";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("itemOrderId", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+
+
+}

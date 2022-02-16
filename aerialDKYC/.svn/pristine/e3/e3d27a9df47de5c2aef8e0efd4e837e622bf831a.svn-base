@@ -1,0 +1,43 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.ItemReturnDetailEntity;
+import com.edios.pms.entity.ItemReturnEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.entity.to.ReturnItemsToStoreEntityTO;
+
+public interface ReturnItemsToStoreDao extends BaseDao<ItemReturnEntity> {
+
+	List<ReturnItemsToStoreEntityTO> getReturnItemsDetails(PayloadBean payloadBean);
+	
+	List<ItemStockEntityTO> getItemStockDetailsByIdAndLocation(ItemStockEntityTO payloadBean);
+	
+	Long addItemReturnBeanDetail(ItemReturnEntity objItemReturnEntity);
+	
+	boolean addItemReturnDetailBeanDetail(ItemReturnDetailEntity objItemReturnDetailEntity);
+	
+	ItemReturnEntity findItemReturnDetailsById(Long id);
+	
+	List<ItemStockEntityTO> getItemStockDetailsByIdByReturnId(ItemStockEntityTO payloadBean);
+	
+	boolean deleteReturnItemDetailsById(Long Id);
+	
+	TransactionData fetchTransactionDataItemReturnDetailEntityById(Long Id);
+	
+	ItemReturnDetailEntity fetchItemReturnDetailEntityDetailbyId(Long Id);
+	
+	TransactionData fetchTransactionDataItemReturnEntityById(Long Id);
+	
+	boolean updateItemReturnEntityDetail(ItemReturnEntity objItemReturnEntity);
+	
+	boolean updateItemReturnDetailBeanDetail(ItemReturnDetailEntity objItemReturnDetailEntity);
+	
+	List<Long> fetchItemDetailsForFinalizedReturnOrder(Long Id);
+	
+	List<ReportsTO> fetchQuantityOnHandDetails(PayloadBean payloadBean,List<Long> itemIdList);
+}

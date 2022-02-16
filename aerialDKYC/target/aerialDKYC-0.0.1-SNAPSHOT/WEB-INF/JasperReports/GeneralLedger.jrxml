@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report12" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="6996776c-99e4-4583-8c26-2243a7d846ec">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="3"/>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#FFE2BF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#FFF3E6">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="Table Dataset 1" uuid="e0144869-143d-4899-a969-f95c3af9387e"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="transactionDate" class="java.lang.String"/>
+	<field name="transactionType" class="java.lang.String"/>
+	<field name="transactedBy" class="java.lang.String"/>
+	<field name="transactedQty" class="java.lang.String"/>
+	<field name="transactedValue" class="java.lang.Integer"/>
+	<field name="balanceQty" class="java.lang.String"/>
+	<field name="balanceValue" class="java.lang.Integer"/>
+	<field name="dateRange" class="java.lang.String"/>
+	<field name="itemNameReport" class="java.lang.String"/>
+	<background>
+		<band height="595" splitType="Stretch">
+			<image scaleImage="FillFrame">
+				<reportElement x="0" y="0" width="842" height="595" uuid="3098daf4-1630-4cc7-be4b-c9e85533df11"/>
+				<imageExpression><![CDATA["E:\\Medi-Land.jpg"]]></imageExpression>
+			</image>
+		</band>
+	</background>
+	<title>
+		<band height="130">
+			<image scaleImage="FillFrame">
+				<reportElement x="24" y="17" width="147" height="38" uuid="8c67f594-79dc-4260-88c0-d58dcf6578a1"/>
+				<imageExpression><![CDATA["E:\\logo.jpg"]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="24" y="72" width="794" height="20" uuid="e87c1758-6a32-4db9-8100-404d5717d10c"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["General Ledger Report as on ("+new SimpleDateFormat("dd-MMMM-yyyy HH:mm").format(new Date())+")"]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="24" y="110" width="794" height="20" uuid="1590f6ea-c8c8-4e59-9dbe-93f238ead4a2"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Item Name - " + $F{itemNameReport}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="24" y="92" width="794" height="18" uuid="7ed5fc37-7623-4975-9943-ef14d49f1601"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dateRange}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="50">
+			<staticText>
+				<reportElement x="28" y="30" width="113" height="20" uuid="906da8bd-59de-4e4b-aebc-e40848dc3739"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Transaction Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="141" y="30" width="113" height="20" uuid="651b14bd-702d-4330-9b20-f794560f0954"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Transaction Type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="254" y="30" width="113" height="20" uuid="178aa524-5795-4181-8492-11b7d3a80505"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Transacted By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="367" y="30" width="113" height="20" uuid="7b0b0d6d-06b2-41ce-80c8-cc89432aff72"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Transacted Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="480" y="30" width="113" height="20" uuid="a92dbf85-d1e2-47ae-b1bf-da8b180c3495"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Transacted Value]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="593" y="30" width="113" height="20" uuid="56a2f37f-57be-4db9-b917-9f161cd01377"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Balance Qty.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="706" y="30" width="113" height="20" uuid="b9d4fafe-7c9d-48ba-becf-05ae890e59fe"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Balance Value]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement x="28" y="0" width="113" height="20" uuid="7adad09a-3ffa-48ed-a84c-6375f3e81768"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{transactionDate}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="141" y="0" width="113" height="20" uuid="f1bbbaba-d937-492e-942f-da5119a096d2"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{transactionType}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="254" y="0" width="113" height="20" uuid="6caadb69-75ad-457f-8037-81a34adc4803"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{transactedBy}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="367" y="0" width="113" height="20" uuid="f4a87fc3-0c3c-4582-8aa0-d3af8476fc0d"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{transactedQty}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="480" y="0" width="113" height="20" uuid="36caa164-4095-44e7-b116-d80c8d19d5f6"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[new Integer( $F{transactedValue}.intValue() )]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="593" y="0" width="113" height="20" uuid="11ffdf03-a441-4160-aa15-4d4041a47c27"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{balanceQty}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="706" y="0" width="113" height="20" uuid="ca2ba1f0-83ae-4942-8075-344c651a5530"/>
+				<box>
+					<pen lineWidth="0.25"/>
+					<topPen lineWidth="0.25"/>
+					<leftPen lineWidth="0.25"/>
+					<bottomPen lineWidth="0.25"/>
+					<rightPen lineWidth="0.25"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[new Integer( $F{balanceValue}.intValue() )]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="50">
+			<textField evaluationTime="Report">
+				<reportElement x="440" y="13" width="40" height="20" uuid="58d4e5cf-95fd-4684-b704-09c50aba3b30"/>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="360" y="13" width="80" height="20" uuid="fa930de6-a266-4be6-9df3-07740a62c5db"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnFooter>
+</jasperReport>

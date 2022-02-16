@@ -1,0 +1,101 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="classification_item_details")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ClassificationItemDetailsEntity extends AbstractEntity{
+	private static final long serialVersionUID = 1L;
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="CLASSIFICATION_ITEM_ID")
+	private Long classificationItemId;
+	
+	@ManyToOne
+	@JoinColumn(name="CLASSIFICATION_ID")
+	private ClassificationItemsEntity classificationItems;
+	
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity item;
+	
+	@Column(name="DISPENSED_QUANTITY")
+	private Long dispensedQuantity;
+	
+	@Column(name="DISPENSED_COST")
+	private Double dispensedCost;
+	
+	@Column(name="CLASSIFICATION_PERCENTAGE")
+	private Double classificationPercentage;
+	
+	@Column(name="CUMULATIVE_PERCENTAGE")
+	private Double cumulativePercentage;
+	
+	@Column(name="NEW_ITEM_CLASS")
+	private String newItemClass;
+	
+	@Column(name="OLD_ITEM_CLASS")
+	private String oldItemClass;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+	
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Integer lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+	
+	@Transient
+	private String itemName;
+	
+	@Transient
+	private String itemCode;
+	
+	@Transient
+	private Long locationID;
+	
+	@Transient
+	private Long itemId;
+	
+	
+}

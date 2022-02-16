@@ -1,0 +1,434 @@
+package com.edios.pms.manager.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.entity.security.UserEntity;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.bean.InventoryCountItemsBean;
+import com.edios.pms.dao.CycleCountDao;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.InventoryCountItemsEntity;
+import com.edios.pms.entity.InventoryCountMismatchEntity;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+import com.edios.pms.manager.CycleCountManager;
+
+@Service("cycleCountManager")
+public class CycleCountManagerImpl extends AbstractManagerImpl<InventoryCountBean, InventoryCountEntity> implements CycleCountManager {
+	
+	@Autowired
+	CycleCountDao cycleCountDao;
+
+	@Autowired
+	MessageSource messageSource;
+
+	private void setAuditInfo(InventoryCountBean inventoryCountBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			inventoryCountBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			inventoryCountBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			inventoryCountBean.setCreatedDate(new Date());
+		} else {
+			inventoryCountBean.setTransactionCount(inventoryCountBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			inventoryCountBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			inventoryCountBean.setLastModifiedDate(new Date());
+			inventoryCountBean.setLastModifiedBy(inventoryCountBean.getLastModifiedBy());
+		}
+	}
+	
+	@Override
+	@Transactional
+	public PhysicalCountEntityTo fetchPhysicalCountItemsAndLocation(PayloadBean payloadBean) {
+		PhysicalCountEntityTo physicalCountEntityTo = new PhysicalCountEntityTo();
+		Long locationID = cycleCountDao.fetchPharmacyLocationID(payloadBean.getId());
+		Long noOfItems = cycleCountDao.fetchItemCount(locationID,payloadBean.getSearchParameter());
+		physicalCountEntityTo.setPharmacyLocationId(locationID);
+		physicalCountEntityTo.setNoOfItems(noOfItems);
+		return physicalCountEntityTo;
+	}
+
+	@Override
+	@Transactional
+	public Long addCycleCount(InventoryCountBean inventoryCountBean) {
+		InventoryCountEntity inventoryCountEntity = null;
+		setAuditInfo(inventoryCountBean, "newFlag");
+		inventoryCountEntity = mapper.map(inventoryCountBean, InventoryCountEntity.class);
+		Long cycleCountPK = cycleCountDao.addCycleCount(inventoryCountEntity);
+		List<PhysicalCountEntityTo> cycleCountEntityToList =  cycleCountDao.fetchCycleCountItems(inventoryCountBean.getPharmacyLocation().getPharmacyLocationId(),inventoryCountBean.getItemClass());
+		
+				Double noOfItemsPerDay =0.0;
+				String []weekDays=inventoryCountBean.getWorkingDays().split("");			
+				List<Long> nonWorkingDays= new ArrayList<>();
+				
+				//setting Non-working days in List. 1L for Sunday,2L for Monday and so on as per Calendar Class
+				if (weekDays[0].equals("0")) {
+					nonWorkingDays.add(2L);
+				}
+				if (weekDays[1].equals("0")) {
+					nonWorkingDays.add(3L);
+				}
+				if (weekDays[2].equals("0")) {
+					nonWorkingDays.add(4L);
+				}
+				if (weekDays[3].equals("0")) {
+					nonWorkingDays.add(5L);
+				}
+				if (weekDays[4].equals("0")) {
+					nonWorkingDays.add(6L);
+				}
+				if (weekDays[5].equals("0")) {
+					nonWorkingDays.add(7L);
+				}
+				if (weekDays[6].equals("0")) {
+					nonWorkingDays.add(1L);
+				}
+				
+				Calendar calendar = Calendar.getInstance();
+				Date countStartdate = inventoryCountBean.getCountStartDate();
+				
+				noOfItemsPerDay = Math.ceil((double)inventoryCountBean.getNoOfItems().longValue()/(double)inventoryCountBean.getCountFrequency().longValue()); 
+				//noOfItemsPerDay = 3.0;
+				Double  itemCounter =0.0;
+				
+				for(PhysicalCountEntityTo physicalCountEntityTo:cycleCountEntityToList) {
+					InventoryCountItemsEntity inventoryCountItemsEntity = new InventoryCountItemsEntity();
+					InventoryCountEntity inventoryCountEntity1 = new InventoryCountEntity();
+					inventoryCountEntity1.setInvCountId(cycleCountPK);
+					inventoryCountItemsEntity.setInvCount(inventoryCountEntity1);
+					ItemEntity itemEntity= new ItemEntity();
+					itemEntity.setItemId(physicalCountEntityTo.getItemId());
+					inventoryCountItemsEntity.setItem(itemEntity);
+					inventoryCountItemsEntity.setQuantityOnHand(physicalCountEntityTo.getQuantityOnHand());
+					inventoryCountItemsEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+					inventoryCountItemsEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+					inventoryCountItemsEntity.setCreatedDate(new Date());
+					inventoryCountItemsEntity.setCreatedBy(inventoryCountBean.getCreatedBy());
+					inventoryCountItemsEntity.setIpAddress(inventoryCountBean.getIpAddress());
+					
+					for(Long offDays:nonWorkingDays) {
+						calendar.setTime(countStartdate);
+						if (calendar.get(Calendar.DAY_OF_WEEK)==offDays.longValue()) {
+							calendar.add(Calendar.DATE, 1);
+						}
+						countStartdate = calendar.getTime();
+					}
+					
+					inventoryCountItemsEntity.setItemCountDate(countStartdate);
+					Long cycleCountItemPK = cycleCountDao.addCycleCountItems(inventoryCountItemsEntity);
+					itemCounter+=1.0;	
+
+					if (cycleCountItemPK>0 && (noOfItemsPerDay.doubleValue()==itemCounter)) {
+						calendar.setTime(countStartdate);
+						calendar.add(Calendar.DATE, 1);
+						countStartdate = calendar.getTime();
+						itemCounter=0.0;
+					}
+				}
+		return cycleCountPK;
+	}
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> fetchCycleCountItems(PhysicalCountEntityTo physicalCountEntityTo) {
+		return cycleCountDao.fetchPhysicalCountItems(physicalCountEntityTo.getInvCountId());
+	}
+
+	@Override
+	@Transactional
+	public String updateCycleCount(InventoryCountItemsBean inventoryCountItemsBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		
+		Long invCountItemMismacthCount=cycleCountDao.checkExistingRecordInCountItemMismatch(inventoryCountItemsBean.getInvCountItemId());
+		
+		if (invCountItemMismacthCount>0) {
+			Long deletedCountMismacth = cycleCountDao.deletePhysicalCountMisMatchItemsById(inventoryCountItemsBean.getInvCountItemId());
+		}
+		
+		TransactionData latestData = cycleCountDao.fetchInvCountItemTransactionDataById(inventoryCountItemsBean.getInvCountItemId());
+		if (latestData.getTransactionCount() > (inventoryCountItemsBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		inventoryCountItemsBean.setTransactionCount(inventoryCountItemsBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+		inventoryCountItemsBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+		inventoryCountItemsBean.setLastModifiedDate(new Date());
+		
+		InventoryCountItemsEntity inventoryCountItemsEntity = mapper.map(inventoryCountItemsBean, InventoryCountItemsEntity.class);
+		resultFlag = cycleCountDao.updateCycleCount(inventoryCountItemsEntity);
+
+		if (resultFlag) {
+			resultString="UPDATED";
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String updateAllCycleCountItems(InventoryCountBean inventoryCountBean) throws TransactionFailedException {
+		Long invCountItemMismacthCount=cycleCountDao.checkAllExistingRecordInCountItemMismatch(inventoryCountBean.getInvCountItemList());
+		if (invCountItemMismacthCount>0) {
+			Long deletedCountMismatch = cycleCountDao.deleteAllPhysicalCountMisMatchItemsById(inventoryCountBean.getInvCountItemList());
+		}
+		for(CycleCountEntityTO cycleCountEntityTO:inventoryCountBean.getCycleCountItemTOList()) {
+			
+			TransactionData latestData = cycleCountDao.fetchInvCountItemTransactionDataById(cycleCountEntityTO.getInvCountItemId());
+			if (latestData.getTransactionCount() > (cycleCountEntityTO.getTransactionCount())) {
+				//return "TransactionFailed";
+				throw new TransactionFailedException("TransactionFailed");
+			}
+			if (latestData.getRecordType() == 'D') {
+				return "recordDeleted";
+			}
+			
+		Long updatePK = cycleCountDao.updateCycleCountItems(cycleCountEntityTO,inventoryCountBean.getLastModifiedBy(),inventoryCountBean.getIpAddress());
+			
+		}
+		
+		return "UPDATED";
+	}
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> fetchStockItems(PhysicalCountEntityTo physicalCountEntityTo) {
+		return cycleCountDao.fetchStockItems(physicalCountEntityTo.getItemId(),physicalCountEntityTo.getPharmacyLocationId());
+	}
+
+	@Override
+	@Transactional
+	public String updateInventoryItemAndAddMismatchItem(InventoryCountItemsBean inventoryCountItemsBean) {
+		Long deletedCountMismatch=0L;
+		Long invCountItemMismacthPK = 0L;
+		Long lastPKMismatch=0L;
+		String result="";
+		
+		invCountItemMismacthPK=	cycleCountDao.checkExistingRecordInCountItemMismatch(inventoryCountItemsBean.getInvCount().getInvCountId());
+			
+		if(invCountItemMismacthPK>0){
+			deletedCountMismatch = cycleCountDao.deletePhysicalCountMisMatchItemsById(inventoryCountItemsBean.getInvCountItemId());
+		}
+		
+		TransactionData latestData = cycleCountDao.fetchInvCountItemTransactionDataById(inventoryCountItemsBean.getInvCountItemId());
+		if (latestData.getTransactionCount() > (inventoryCountItemsBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		CycleCountEntityTO cycleCountEntityTO = new CycleCountEntityTO();
+		cycleCountEntityTO.setCountedQuantity(inventoryCountItemsBean.getCountedQuantity());
+		cycleCountEntityTO.setQuantityMatched(inventoryCountItemsBean.getQuantityMatched());
+		cycleCountEntityTO.setInvCountItemId(inventoryCountItemsBean.getInvCountItemId());
+		cycleCountEntityTO.setTransactionCount(inventoryCountItemsBean.getTransactionCount());
+		
+		Long count = cycleCountDao.updateCycleCountItems(cycleCountEntityTO,inventoryCountItemsBean.getLastModifiedBy(),inventoryCountItemsBean.getIpAddress());
+	
+		if (count>0) {
+			
+			for (PhysicalCountEntityTo physicalCountEntityTo : inventoryCountItemsBean.getInventoryCountMismatchToList()) {
+				if (physicalCountEntityTo.getCountedQuantity().longValue()!=physicalCountEntityTo.getQuantityOnHand().longValue()) {
+					InventoryCountMismatchEntity inventoryCountMismatchEntity = new InventoryCountMismatchEntity();
+					InventoryCountItemsEntity inventoryCountItemEntity = new InventoryCountItemsEntity();
+					ItemStockEntity itemStockEntity = new ItemStockEntity();
+					inventoryCountItemEntity.setInvCountItemId(inventoryCountItemsBean.getInvCountItemId());
+					inventoryCountMismatchEntity.setInvCountItem(inventoryCountItemEntity);
+					itemStockEntity.setItemStockId(physicalCountEntityTo.getItemStockId());
+					
+					inventoryCountMismatchEntity.setItemStock(itemStockEntity);
+					inventoryCountMismatchEntity.setQuantityOnHand(physicalCountEntityTo.getQuantityOnHand());
+					inventoryCountMismatchEntity.setCountedQuantity(physicalCountEntityTo.getCountedQuantity());
+					inventoryCountMismatchEntity.setNotes(physicalCountEntityTo.getNotes());
+					inventoryCountMismatchEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+					inventoryCountMismatchEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+					inventoryCountMismatchEntity.setCreatedDate(new Date());
+					inventoryCountMismatchEntity.setIpAddress(inventoryCountItemsBean.getIpAddress());
+					inventoryCountMismatchEntity.setCreatedBy(inventoryCountItemsBean.getCreatedBy());
+					lastPKMismatch = cycleCountDao.insertPhysicalCountMismatchItems(inventoryCountMismatchEntity);	
+				}
+			}
+			if (lastPKMismatch>0) {
+				result="ADDED";
+			}
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> fetchStockItemsOnEdit(PhysicalCountEntityTo physicalCountEntityTo) {
+		Long invCountItemsPK=cycleCountDao.fetchInvCountItemsPk(physicalCountEntityTo);
+		List<Long> itemStockList = cycleCountDao.fetchItemStockIdFromInvCountMismatch(invCountItemsPK);
+		return cycleCountDao.fetchStockItemsOnEdit(physicalCountEntityTo.getItemId(),physicalCountEntityTo.getPharmacyLocationId(),invCountItemsPK,itemStockList);
+	}
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> searchCycleCount(PayloadBean payloadBean) {
+		Long locationID =  cycleCountDao.fetchPharmacyLocationID(payloadBean.getId());
+		return cycleCountDao.searchCycleCount(payloadBean,locationID);
+	}
+
+	@Override
+	@Transactional
+	public InventoryCountBean searchCycleCountById(PayloadBean payloadBean) {
+		InventoryCountBean inventoryCountBean = null;
+		List<PhysicalCountEntityTo> physicalCountEntityToList=null;
+		try {
+			//Long locationID =  cycleCountDao.fetchPharmacyLocationID(payloadBean.getUserId());
+			InventoryCountEntity inventoryCountEntity = cycleCountDao.searchCycleCountById(payloadBean.getId());
+			if (inventoryCountEntity instanceof InventoryCountEntity)
+				inventoryCountBean = mapper.map(inventoryCountEntity, InventoryCountBean.class);
+			
+			
+			if (inventoryCountBean.getCountStatus().equals("InProgress")) {
+				physicalCountEntityToList=cycleCountDao.fetchPhysicalCountItems(payloadBean.getId());
+			}
+			else {
+				physicalCountEntityToList=cycleCountDao.fetchFinalizedPhysicalCountItems(payloadBean.getId());
+			}
+				 
+				inventoryCountBean.setInventoryCountItemTOList(physicalCountEntityToList);
+			return inventoryCountBean;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public String updateInvCycleCount(InventoryCountBean inventoryCountBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		
+		TransactionData latestData = cycleCountDao.fetchTransactionDataById(inventoryCountBean.getInvCountId());
+		if (latestData.getTransactionCount() > (inventoryCountBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		setAuditInfo(inventoryCountBean, "editFlag");
+		InventoryCountEntity inventoryCountEntity = mapper.map(inventoryCountBean, InventoryCountEntity.class);
+		resultFlag = cycleCountDao.updateInvCycleCount(inventoryCountEntity);
+
+		if (resultFlag) {
+			resultString="UPDATED";
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String finalizeCycleCount(InventoryCountBean inventoryCountBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		Long lastPKStockAdjustment = 0L;
+		Long nonMatchedRecordsCount=0L;
+		
+//		Long pendingItemsCount = cycleCountDao.fetchPendingInvCountItems(inventoryCountBean.getInvCountId());
+//		
+//		if (pendingItemsCount>0) {
+//			return "PENDING";
+//		}
+//		else {
+			nonMatchedRecordsCount=	cycleCountDao.checkForNonMatchedRecordsInInvCountItems(inventoryCountBean.getInvCountId());
+//		}
+		
+		if (nonMatchedRecordsCount>0) {
+			inventoryCountBean.setCountMatched("No");
+		}
+		else {
+			inventoryCountBean.setCountMatched("Yes");
+		}
+		
+		TransactionData latestData = cycleCountDao.fetchTransactionDataById(inventoryCountBean.getInvCountId());
+		if (latestData.getTransactionCount() > (inventoryCountBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		setAuditInfo(inventoryCountBean, "editFlag");
+		InventoryCountEntity inventoryCountEntity = mapper.map(inventoryCountBean, InventoryCountEntity.class);
+		resultFlag = cycleCountDao.updateInvCycleCount(inventoryCountEntity);
+
+		if (resultFlag) {
+		List<Long> invCountItemsPKList = cycleCountDao.checkAllExistingRecordsInInventoryCountItems(inventoryCountBean.getInvCountId());
+			if (invCountItemsPKList.size()>0) {
+				List<InventoryCountMismatchEntity> inventoryCountMismatchEntityList = cycleCountDao.fetchInventoryMismatchItemsByIds(invCountItemsPKList);
+				SimpleDateFormat format = new SimpleDateFormat("dd-MMM-yyyy");
+				for(InventoryCountMismatchEntity inventoryCountMismatchEntity:inventoryCountMismatchEntityList) {
+					ItemStockAdjustmentEntity itemStockAdjustmentEntity = new ItemStockAdjustmentEntity();
+					itemStockAdjustmentEntity.setAdjustmentDate(new Date());
+					itemStockAdjustmentEntity.setAdjustmentNotes(inventoryCountBean.getInvCountName()+"-"+format.format(inventoryCountBean.getInvCountDate())+"-"+inventoryCountBean.getCountedBy());
+					itemStockAdjustmentEntity.setAdjustmentQuantity(inventoryCountMismatchEntity.getQuantityOnHand()-inventoryCountMismatchEntity.getCountedQuantity());
+					itemStockAdjustmentEntity.setAdjustmentStatus("Pending");
+					itemStockAdjustmentEntity.setCreatedBy(inventoryCountBean.getCreatedBy());
+					itemStockAdjustmentEntity.setCreatedDate(new Date());
+					itemStockAdjustmentEntity.setItemStock(inventoryCountMismatchEntity.getItemStock());
+					itemStockAdjustmentEntity.setIpAddress(inventoryCountBean.getIpAddress());
+					itemStockAdjustmentEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+					itemStockAdjustmentEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+					UserEntity userEntity = new UserEntity();
+					userEntity.setUserID(inventoryCountBean.getUser().getUserID());
+					itemStockAdjustmentEntity.setUser(userEntity);
+					itemStockAdjustmentEntity.setWitnessName(inventoryCountBean.getCheckedBy());
+					lastPKStockAdjustment = cycleCountDao.insertStockAdjustment(itemStockAdjustmentEntity);
+				}
+				if (lastPKStockAdjustment>0) {
+					resultString="ADDED";
+				}
+			}
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public InventoryCountBean fetchCycleCount(PayloadBean payloadBean) {
+		InventoryCountEntity inventoryCountEntity = cycleCountDao.searchCycleCountById(payloadBean.getId());
+		InventoryCountBean inventoryCountBean = new InventoryCountBean();
+		if (inventoryCountEntity instanceof InventoryCountEntity)
+			inventoryCountBean = mapper.map(inventoryCountEntity, InventoryCountBean.class);
+		return inventoryCountBean;
+	}
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> fetchFinalizedCycleCountItems(PhysicalCountEntityTo physicalCountEntityTo) {
+		return cycleCountDao.fetchFinalizedPhysicalCountItems(physicalCountEntityTo.getInvCountId());
+	}
+
+	@Override
+	@Transactional
+	public Long checkPendingItems(PayloadBean payloadBean) {
+		return cycleCountDao.fetchPendingInvCountItems(payloadBean.getId());
+	}
+
+	
+
+
+
+}

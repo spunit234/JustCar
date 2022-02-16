@@ -1,0 +1,139 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.entity.to.PharmacyStoreTO;
+import com.edios.pms.manager.PharmacyStoreManager;
+
+@RestController
+public class PharmacyStoreController extends AbstractController {
+
+	@Autowired
+	MessageSource messageSource;
+	@Autowired
+	PharmacyStoreManager pharmacyStoreManager;
+
+	@PostMapping("/fetch-pharmacy-autoLookUp")
+	public ResponseEntity<List<PharmacyStoreTO>> fetchPharmacyLookUp(@RequestBody PayloadBean payloadBean) {
+		List<PharmacyStoreTO> pharmacyStoreTOList = null;
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			pharmacyStoreTOList = pharmacyStoreManager.fetchPharmacyLookUp();
+			return new ResponseEntity<List<PharmacyStoreTO>>(pharmacyStoreTOList, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+
+	@PostMapping("/add-Pharmacy")
+	public BaseResponse addPharmacy(@RequestBody PharmacyStoreBean pharmacyStoreBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			pharmacyStoreBean.setIpAddress(request.getRemoteAddr());
+
+			String resultString = pharmacyStoreManager.addPharmacy(pharmacyStoreBean);
+			if (resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED", messageSource
+						.getMessage("duplicateFieldMessage", new Object[] { "Store Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED", messageSource
+						.getMessage("duplicateFieldMessage", new Object[] { "Store Code" }, "", Locale.US));
+			}
+
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+
+	@PostMapping("/fetch-Pharmacy")
+	public ResponseEntity<List<PharmacyStoreTO>> fetchPharmacy(@RequestBody PayloadBean payloadBean) {
+
+		List<PharmacyStoreTO> pharmacyStoreTO = null;
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			pharmacyStoreTO = pharmacyStoreManager.fetchPharmacy(payloadBean.getSearchParameter());
+			return new ResponseEntity<List<PharmacyStoreTO>>(pharmacyStoreTO, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+
+	@PostMapping("/edit-pharmacy")
+	public ResponseEntity<PharmacyStoreBean> editPharmacy(@RequestBody PayloadBean payloadBean) {
+		PharmacyStoreBean pharmacyStoreBean = null;
+		try {
+			if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+				pharmacyStoreBean = pharmacyStoreManager.findPharmacyById(payloadBean.getId());
+
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return new ResponseEntity<PharmacyStoreBean>(pharmacyStoreBean, HttpStatus.OK);
+		}
+		return new ResponseEntity<PharmacyStoreBean>(pharmacyStoreBean, HttpStatus.OK);
+	}
+
+	@PostMapping("/delete-Pharmacy")
+	public BaseResponse deletePharmacy(@RequestBody DeleteRecords deleteRecords) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = pharmacyStoreManager.deletePharmacy(deleteRecords);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+
+	@PostMapping("/update-Pharmacy")
+	public BaseResponse updatePharmacy(@RequestBody PharmacyStoreBean pharmacyStoreBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			pharmacyStoreBean.setIpAddress(request.getRemoteAddr());
+			String resultString = pharmacyStoreManager.updatePharmacy(pharmacyStoreBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Store Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Store Code" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+}

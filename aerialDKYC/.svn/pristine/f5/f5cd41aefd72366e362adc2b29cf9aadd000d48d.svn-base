@@ -1,0 +1,307 @@
+package com.edios.pms.controller;
+
+
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.PatientMedicalPrescriptionDetailBean;
+import com.edios.pms.entity.to.DispenseMedicationsTO;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PatientPrescriptionEntityTO;
+import com.edios.pms.manager.PatientDispensingManager;
+
+
+@RestController
+public class PatientDispensingController extends AbstractController {
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	PatientDispensingManager patientDispensingManager;
+	
+	@PostMapping("/get-patient-details")
+	public ResponseEntity<List<PatientEntityTO>> getPatientDetails(@RequestBody PatientEntityTO payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getPatientDetails(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+
+	@PostMapping("/get-patient-details-by-id")
+	public ResponseEntity<PatientMedicalPrescriptionDetailBean> getPatientDetailsById(@RequestBody PayloadBean payloadBean) {
+		PatientMedicalPrescriptionDetailBean objPatientMedicalPrescriptionDetailBean=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPatientMedicalPrescriptionDetailBean = patientDispensingManager.getPatientDetailsById(payloadBean);
+				return new ResponseEntity<PatientMedicalPrescriptionDetailBean>(objPatientMedicalPrescriptionDetailBean, HttpStatus.OK);
+			}else{
+				return new ResponseEntity<>(null, HttpStatus.OK);
+			}
+		
+	}
+	
+	@PostMapping("/get-patient-prescribed-items-detail")
+	public ResponseEntity<List<PatientPrescriptionEntityTO>> getPatientPatientPrescribedDetailsByEncounterId(@RequestBody PayloadBean payloadBean) {
+		List<PatientPrescriptionEntityTO> objPatientPrescriptionEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPatientPrescriptionEntityTOList = patientDispensingManager.getPatientPatientPrescribedDetailsByEncounterId(payloadBean);
+				return new ResponseEntity<List<PatientPrescriptionEntityTO>>(objPatientPrescriptionEntityTOList, HttpStatus.OK);
+			}else{
+				return new ResponseEntity<>(null, HttpStatus.OK);
+			}
+		
+	}
+	
+	@PostMapping("/get-dispensed-items-detail")
+	public ResponseEntity<List<PatientDispensedItemsTO>> getPerscribedItemsToBeDispensed(@RequestBody PatientDispensedItemsTO payloadBean) {
+		List<PatientDispensedItemsTO> objPatientDispensedItemsTOList=null;
+			objPatientDispensedItemsTOList = patientDispensingManager.getPerscribedItemsToBeDispensed(payloadBean);
+				return new ResponseEntity<List<PatientDispensedItemsTO>>(objPatientDispensedItemsTOList, HttpStatus.OK);
+			
+		
+	}
+	
+	@PostMapping("/dispense-medicine-to-patient")
+	public BaseResponse dispenseMedicineToPatient(@RequestBody PatientDispensedItemsTO objPatientDispensedItemsTO, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = patientDispensingManager.dispenseMedicineToPatient(objPatientDispensedItemsTO,request);
+		 if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("ADDED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+		
+	@PutMapping("/work-station-gender")
+	public BaseResponse getGenderDetailOfWorkStation(@RequestBody PayloadBean PayloadBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = patientDispensingManager.getGenderDetailOfWorkStation(PayloadBean,request);
+			if (resultString.equalsIgnoreCase("GENDERNOTASSIGNED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "GENDER_NOT_ASSIGNED", messageSource.getMessage("genderMessage", new Object[] { request.getRemoteAddr() }, "", Locale.US));
+			} else if (resultString.contains("Male")||resultString.contains("Female")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "GENDER_ASSIGNED",resultString);
+			} 
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PutMapping("/robot-dispensing-for-work-station")
+	public BaseResponse checkRobotDispensingForWorkStation(@RequestBody PayloadBean PayloadBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = patientDispensingManager.checkRobotDispensingForWorkStation(PayloadBean,request);
+				baseResponse = new BaseResponse(HttpStatus.OK, "ROBOT_DISPENSING", resultString);
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/get-pending-saved-draft-patient-detail")
+	public ResponseEntity<List<DispenseMedicationsTO>> getPendingSavedDraftPetientDetails(@RequestBody PayloadBean payloadBean) {
+		List<DispenseMedicationsTO> objDispenseMedicationsTOList=null;
+		objDispenseMedicationsTOList = patientDispensingManager.getPendingSavedDraftPetientDetails(payloadBean);
+				return new ResponseEntity<List<DispenseMedicationsTO>>(objDispenseMedicationsTOList, HttpStatus.OK);
+			
+		
+	}
+	@PostMapping("/get-patient-details-by-prescription-status")
+	public ResponseEntity<List<PatientEntityTO>> getPatientDetailsByPrescriptionStatus(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getPatientDetailsByPrescriptionStatus(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/get-patient-details-of-under-proccessing")
+	public ResponseEntity<List<PatientEntityTO>> getPatientDetailsUnderProccesing(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getPatientDetailsUnderProccesing(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/get-patient-details-ready-to-verified")
+	public ResponseEntity<List<PatientEntityTO>> getPatientDetailsReadyToVerified(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getPatientDetailsReadyToVerified(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/get-patient-details-ready-to-dispensed")
+	public ResponseEntity<List<PatientEntityTO>> getPatientDetailsReadyToDispensed(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getPatientDetailsReadyToDispensed(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/get-troubled-patient-details")
+	public ResponseEntity<List<PatientEntityTO>> getTroubledPatientDetails(@RequestBody PayloadBean payloadBean) {
+		List<PatientEntityTO> objPatientEntityTOList=null;
+		objPatientEntityTOList = patientDispensingManager.getTroubledPatientDetails(payloadBean);
+			return new ResponseEntity<List<PatientEntityTO>>(objPatientEntityTOList, HttpStatus.OK);
+		
+	}
+	
+	
+	@PostMapping("/delete-dispensed-item-details")
+	public BaseResponse deleteDispensedItemDetailsById(@RequestBody PatientDispensedItemsTO deleteRecords) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = patientDispensingManager.deleteDispensedItemDetailsById(deleteRecords);
+		 if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/get-prescribed-item-detail-by-id")
+	public ResponseEntity<PatientPrescriptionEntityTO> getPatientPatientPrescribedDetailsByPrescribedItemId(@RequestBody PatientDispensedItemsTO payloadBean) {
+		PatientPrescriptionEntityTO objPatientPrescriptionEntityTO=null;
+		objPatientPrescriptionEntityTO = patientDispensingManager.getPatientPatientPrescribedDetailsByPrescribedItemId(payloadBean.getPrescribedItemId());
+			return new ResponseEntity<PatientPrescriptionEntityTO>(objPatientPrescriptionEntityTO, HttpStatus.OK);
+		
+	}
+	
+	
+	@PostMapping("/fetch-prescription-status")
+	public BaseResponse fetchPrescribedItemsStatus(@RequestBody PatientPrescriptionEntityTO payloadBean) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = patientDispensingManager.fetchPrescribedItemsStatus(payloadBean.getPatientPrescriptionId());
+		 if (resultString.equalsIgnoreCase("DISPENSED")||resultString.equalsIgnoreCase("NOTDISPENSED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, resultString, "");
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/get-patient-prescription-detail")
+	public ResponseEntity<PatientEntityTO> getPatientAndPrescribedDetailsByEncounterId(@RequestBody PayloadBean payloadBean) {
+		PatientEntityTO objPatientEntityTO=null;
+		objPatientEntityTO = patientDispensingManager.getPatientAndPrescribedDetailsByEncounterId(payloadBean.getId());
+				return new ResponseEntity<PatientEntityTO>(objPatientEntityTO, HttpStatus.OK);
+			
+		
+	}
+	
+	@PostMapping("/get-completed-items-detail-to-verify")
+	public ResponseEntity<List<PatientDispensedItemsTO>> getCompletedItemsDetailOfProcessedPatientPrescriptions(@RequestBody PayloadBean payloadBean) {
+		List<PatientDispensedItemsTO> objPatientDispensedItemsTOList=null;
+		objPatientDispensedItemsTOList = patientDispensingManager.getCompletedItemsDetailOfProcessedPatientPrescriptions(payloadBean);
+			return new ResponseEntity<List<PatientDispensedItemsTO>>(objPatientDispensedItemsTOList, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/update-dispensed-item-status-verified")
+	public BaseResponse verfiedDispensedItems(@RequestBody PatientDispensedItemsTO payloadBean) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = patientDispensingManager.verfiedDispensedItems(payloadBean);
+		 if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	
+	@PostMapping("/dispense-verified-medications-to-patient")
+	public BaseResponse dispenseVerifiedMedicationsToPatient(@RequestBody PatientEntityTO objPatientEntityTO, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = patientDispensingManager.dispenseVerifiedMedicationsToPatient(objPatientEntityTO,request);
+		 if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+	@PutMapping("/trouble-reslove-patient-prescription")
+	public BaseResponse troublePatientPrescription(@RequestBody PatientEntityTO objPatientEntityTO, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = patientDispensingManager.troublePatientPrescription(objPatientEntityTO,request);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, resultString, "");
+			} 
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Something went wrong! please try again later.");
+		}
+	}
+}

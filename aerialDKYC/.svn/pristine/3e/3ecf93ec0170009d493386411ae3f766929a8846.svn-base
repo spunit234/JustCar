@@ -1,0 +1,468 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.bean.common.ApplicationParameterListBean;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemCodeLinkageBean;
+import com.edios.pms.bean.ItemDrugSubstitutionBean;
+import com.edios.pms.bean.ItemInventorySettingBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.dao.ItemsDao;
+import com.edios.pms.entity.ItemCodeLinkageEntity;
+import com.edios.pms.entity.ItemDrugSubstitutionEntity;
+import com.edios.pms.entity.ItemInventorySettingEntity;
+import com.edios.pms.entity.ItemPackSizeEntity;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.ItemsEntity;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+import com.edios.pms.manager.ItemsManager;
+
+@Service("itemsManager")
+public class ItemsManagerImpl extends AbstractManagerImpl<ItemsBean, ItemsEntity> implements ItemsManager {
+
+	@Autowired
+	ItemsDao itemsDao;
+	
+	
+	@Override
+	@Transactional
+	public String addItemConfiguration(ItemsBean itemsBean) {	
+		String resultString = "";
+		boolean resultFlag = false;
+		setAuditInfo(itemsBean, "newFlag");
+		ItemsEntity itemsEntity = mapper.map(itemsBean,ItemsEntity.class);
+		resultFlag = itemsDao.addItemConfiguration(itemsEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+
+	private void setAuditInfo(ItemsBean itemsBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			itemsBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			itemsBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			itemsBean.setCreatedDate(new Date());
+		} else {
+			itemsBean.setTransactionCount(
+					itemsBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			itemsBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			itemsBean.setLastModifiedDate(new Date());
+		}
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemsEnityTO> fetchItems(Integer accountId,String searchParameter) {	
+		return itemsDao.fetchItems(accountId,searchParameter);
+	}
+
+	@Override
+	@Transactional
+	public ItemsBean findItemById(Long id) {
+		ItemsBean  itemsBean= null;
+		ItemsEntity itemsEntity = itemsDao.findItemById(id);
+		if(itemsEntity instanceof ItemsEntity)
+			itemsBean = mapper.map(itemsEntity, ItemsBean.class);
+		return itemsBean;
+	}
+	
+	@Override
+	@Transactional
+	public String updateItem(ItemsBean itemsBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = itemsDao.fetchTransactionDataById(itemsBean.getItemId());
+		if (latestData.getTransactionCount() > (itemsBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		//setAuditInfo(itemsBean, "editFlag");
+		itemsBean.setTransactionCount(itemsBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+		itemsBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+		ItemsEntity itemsEntity = mapper.map(itemsBean,ItemsEntity.class);
+		resultFlag = itemsDao.updateItem(itemsEntity);
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public String deleteItem(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		
+		//Long record = itemsDao.checkItemUsageInItemStockAndItemOrderDetails(deleteRecords.getId());
+		
+		
+		
+		TransactionData latestData = itemsDao.fetchTransactionDataById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		resultFlag = itemsDao.deleteItem(deleteRecords.getId(), deleteRecords.getModifiedBy());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+	
+	@Override
+	@Transactional
+	public List<ItemEntityTO> fetchParameterList(String searchParameter) {
+		return itemsDao.fetchParameterList(searchParameter);
+	}
+//-------------------second Tab----------------//
+
+	
+	@Override
+	@Transactional
+	public List<ItemInventorySettingsTo> fetchPharmacyLocationNameAuto(Long userID) {
+		return itemsDao.fetchPharmacyLocationNameAuto(userID);
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemInventorySettingsTo> fetchPharmacyLocationCodeAuto() {
+		return itemsDao.fetchPharmacyLocationCodeAuto();
+	}
+
+
+	@Override
+	@Transactional
+	public String addInventorySetting(ItemInventorySettingBean itemInventorySettingBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		Long pk=0L;
+		itemInventorySettingBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+		itemInventorySettingBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		itemInventorySettingBean.setCreatedDate(new Date());
+		ItemInventorySettingEntity itemInventorySettingEntity = mapper.map(itemInventorySettingBean,ItemInventorySettingEntity.class);
+		resultFlag = itemsDao.addInventorySetting(itemInventorySettingEntity);
+		if (resultFlag) {
+			ItemTransactionEntity itemTransactionEntity = new ItemTransactionEntity();
+			itemTransactionEntity.setPharmacyLocation(itemInventorySettingEntity.getPharmacyLocation());
+			itemTransactionEntity.setItem(itemInventorySettingEntity.getItem());
+			itemTransactionEntity.setTransactionDate(new Date());
+			itemTransactionEntity.setTransactionType("Opening Balance");
+			itemTransactionEntity.setTransactionQuantity(0L);
+			itemTransactionEntity.setTransactionQuantityCost(0.0);
+			itemTransactionEntity.setBalanceQuantity(0L);
+			itemTransactionEntity.setBalanceQuantityCost(0.0);
+			itemTransactionEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			itemTransactionEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			itemTransactionEntity.setCreatedBy(itemInventorySettingEntity.getCreatedBy());
+			itemTransactionEntity.setCreatedDate(new Date());
+			
+			pk = itemsDao.addItemTransaction(itemTransactionEntity);
+			
+			
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemInventorySettingsTo> fetchInventorySettings(Long itemID) {
+		return itemsDao.fetchInventorySettings(itemID);
+	}
+
+
+	@Override
+	@Transactional
+	public ItemInventorySettingBean editInventorySettings(Long id) {
+		ItemInventorySettingBean  itemInventorySettingBean= null;
+		ItemInventorySettingEntity itemInventorySettingEntity = itemsDao.editInventorySettings(id);
+		if(itemInventorySettingEntity instanceof ItemInventorySettingEntity)
+			itemInventorySettingBean = mapper.map(itemInventorySettingEntity, ItemInventorySettingBean.class);
+		return itemInventorySettingBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateInventorySetting(ItemInventorySettingBean itemInventorySettingBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = itemsDao.fetchInventoryTransactionDataById(itemInventorySettingBean.getInventorySettingId());
+		if (latestData.getTransactionCount() > (itemInventorySettingBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		itemInventorySettingBean.setTransactionCount(itemInventorySettingBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+		itemInventorySettingBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+		itemInventorySettingBean.setLastModifiedDate(new Date());
+		ItemInventorySettingEntity itemsEntity = mapper.map(itemInventorySettingBean,ItemInventorySettingEntity.class);
+		resultFlag = itemsDao.updateInventorySetting(itemsEntity);
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public String addPackSize(ItemPackSizeBean itemPackSizeBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		itemPackSizeBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+		itemPackSizeBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		itemPackSizeBean.setCreatedDate(new Date());
+		ItemPackSizeEntity itemPackSizeEntity = mapper.map(itemPackSizeBean,ItemPackSizeEntity.class);
+		resultFlag = itemsDao.addPackSize(itemPackSizeEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemPackSizeEntityTO> fetchItemPackSize(Long itemID) {
+		return itemsDao.fetchItemPackSize(itemID);
+	}
+
+
+	@Override
+	@Transactional
+	public ItemPackSizeBean editItemPackSize(Long packSizeid) {
+		ItemPackSizeBean  itemPackSizeBean= null;
+		ItemPackSizeEntity itemPackSizeEntity = itemsDao.editItemPackSize(packSizeid);
+		if(itemPackSizeEntity instanceof ItemPackSizeEntity)
+			itemPackSizeBean = mapper.map(itemPackSizeEntity, ItemPackSizeBean.class);
+		return itemPackSizeBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateItemPackSize(ItemPackSizeBean itemPackSizeBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = itemsDao.fetchPackSizeTransactionDataById(itemPackSizeBean.getPackSizeId());
+		if (latestData.getTransactionCount() > (itemPackSizeBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		itemPackSizeBean.setTransactionCount(itemPackSizeBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+		itemPackSizeBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+		itemPackSizeBean.setLastModifiedDate(new Date());
+		ItemPackSizeEntity itemPackSizeEntity = mapper.map(itemPackSizeBean,ItemPackSizeEntity.class);
+		resultFlag = itemsDao.updateItemPackSize(itemPackSizeEntity);
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public Boolean checkItemsRecord(Long itemId, Long pharmacyLocationId) {
+		return itemsDao.checkItemsRecord(itemId,pharmacyLocationId);
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemEntityTO> fetchDrugSubstitutionAutoLookUpList(Long itemId) {
+		return itemsDao.fetchDrugSubstitutionAutoLookUpList(itemId);
+	}
+
+
+	@Override
+	@Transactional
+	public String addDrugSubstitution(ItemDrugSubstitutionBean itemDrugSubstitutionBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		itemDrugSubstitutionBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+		itemDrugSubstitutionBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		itemDrugSubstitutionBean.setCreatedDate(new Date());
+		ItemDrugSubstitutionEntity itemDrugSubstitutionEntity = mapper.map(itemDrugSubstitutionBean,ItemDrugSubstitutionEntity.class);
+		resultFlag = itemsDao.addDrugSubstitution(itemDrugSubstitutionEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemDrugSubstitutionEntityTO> fetchDrugSubstitution(Long itemID) {
+		return itemsDao.fetchDrugSubstitution(itemID);
+	}
+
+
+	@Override
+	@Transactional
+	public ItemDrugSubstitutionBean editDrugSubstitution(Long drugSubstitutionid) {
+		ItemDrugSubstitutionBean  itemDrugSubstitutionBean= null;
+		ItemDrugSubstitutionEntity itemDrugSubstitutionEntity = itemsDao.editDrugSubstitution(drugSubstitutionid);
+		if(itemDrugSubstitutionEntity instanceof ItemDrugSubstitutionEntity)
+			itemDrugSubstitutionBean = mapper.map(itemDrugSubstitutionEntity, ItemDrugSubstitutionBean.class);
+		return itemDrugSubstitutionBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateDrugSubstitution(ItemDrugSubstitutionBean itemDrugSubstitutionBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = itemsDao.fetchDrugSubstitutionTransactionDataById(itemDrugSubstitutionBean.getDrugSubstitutionId());
+		if (latestData.getTransactionCount() > (itemDrugSubstitutionBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		itemDrugSubstitutionBean.setTransactionCount(itemDrugSubstitutionBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+		itemDrugSubstitutionBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+		itemDrugSubstitutionBean.setLastModifiedDate(new Date());
+		ItemDrugSubstitutionEntity itemDrugSubstitutionEntity = mapper.map(itemDrugSubstitutionBean,ItemDrugSubstitutionEntity.class);
+		resultFlag = itemsDao.updateDrugSubstitution(itemDrugSubstitutionEntity);
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public String addItemCodeLinkage(ItemCodeLinkageBean itemCodeLinkageBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		itemCodeLinkageBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+		itemCodeLinkageBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		itemCodeLinkageBean.setCreatedDate(new Date());
+		ItemCodeLinkageEntity itemCodeLinkageEntity = mapper.map(itemCodeLinkageBean,ItemCodeLinkageEntity.class);
+		resultFlag = itemsDao.addItemCodeLinkage(itemCodeLinkageEntity);
+		if (resultFlag) {
+			return "ADDED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public List<ItemCodeLinkageEntityTO> fetchCodeLinkage(Long itemID) {
+		return itemsDao.fetchCodeLinkage(itemID);
+	}
+
+
+	@Override
+	@Transactional
+	public ItemCodeLinkageBean editCodeLinkage(Long codeLinkageId) {
+		ItemCodeLinkageBean  itemCodeLinkageBean= null;
+		ItemCodeLinkageEntity itemCodeLinkageEntity = itemsDao.editCodeLinkage(codeLinkageId);
+		if(itemCodeLinkageEntity instanceof ItemCodeLinkageEntity)
+			itemCodeLinkageBean = mapper.map(itemCodeLinkageEntity, ItemCodeLinkageBean.class);
+		return itemCodeLinkageBean;
+	}
+
+
+	@Override
+	@Transactional
+	public String updateCodeLinkage(ItemCodeLinkageBean itemCodeLinkageBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = itemsDao.fetchCodeLinkageTransactionDataById(itemCodeLinkageBean.getCodeLinkageId());
+		if (latestData.getTransactionCount() > (itemCodeLinkageBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		itemCodeLinkageBean.setTransactionCount(itemCodeLinkageBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+		itemCodeLinkageBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+		itemCodeLinkageBean.setLastModifiedDate(new Date());
+		ItemCodeLinkageEntity itemCodeLinkageEntity = mapper.map(itemCodeLinkageBean,ItemCodeLinkageEntity.class);
+		resultFlag = itemsDao.updateCodeLinkage(itemCodeLinkageEntity);
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public boolean checkExistingDrugSubstitutes(Long substituteItemId,Long ItemId) {
+		return itemsDao.checkExistingDrugSubstitutes(substituteItemId,ItemId);
+	}
+
+
+	@Override
+	@Transactional
+	public boolean checkExistingPackSizes(Long packSize, Long itemId) {
+		return itemsDao.checkExistingPackSizes(packSize,itemId);
+	}
+
+
+	@Override
+	@Transactional
+	public Boolean checkItemsInventoryRecord(Long itemId, Long pharmacyLocationId, Long inventorySettingId) {
+		return itemsDao.checkItemsInventoryRecord(itemId,pharmacyLocationId,inventorySettingId);
+	}
+
+
+	
+
+
+	
+
+
+
+		
+	}
+
+
+	
+	
+
+

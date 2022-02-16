@@ -1,0 +1,42 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+
+public interface ItemStockAdjustmentDao extends BaseDao<ItemStockAdjustmentEntity> {
+
+	List<ItemStockEntityTO> fetchItemStock(String itemCode, String itemName, Long pharmacyLocationId);
+
+	ItemStockEntityTO fetchItemStockInfo(Long id);
+
+	TransactionData fetchTransactionDataById(Long itemStockId);
+
+	boolean updateItemStock(Long itemStockId, Long itemStockQuantityOnHand, Long transactionCount, Long modifiedBy, Long quantityAdjusted );
+
+	boolean insertItemStockAdjustment(ItemStockAdjustmentEntity itemStockAdjustmentEntity);
+
+	List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentRecords(PayloadBean payloadBean, Long pharmacyLocationId);
+
+	List<UserEntityTO> fetchuserlist(String values);
+
+	List<ItemStockAdjustmentEntityTO> fetchApprovalRoleList(PayloadBean payloadBean);
+
+	String fetchApplicationParameterValues(String searchParameter);
+
+	Long fetchPharmacyLocationId(Long user);
+
+	Long checkPendingRequestInStockAdjustment(PayloadBean payloadBean);
+
+
+
+
+
+}

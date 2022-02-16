@@ -1,0 +1,17 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+
+public interface StockAdjustmentReportDao extends BaseDao<ItemStockAdjustmentEntity>{
+
+	List<ItemStockAdjustmentEntityTO> searchStockAdjustmentReport(PayloadBean payloadBean);
+
+	List<PhysicalCountReportTO> searchPhysicalCountReport(PayloadBean payloadBean);
+
+}

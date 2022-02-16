@@ -1,0 +1,23 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+
+public interface BatchRecallManager extends AbstractManager {
+
+	List<ItemStockEntityTO> fetchItemStock(ItemStockEntityTO itemStockEntityTO);
+
+	String updateItemStockHold(List<ItemStockBean> itemStockBeanList, HttpServletRequest request);
+
+	String updateItemStockResume(List<ItemStockBean> itemStockBeanList, HttpServletRequest request);
+
+	List<PatientEntityTO> fetchPatientList(PayloadBean payloadBean);
+
+}

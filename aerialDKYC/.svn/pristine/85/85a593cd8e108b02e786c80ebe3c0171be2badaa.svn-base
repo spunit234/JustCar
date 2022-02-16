@@ -1,0 +1,16 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+
+public interface StockReportDao extends BaseDao<ItemStockEntity> {
+
+	List<PhysicalCountReportTO> fetchStockReport(PayloadBean payloadBean, Long locationID);
+
+	Long fetchPharmacyLocationID(Long id); 
+
+}

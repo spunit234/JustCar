@@ -1,0 +1,512 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.bean.ItemBean;
+import com.edios.pms.bean.ItemOrderBean;
+import com.edios.pms.bean.ItemOrderDetailBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.dao.CreateOrderDao;
+import com.edios.pms.dao.ReportDao;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.ItemOrderDetailEntity;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyStoreEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.manager.CreateOrderManager;
+
+@Service("createOrderManagerImpl")
+public class CreateOrderManagerImpl extends AbstractManagerImpl<ItemOrderBean,ItemOrderEntity > implements CreateOrderManager {
+
+	@Autowired
+	CreateOrderDao createOrderDao;
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	@Transactional
+	public PharmacyLocationEntityTO getUserPharmacyLocation(Long userID) {
+		// TODO Auto-generated method stub
+		return createOrderDao.getUserPharmacyLocation(userID);
+	}
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID) {
+		// TODO Auto-generated method stub
+		return createOrderDao.getUserCorrespondingPharmacyLocation(userID);
+	}
+
+	@Override
+	@Transactional
+	public List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID) {
+		// TODO Auto-generated method stub
+		return createOrderDao.getUserPharmacyStore(userID);
+	}
+
+	@Override
+	@Transactional
+	public List<ItemEntityTO> getItemDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return createOrderDao.getItemDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return createOrderDao.getItemPackSizeDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public ItemStockEntityTO fetchItemQuantityOnHandDetail(ItemStockEntityTO itemStockEntityTO) {
+		// TODO Auto-generated method stub
+		return createOrderDao.fetchItemQuantityOnHandDetail(itemStockEntityTO);
+	}
+
+	@Override
+	@Transactional
+	public String createOrder(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+		// TODO Auto-generated method stub
+		String resultString="";
+		boolean resultFlag;
+		ItemOrderBean itemOrderBean=CreateOrderCompositeBean.getObjItemOrderBean();
+		itemOrderBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfItemOrderBean(itemOrderBean,"newFlag");
+		ItemOrderEntity objItemOrderEntity=mapper.map(itemOrderBean, ItemOrderEntity.class);
+		Long itemOrderPk=createOrderDao.addItemOrder(objItemOrderEntity);
+		if(itemOrderPk!=null) {
+			itemOrderBean.setItemOrderId(itemOrderPk);
+			for(ItemOrderDetailBean objItemOrderDetailBean:CreateOrderCompositeBean.getObjItemOrderDetailBeanList()) {
+				objItemOrderDetailBean.setItemOrder(itemOrderBean);
+				objItemOrderDetailBean.setIpAddress(request.getRemoteAddr());
+				setAuditInfoOfItemOrderDetailBean(objItemOrderDetailBean,"newFlag");
+				ItemOrderDetailEntity objItemOrderDetailEntity=mapper.map(objItemOrderDetailBean, ItemOrderDetailEntity.class);
+				objItemOrderDetailEntity.setCreatedBy(itemOrderBean.getCreatedBy());
+				resultFlag=createOrderDao.addItemOrderDetails(objItemOrderDetailEntity);
+				if(resultFlag)
+					resultString="ADDED";
+			}
+		}
+		return resultString;
+	}
+	
+	
+	private void setAuditInfoOfItemOrderBean(ItemOrderBean ItemOrderBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemOrderBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemOrderBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemOrderBean.setCreatedDate(new Date());
+		} else {
+			ItemOrderBean.setTransactionCount(ItemOrderBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemOrderBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemOrderBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	private void setAuditInfoOfItemOrderDetailBean(ItemOrderDetailBean ItemOrderDetailBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ItemOrderDetailBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ItemOrderDetailBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ItemOrderDetailBean.setCreatedDate(new Date());
+		} else {
+			ItemOrderDetailBean.setTransactionCount(ItemOrderDetailBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ItemOrderDetailBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ItemOrderDetailBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+	@Override
+	@Transactional
+	public List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return createOrderDao.getItemOrderDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public CreateOrderCompositeBean findItemOrderDetailsById(Long itemOrderId,String type) {
+		// TODO Auto-generated method stub
+		CreateOrderCompositeBean objCreateOrderCompositeBean=new CreateOrderCompositeBean();
+		ItemOrderBean itemOrderBean=null;
+		List<ItemOrderDetailBean> itemOrderDetailList=null;
+		
+		itemOrderBean=mapper.map(createOrderDao.findItemOrderById(itemOrderId),ItemOrderBean.class);
+	//	itemOrderDetailList=
+//				for(ItemOrderDetailEntity ItemOrderDetailEntity:createOrderDao.findItemOrderDetailsByItemOrderPK(itemOrderId)) {
+//					itemOrderDetailList.add(mapper.map(ItemOrderDetailEntity, ItemOrderDetailBean.class));
+//				}
+		if(itemOrderBean.getOtPharmacyLocation()!=null) {
+			PharmacyLocationBean objPharmacyLocationBean=new PharmacyLocationBean();
+			objPharmacyLocationBean.setPharmacyLocationId(itemOrderBean.getOtPharmacyLocation().getPharmacyLocationId());
+			objPharmacyLocationBean.setPharmacyLocationName(itemOrderBean.getOtPharmacyLocation().getPharmacyLocationName());
+			itemOrderBean.setOtPharmacyLocation(objPharmacyLocationBean);
+		}else {
+			PharmacyStoreBean objPharmacyStoreBean=new PharmacyStoreBean();
+			objPharmacyStoreBean.setPharmacyStoreId(itemOrderBean.getOtPharmacyStore().getPharmacyStoreId());
+			objPharmacyStoreBean.setPharmacyStoreName(itemOrderBean.getOtPharmacyStore().getPharmacyStoreName());
+			itemOrderBean.setOtPharmacyStore(objPharmacyStoreBean);
+		}
+		objCreateOrderCompositeBean.setObjItemOrderBean(itemOrderBean);
+		for(ItemOrderDetailBean itemDetail:itemOrderBean.getItemOrderDetails()) {
+			//Item Bean 
+			ItemBean objItemBean= new ItemBean();
+			objItemBean.setItemId(itemDetail.getItem().getItemId());
+			objItemBean.setItemName(itemDetail.getItem().getItemName());
+			objItemBean.setItemCode(itemDetail.getItem().getItemCode());
+			objItemBean.setOrderAsPack(itemDetail.getItem().getOrderAsPack());
+			itemDetail.setItemName(itemDetail.getItem().getItemName());
+			itemDetail.setItemCode(itemDetail.getItem().getItemCode());
+			itemDetail.setItem(objItemBean);
+			
+			itemDetail.setItemOrder(null);
+			
+			//Pack Size
+			ItemPackSizeBean objItemPackSizeBean=new ItemPackSizeBean();
+			objItemPackSizeBean.setPackSizeId(itemDetail.getItemPackSize().getPackSizeId());
+			objItemPackSizeBean.setPackSize(itemDetail.getItemPackSize().getPackSize());
+			itemDetail.setPackSize(itemDetail.getItemPackSize().getPackSize());
+			itemDetail.setItemPackSize(objItemPackSizeBean);
+			
+			ItemStockEntityTO itemStockEntityTO=new ItemStockEntityTO();
+			Long quantityOnHand=null;
+			if(type.equals("Distribute")) {
+				//if(itemOrderBean.getOtPharmacyLocation()!=null) {
+					itemStockEntityTO.setPharmacyLocationId(itemOrderBean.getOtPharmacyLocation().getPharmacyLocationId());
+					itemStockEntityTO.setItemId(objItemBean.getItemId());
+					itemStockEntityTO.setPackSizeId(objItemPackSizeBean.getPackSizeId());
+				/*}
+				else {
+					itemStockEntityTO.setPharmacyStoreId(itemOrderBean.getOtPharmacyStore().getPharmacyStoreId());
+					itemStockEntityTO.setItemId(objItemBean.getItemId());
+					itemStockEntityTO.setPackSizeId(objItemPackSizeBean.getPackSizeId());
+				}*/
+				
+			}
+			else {
+				itemStockEntityTO.setPharmacyLocationId(itemOrderBean.getOfPharmacyLocation().getPharmacyLocationId());
+				itemStockEntityTO.setItemId(objItemBean.getItemId());
+				itemStockEntityTO.setPackSizeId(objItemPackSizeBean.getPackSizeId());
+			}
+			quantityOnHand=createOrderDao.fetchItemQuantityOnHandDetail(itemStockEntityTO).getQuantityOnHand();
+			
+			
+			System.out.println("Quantity on Hand is "+quantityOnHand);
+			//if()
+			itemDetail.setQuantityOnHand(quantityOnHand==null?0:quantityOnHand);
+			//System.out.println(itemDetail.getItemOrderDetailId());
+			itemDetail.setDistributeQuantity(createOrderDao.fetchDistributedQunatityByItemOrderDetailID(itemDetail.getItemOrderDetailId()).getDistributeQuantity());
+			//System.out.println(itemDetail.getDistributeQuantity()+"   "+itemOrderBean.getOfPharmacyLocation().getPharmacyLocationId()+"  "+objItemBean.getItemId()+"   "+objItemPackSizeBean.getPackSizeId()+"Quantity on Hand is ::: "+itemDetail.getQuantityOnHand());
+		}
+		objCreateOrderCompositeBean.setObjItemOrderDetailBeanList(itemOrderBean.getItemOrderDetails());
+		itemOrderBean.setItemOrderDetails(null);
+		//for(ItemOrderDetailEntity itemOrderDetailEntity:createOrderDao.findItemOrderDetailsByItemOrderPK(itemOrderId)) {
+			
+		//}
+		System.out.println("xxxxxxxxxx"+objCreateOrderCompositeBean.toString());
+		return objCreateOrderCompositeBean;
+	}
+
+	@Override
+	@Transactional
+	public String updateItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean,
+			HttpServletRequest request) {
+		String resultString = null;
+		boolean resultFlag;
+		ItemOrderBean itemOrderBean=CreateOrderCompositeBean.getObjItemOrderBean();
+		
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = createOrderDao.fetchTransactionDataById(itemOrderBean.getItemOrderId());
+		if (latestData.getTransactionCount() > (itemOrderBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		
+		//Transaction Count of Item Oreder Details
+		for(ItemOrderDetailBean objItemOrderDetailBean:CreateOrderCompositeBean.getObjItemOrderDetailBeanList()) {
+			if(objItemOrderDetailBean.getItemOrderDetailId()!=null) {
+				//setAuditInfoOfItemOrderDetailBean(objItemOrderDetailBean,"editFlag");
+				TransactionData latestDataItemOrderDetail = createOrderDao.fetchTransactionDataOfItemOrderDetailById(objItemOrderDetailBean.getItemOrderDetailId());
+				//System.out.println("Database Modified Date is :::: "+latestDataItemOrderDetail.getLastModifiedDate().toString().substring(0, 19)+"   UI Modi Date is ::::: "+new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(objItemOrderDetailBean.getLastModifiedDate()));
+				//System.out.println(latestDataItemOrderDetail.getLastModifiedDate().toString().substring(0, 19).equals(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(objItemOrderDetailBean.getLastModifiedDate())));
+				System.out.println(latestDataItemOrderDetail.getTransactionCount() +"    "+ (objItemOrderDetailBean.getTransactionCount()));
+				if (latestDataItemOrderDetail.getTransactionCount() > (objItemOrderDetailBean.getTransactionCount())) {
+					return "TransactionFailed";
+				}
+				if (latestDataItemOrderDetail.getRecordType() == 'D') {
+					return "recordDeleted";
+				}
+				
+				
+				
+			}
+		}
+			//Addition Updation of ItemOrderDetail
+			for(ItemOrderDetailBean addEditItemOrderDetailBean:CreateOrderCompositeBean.getObjItemOrderDetailBeanList()) {
+				if(addEditItemOrderDetailBean.getItemOrderDetailId()!=null) {
+					//setAuditInfoOfItemOrderDetailBean(objItemOrderDetailBean,"editFlag");
+					//TransactionData latestDataItemOrderDetail = createOrderDao.fetchTransactionDataOfItemOrderDetailById(addEditItemOrderDetailBean.getItemOrderDetailId());
+					//System.out.println("Database Modified Date is :::: "+latestDataItemOrderDetail.getLastModifiedDate().toString().substring(0, 19)+"   UI Modi Date is ::::: "+new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(objItemOrderDetailBean.getLastModifiedDate()));
+					//System.out.println(latestDataItemOrderDetail.getLastModifiedDate().toString().substring(0, 19).equals(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(objItemOrderDetailBean.getLastModifiedDate())));
+					if (addEditItemOrderDetailBean.isEditFlag()) {
+						//Update of Item Order Detail
+						addEditItemOrderDetailBean.setIpAddress(request.getRemoteAddr());
+						setAuditInfoOfItemOrderDetailBean(addEditItemOrderDetailBean,"editFlag");
+						addEditItemOrderDetailBean.setItemOrder(itemOrderBean);
+						ItemOrderDetailEntity objItemOrderDetailEntity=mapper.map(addEditItemOrderDetailBean, ItemOrderDetailEntity.class);
+						//objItemOrderDetailEntity.setCreatedBy(itemOrderBean.getLastModifiedBy());
+						resultFlag=createOrderDao.updateItemOrderDetail(objItemOrderDetailEntity);
+						if(resultFlag)
+							resultString="UPDATED";
+					}
+					
+					
+				}
+				else {
+					//New Addition of Item Order Detail 
+					addEditItemOrderDetailBean.setItemOrder(itemOrderBean);
+					addEditItemOrderDetailBean.setIpAddress(request.getRemoteAddr());
+					setAuditInfoOfItemOrderDetailBean(addEditItemOrderDetailBean,"newFlag");
+					ItemOrderDetailEntity objItemOrderDetailEntity=mapper.map(addEditItemOrderDetailBean, ItemOrderDetailEntity.class);
+					objItemOrderDetailEntity.setCreatedBy(itemOrderBean.getLastModifiedBy());
+					resultFlag=createOrderDao.addItemOrderDetails(objItemOrderDetailEntity);
+					if(resultFlag)
+						resultString="ADDED";
+				}
+			/*objItemOrderDetailBean.setItemOrder(itemOrderBean);
+			objItemOrderDetailBean.setIpAddress(request.getRemoteAddr());
+			setAuditInfoOfItemOrderDetailBean(objItemOrderDetailBean,"newFlag");
+			ItemOrderDetailEntity objItemOrderDetailEntity=mapper.map(objItemOrderDetailBean, ItemOrderDetailEntity.class);
+			objItemOrderDetailEntity.setCreatedBy(itemOrderBean.getCreatedBy());
+			resultFlag=createOrderDao.addItemOrderDetails(objItemOrderDetailEntity);
+			if(resultFlag)
+				resultString="ADDED";*/
+		}
+		
+		itemOrderBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfItemOrderBean(itemOrderBean,"editFlag");
+		ItemOrderEntity objItemOrderEntity=mapper.map(itemOrderBean, ItemOrderEntity.class);
+		resultFlag=createOrderDao.updateItemOrder(objItemOrderEntity);
+		if(resultFlag)
+			resultString="UPDATED";
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public List<ItemOrderDetailBean> getAutoOrderItemDetails(PayloadBean payloadBean) {
+		List<ItemOrderDetailBean> objModifiedList=new ArrayList<ItemOrderDetailBean>();
+		List<ReportsTO> objDataList=createOrderDao.fetchAutoOrdersMinimumQuantityItemDetails(payloadBean);
+		for(ReportsTO objReportsTO:objDataList) {
+			if(objReportsTO.getAoMinQuantity()>=objReportsTO.getQuantityOnHand()) {
+				ItemOrderDetailBean objItemOrderDetailBean=new ItemOrderDetailBean();
+				//Set Item 
+				ItemBean objItemBean=new ItemBean();
+				objItemBean.setItemId(objReportsTO.getItemId());
+				
+				objItemOrderDetailBean.setItem(objItemBean);
+				objItemOrderDetailBean.setItemName(objReportsTO.getItemName());
+				objItemOrderDetailBean.setItemCode(objReportsTO.getItemCode());
+				//Set Pack Size List
+				PayloadBean objPayloadBean=new PayloadBean();
+				objPayloadBean.setId(objReportsTO.getItemId());
+				objPayloadBean.setSearchParameter("Active");
+				objItemOrderDetailBean.setObjPackList(createOrderDao.getItemPackSizeDetails(objPayloadBean));
+				if(objItemOrderDetailBean.getObjPackList()!=null &&!objItemOrderDetailBean.getObjPackList().isEmpty() && objItemOrderDetailBean.getObjPackList().size()==1) {
+					objItemOrderDetailBean.setItemPackSize(mapper.map(objItemOrderDetailBean.getObjPackList().get(0), ItemPackSizeBean.class));
+					ItemStockEntityTO itemStockEntityTO=new ItemStockEntityTO();
+					itemStockEntityTO.setItemId(objReportsTO.getItemId());
+					itemStockEntityTO.setPackSizeId(objItemOrderDetailBean.getObjPackList().get(0).getPackSizeId());
+					itemStockEntityTO.setPharmacyLocationId(objReportsTO.getPharmacyLocationId());
+					objItemOrderDetailBean.setQuantityOnHand(createOrderDao.fetchItemQuantityOnHandDetail(itemStockEntityTO).getQuantityOnHand());
+					objItemOrderDetailBean.setPackOrderQuantity(new Double(Math.ceil((double)  objReportsTO.getReorderQuantity()/objItemOrderDetailBean.getObjPackList().get(0).getPackSize())).longValue());
+					//objItemOrderDetailBean.setpack
+				}
+				objItemOrderDetailBean.setOrderQuantity(objReportsTO.getReorderQuantity());
+				objItemOrderDetailBean.setReorderQuantity(objReportsTO.getReorderQuantity());
+				objItemOrderDetailBean.setAoMinQuantity(objReportsTO.getAoMinQuantity());
+				objItemOrderDetailBean.setDispenseAsPack(objReportsTO.getDispenseAsPack());
+				objModifiedList.add(objItemOrderDetailBean);
+			}
+				
+		}
+		
+		return objModifiedList;
+	}
+	//Auto Orders
+	@Override
+	@Transactional
+	public CreateOrderCompositeBean findAutoItemOrderDetailsById(Long itemOrderId) {
+		// TODO Auto-generated method stub
+		CreateOrderCompositeBean objCreateOrderCompositeBean=new CreateOrderCompositeBean();
+		ItemOrderBean itemOrderBean=null;
+		List<ItemOrderDetailBean> itemOrderDetailList=null;
+		
+		itemOrderBean=mapper.map(createOrderDao.findItemOrderById(itemOrderId),ItemOrderBean.class);
+	//	itemOrderDetailList=
+//				for(ItemOrderDetailEntity ItemOrderDetailEntity:createOrderDao.findItemOrderDetailsByItemOrderPK(itemOrderId)) {
+//					itemOrderDetailList.add(mapper.map(ItemOrderDetailEntity, ItemOrderDetailBean.class));
+//				}
+		if(itemOrderBean.getOtPharmacyLocation()!=null) {
+			PharmacyLocationBean objPharmacyLocationBean=new PharmacyLocationBean();
+			objPharmacyLocationBean.setPharmacyLocationId(itemOrderBean.getOtPharmacyLocation().getPharmacyLocationId());
+			objPharmacyLocationBean.setPharmacyLocationName(itemOrderBean.getOtPharmacyLocation().getPharmacyLocationName());
+			itemOrderBean.setOtPharmacyLocation(objPharmacyLocationBean);
+		}else {
+			PharmacyStoreBean objPharmacyStoreBean=new PharmacyStoreBean();
+			objPharmacyStoreBean.setPharmacyStoreId(itemOrderBean.getOtPharmacyStore().getPharmacyStoreId());
+			objPharmacyStoreBean.setPharmacyStoreName(itemOrderBean.getOtPharmacyStore().getPharmacyStoreName());
+			itemOrderBean.setOtPharmacyStore(objPharmacyStoreBean);
+		}
+		objCreateOrderCompositeBean.setObjItemOrderBean(itemOrderBean);
+		for(ItemOrderDetailBean itemDetail:itemOrderBean.getItemOrderDetails()) {
+			//Item Bean 
+			ItemBean objItemBean= new ItemBean();
+			objItemBean.setItemId(itemDetail.getItem().getItemId());
+			//objItemBean.setItemName(itemDetail.getItem().getItemName());
+			//objItemBean.setItemCode(itemDetail.getItem().getItemCode());
+			itemDetail.setDispenseAsPack(itemDetail.getItem().getOrderAsPack());
+			//objItemBean.setOrderAsPack(itemDetail.getItem().getOrderAsPack());
+			itemDetail.setItemName(itemDetail.getItem().getItemName());
+			itemDetail.setItemCode(itemDetail.getItem().getItemCode());
+			itemDetail.setItem(objItemBean);
+			
+			itemDetail.setItemOrder(null);
+			
+			//Pack Size
+			ItemPackSizeBean objItemPackSizeBean=new ItemPackSizeBean();
+			objItemPackSizeBean.setPackSizeId(itemDetail.getItemPackSize().getPackSizeId());
+			objItemPackSizeBean.setPackSize(itemDetail.getItemPackSize().getPackSize());
+			
+			itemDetail.setPackSize(itemDetail.getItemPackSize().getPackSize());
+			itemDetail.setItemPackSize(objItemPackSizeBean);
+			
+			//fetch pack Size List
+			PayloadBean objPayloadBean=new PayloadBean();
+			objPayloadBean.setId(objItemBean.getItemId());
+			objPayloadBean.setSearchParameter("Active");
+			itemDetail.setObjPackList(createOrderDao.getItemPackSizeDetails(objPayloadBean));
+			
+			//Set package order quantity
+			itemDetail.setPackOrderQuantity(new Double(Math.ceil((double)  itemDetail.getOrderQuantity()/itemDetail.getItemPackSize().getPackSize())).longValue());
+			itemDetail.setOrderQuantityFlag(false);
+			ItemStockEntityTO itemStockEntityTO=new ItemStockEntityTO();
+			itemStockEntityTO.setPharmacyLocationId(itemOrderBean.getOfPharmacyLocation().getPharmacyLocationId());
+			itemStockEntityTO.setItemId(objItemBean.getItemId());
+			itemStockEntityTO.setPackSizeId(objItemPackSizeBean.getPackSizeId());
+			Long quantityOnHand=createOrderDao.fetchItemQuantityOnHandDetail(itemStockEntityTO).getQuantityOnHand();
+			//if()
+			itemDetail.setQuantityOnHand(quantityOnHand==null?0:quantityOnHand);
+			
+			itemDetail.setReorderQuantity(createOrderDao.fetchRecorderQuantityOfItemCorrespondingPharmacyLocation(itemOrderBean.getOfPharmacyLocation().getPharmacyLocationId(), objItemBean.getItemId()).getReorderQuantity());
+			
+			//System.out.println(itemDetail.getItemOrderDetailId());
+			itemDetail.setDistributeQuantity(createOrderDao.fetchDistributedQunatityByItemOrderDetailID(itemDetail.getItemOrderDetailId()).getDistributeQuantity());
+			//System.out.println(itemDetail.getDistributeQuantity()+"   "+itemOrderBean.getOfPharmacyLocation().getPharmacyLocationId()+"  "+objItemBean.getItemId()+"   "+objItemPackSizeBean.getPackSizeId()+"Quantity on Hand is ::: "+itemDetail.getQuantityOnHand());
+		}
+		objCreateOrderCompositeBean.setObjItemOrderDetailBeanList(itemOrderBean.getItemOrderDetails());
+		itemOrderBean.setItemOrderDetails(null);
+		//for(ItemOrderDetailEntity itemOrderDetailEntity:createOrderDao.findItemOrderDetailsByItemOrderPK(itemOrderId)) {
+			
+		//}
+		return objCreateOrderCompositeBean;
+	}
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String updateAutoItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean,
+			HttpServletRequest request) throws TransactionFailedException {
+		String resultString = null;
+		boolean resultFlag;
+		ItemOrderBean itemOrderBean=CreateOrderCompositeBean.getObjItemOrderBean();
+		
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = createOrderDao.fetchTransactionDataById(itemOrderBean.getItemOrderId());
+		if (latestData.getTransactionCount() > (itemOrderBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		
+		
+		//Transaction Count of Item Oreder Details
+		for(ItemOrderDetailBean objItemOrderDetailBean:CreateOrderCompositeBean.getObjItemOrderDetailBeanList()) {
+			if(objItemOrderDetailBean.getItemOrderDetailId()!=null) {
+				//setAuditInfoOfItemOrderDetailBean(objItemOrderDetailBean,"editFlag");
+				TransactionData latestDataItemOrderDetail = createOrderDao.fetchTransactionDataOfItemOrderDetailById(objItemOrderDetailBean.getItemOrderDetailId());
+				//System.out.println("Database Modified Date is :::: "+latestDataItemOrderDetail.getLastModifiedDate().toString().substring(0, 19)+"   UI Modi Date is ::::: "+new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(objItemOrderDetailBean.getLastModifiedDate()));
+				//System.out.println(latestDataItemOrderDetail.getLastModifiedDate().toString().substring(0, 19).equals(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(objItemOrderDetailBean.getLastModifiedDate())));
+				System.out.println(latestDataItemOrderDetail.getTransactionCount() +"    "+ (objItemOrderDetailBean.getTransactionCount()));
+				if (latestDataItemOrderDetail.getTransactionCount() > (objItemOrderDetailBean.getTransactionCount())) {
+					throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+				}
+				if (latestData.getRecordType() == 'D') {
+					throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+				}
+				//Update of Item Order Detail
+				objItemOrderDetailBean.setIpAddress(request.getRemoteAddr());
+				objItemOrderDetailBean.setLastModifiedBy(itemOrderBean.getLastModifiedBy());
+				setAuditInfoOfItemOrderDetailBean(objItemOrderDetailBean,"editFlag");
+				objItemOrderDetailBean.setItemOrder(itemOrderBean);
+				ItemOrderDetailEntity objItemOrderDetailEntity=mapper.map(objItemOrderDetailBean, ItemOrderDetailEntity.class);
+				//objItemOrderDetailEntity.setCreatedBy(itemOrderBean.getLastModifiedBy());
+				resultFlag=createOrderDao.updateItemOrderDetail(objItemOrderDetailEntity);
+				if(resultFlag)
+					resultString="UPDATED";
+				
+				
+			}
+		}
+			
+		
+		itemOrderBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfItemOrderBean(itemOrderBean,"editFlag");
+		ItemOrderEntity objItemOrderEntity=mapper.map(itemOrderBean, ItemOrderEntity.class);
+		resultFlag=createOrderDao.updateItemOrder(objItemOrderEntity);
+		if(resultFlag)
+			resultString="UPDATED";
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String deleteItemOrderDetailsById(DeleteRecords deleteRecords) {
+		String resultOutput="";
+		if(createOrderDao.deleteItemOrderDetailsById(deleteRecords)) {
+			resultOutput="DELETED";
+		}
+		return resultOutput;
+	}
+}

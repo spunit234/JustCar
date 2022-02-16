@@ -1,0 +1,77 @@
+package com.edios.pms.bean;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemStockBean extends AbstractBean {
+	private static final long serialVersionUID = -7959006084525327336L;
+	
+	private Long itemStockId;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private Date expiryDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String lotNo;
+
+	private Long quantityBlocked;
+
+	private Long quantityInStock;
+
+	private Long quantityOnHand;
+
+	private Character recordType;
+
+	private Double totalCost;
+
+	private Long transactionCount;
+
+	private Double unitCost;
+
+	private Long userActivityId;
+
+		private ItemBean item;
+
+	private ItemOrderDetailBean itemOrderDetail;
+
+	private ItemOrderBean itemOrder;
+
+	private ItemPackSizeBean itemPackSize;
+
+	private PharmacyLocationBean pharmacyLocation;
+
+	private String itemStockStatus;
+	
+
+	private String onHoldNotes;
+	private String resumedNotes;
+	private Long quantityTransferred;
+	private Long quantityAdjusted;
+	
+	private Long quantityReturned;
+	private Long quantityMixed;
+	private Long quantityRobot;
+
+}

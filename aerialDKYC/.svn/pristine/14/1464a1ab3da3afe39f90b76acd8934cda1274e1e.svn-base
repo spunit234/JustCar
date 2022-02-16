@@ -1,0 +1,49 @@
+package com.edios.pms.bean;
+
+import javax.persistence.Column;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.cdf.bean.common.ApplicationParameterBean;
+import com.edios.cdf.entity.common.ApplicationParameterEntity;
+import com.edios.pms.entity.AdhocReportEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+
+
+public class AdhocReportParameterBean extends AbstractBean {
+
+	private Long adhocReportParameterId;
+	
+	private AdhocReportBean adhocReport;
+	
+	private String parameterName;
+	
+	private String parameterType;
+	
+	private Long parameterSequence;
+	
+	private ApplicationParameterBean parameterID;
+	
+	private String displaySize;
+	
+	private Long dataLength;
+	
+	private Long decimalLength;
+	
+	private String mandatory;
+	
+	private DataSourceFieldBean dataSourceField;
+
+}

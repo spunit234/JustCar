@@ -1,0 +1,34 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.CycleCountItemsEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+
+public interface CycleCountDao extends BaseDao<CycleCountEntity> {
+
+	List<CycleCountEntityTO> searchCycleCount(PayloadBean payloadBean);
+
+	CycleCountEntity searchCycleCountById(Long id);
+
+	List<CycleCountEntityTO> searchCycleCountItems(PayloadBean payloadBean);
+	
+	List<CycleCountEntityTO> fetchItemDetailForNewCycleCount(PayloadBean payloadBean);
+	
+	Long addCycleCountAndCountItems(CycleCountEntity cycleCountEntity);
+
+	boolean addCycleCountItems(CycleCountItemsEntity cycleCountItemsEntity);
+
+	TransactionData fetchTransactionDataById(Long cycleCountID);
+	boolean updateCycleCount(CycleCountEntity cycleCountEntity);
+
+	boolean updateCycleCountItems(CycleCountItemsEntity cycleCountItemsEntity);
+
+	TransactionData fetchTransactionDataById2(Long cycleCountItemID);
+	
+	CycleCountItemsEntity fetchCycleCountItemsEntityById(Long id);
+}

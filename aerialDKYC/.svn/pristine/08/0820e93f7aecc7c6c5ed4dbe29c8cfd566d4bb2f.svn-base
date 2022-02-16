@@ -1,0 +1,217 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.DbCustomFunctions;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.dao.PharmacyDao;
+import com.edios.pms.dao.UserActivityDetailsManagerDao;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyStoreTO;
+
+
+@Repository
+public class PharmacyDaoImpl extends BaseDaoImpl <PharmacyStoreEntity> implements PharmacyDao{
+
+	@Autowired
+	MessageSource message;
+	
+	@Autowired
+	UserActivityDetailsManagerDao userActivityDetailsManagerDao;
+	
+	DbCustomFunctions dbCustomFunctions = new DbCustomFunctions();
+	
+	
+	@Override
+	public List<PharmacyStoreTO> fetchPharmacyLookUp() {
+		try {
+			Session session=(Session) entityManager.getDelegate();
+			@SuppressWarnings("unchecked")
+			List<PharmacyStoreTO> pharmacyStoreTO=session.createQuery("select site.siteID as siteID, site.siteName as siteName "
+					+ " from SiteEntity as site where recordType<>'D'  ").setResultTransformer(Transformers.aliasToBean(PharmacyStoreTO.class)).list();
+
+		return pharmacyStoreTO;
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	@Override
+	public boolean addPharmacy(PharmacyStoreBean pharmacyStoreBean,PharmacyStoreEntity pharmacyStoreEntity) {
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			
+			String tablename = 	dbCustomFunctions.getTableName(PharmacyStoreEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(PharmacyStoreEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(pharmacyStoreBean.getLoginDetailId(), pharmacyStoreBean.getScreenName(),pharmacyStoreBean.getActivityName(), null,null, tablename, columnName, null, null,pharmacyStoreBean.getPharmacyStoreName());
+			
+			pharmacyStoreEntity.setUserActivityId(pkActivityId);
+			Long pk = (Long) session.save(pharmacyStoreEntity);	
+			
+			 userActivityDetailsManagerDao.updateActivityRow(null, null, pk, pkActivityId);
+			
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<PharmacyStoreTO> fetchPharmacy(PayloadBean payloadbean) {
+		List<PharmacyStoreTO> pharmacyStoreTOList = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select pharmacy.pharmacyStoreId As pharmacyStoreId,pharmacy.pharmacyStoreName As pharmacyStoreName,siteEntity.siteName as siteName, "
+					+ "pharmacy.pharmacyStoreCode As pharmacyStoreCode,pharmacy.contactPersonName As contactPersonName,"
+					+ "pharmacy.contactPersonPhone As contactPersonPhone,pharmacy.pharmacyStoreStatus As pharmacyStoreStatus,"
+					+ "pharmacy.transactionCount As transactionCount from PharmacyStoreEntity pharmacy left join pharmacy.siteId siteEntity where pharmacy.pharmacyStoreStatus=:pharmacyStoreStatus and pharmacy.recordType<>'D'";
+			pharmacyStoreTOList = (List<PharmacyStoreTO>) session.createQuery(sqlQuery).setParameter("pharmacyStoreStatus", payloadbean.getSearchParameter()).setResultTransformer(Transformers.aliasToBean(PharmacyStoreTO.class)).list();
+			
+			if (payloadbean.getActivityFlag()==true) {
+				String sql = dbCustomFunctions.toSql(session, session.createQuery(sqlQuery).getQueryString());
+				String tablename = 	dbCustomFunctions.getTableName(PharmacyStoreEntity.class);
+				String columnName = dbCustomFunctions.getPkColumnName(PharmacyStoreEntity.class, session);
+				Long pk = userActivityDetailsManagerDao.insertScreenActivity(payloadbean.getLoginDetailId(), payloadbean.getScreenName(),payloadbean.getActivityName(), sql,(long) (pharmacyStoreTOList.size()), tablename, columnName, null, null,null);	
+			}
+			
+		
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		
+		return pharmacyStoreTOList;
+	}
+
+	@Override
+	public PharmacyStoreEntity findPharmacyById(PayloadBean payloadbean) {
+	
+			Session session = (Session) entityManager.getDelegate();
+			PharmacyStoreEntity pharmacyStoreEntity = entityManager.find(PharmacyStoreEntity.class, payloadbean.getId());
+			
+	
+			String tablename = 	dbCustomFunctions.getTableName(PharmacyStoreEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(PharmacyStoreEntity.class, session);
+			Long pk = userActivityDetailsManagerDao.insertScreenActivity(payloadbean.getLoginDetailId(), payloadbean.getScreenName(),payloadbean.getActivityName(), null,null, tablename, columnName, payloadbean.getId(), null,null);	
+			
+			 return pharmacyStoreEntity;
+
+	}
+	
+	@Override
+	public TransactionData fetchTransactionDataById(Long id) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  PharmacyStoreEntity table where table.pharmacyStoreId=:pharmacyStoreId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("pharmacyStoreId", id)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+			
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	@Override
+	public boolean deletePharmacy(DeleteRecords deleteRecords) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			
+			String tablename = 	dbCustomFunctions.getTableName(PharmacyStoreEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(PharmacyStoreEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(deleteRecords.getLoginDetailId(), deleteRecords.getScreenName(),deleteRecords.getActivityName(), null,null, tablename, columnName, deleteRecords.getId(), null,null);
+				
+			
+			String sqlQuery = "update PharmacyStoreEntity  set lastModifiedDate=:lastModifiedDate"
+					+ " , recordType='D' , lastModifiedBy=:lastModifiedBy,userActivityId=:userActivityId"
+					+ " WHERE pharmacyStoreId=:pharmacyStoreId";
+
+			 session.createQuery(sqlQuery).setParameter("lastModifiedBy", (long)deleteRecords.getModifiedBy()).
+			 setParameter("pharmacyStoreId", deleteRecords.getId())
+			 .setParameter("lastModifiedDate", new Date(), TemporalType.TIMESTAMP).setParameter("userActivityId", pkActivityId).executeUpdate();
+			 
+
+			// userActivityDetailsManagerDao.updateActivityRow(null, null, deleteRecords.getId(), pkActivityId);
+				
+			
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+	@Override
+	public boolean updatePharmacy(PharmacyStoreEntity pharmacyStoreEntity,PharmacyStoreBean pharmacyStoreBean) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			
+
+			String tablename = 	dbCustomFunctions.getTableName(PharmacyStoreEntity.class);
+			String columnName = dbCustomFunctions.getPkColumnName(PharmacyStoreEntity.class, session);
+			Long pkActivityId = userActivityDetailsManagerDao.insertScreenActivity(pharmacyStoreBean.getLoginDetailId(), pharmacyStoreBean.getScreenName(),pharmacyStoreBean.getActivityName(), null,null, tablename, columnName, pharmacyStoreBean.getPharmacyStoreId(), null,pharmacyStoreBean.getPharmacyStoreName());
+			
+			pharmacyStoreEntity.setUserActivityId(pkActivityId);
+			session.update(pharmacyStoreEntity);
+			
+			//userActivityDetailsManagerDao.updateActivityRow(null, null, pharmacyStoreBean.getPharmacyStoreId(), pkActivityId);
+			
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+	@Override
+	public boolean checkStoreCode(String pharmacyStoreCode,Long storeID) {
+		try {
+			return entityManager.createQuery(
+					"select table.pharmacyStoreCode as pharmacyStoreCode from PharmacyStoreEntity table where "
+							+ " table.pharmacyStoreCode='" + pharmacyStoreCode+"' and table.pharmacyStoreId!="+storeID)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+	@Override
+	public boolean checkStoreName(String pharmacyStoreName, Long storeId) {
+		try {
+			return entityManager.createQuery(
+					"select table.pharmacyStoreName as pharmacyStoreName from PharmacyStoreEntity table where "
+							+ " table.pharmacyStoreName='" + pharmacyStoreName+"' and table.pharmacyStoreId!="+storeId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+	
+}

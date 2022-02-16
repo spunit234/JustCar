@@ -1,0 +1,41 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.bean.security.UserBean;
+import com.edios.cdf.entity.security.UserEntity;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.DashboardDao;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.manager.DashboardManager;
+
+@Service("dashboardManagerImpl")
+public class DashboardManagerImpl extends AbstractManagerImpl<UserBean, UserEntity>
+		implements DashboardManager {
+
+	@Autowired
+	DashboardDao dashboardDao;
+
+	@Override
+	@Transactional
+	public DashboardTO getDashboards(PayloadBean payloadBean) {
+		return dashboardDao.findDashBoardById(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<DashboardTO> getDashboardWidgetDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		DashboardTO objDashboardTO=dashboardDao.findDashBoardById(payloadBean);
+		
+		return dashboardDao.getDashboardWidgetDetails(objDashboardTO.getDashboardID());
+	}
+
+	
+}

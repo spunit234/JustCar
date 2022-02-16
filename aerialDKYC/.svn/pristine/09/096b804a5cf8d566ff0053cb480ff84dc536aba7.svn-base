@@ -1,0 +1,110 @@
+package com.edios.pms.manager.impl;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemConsumptionReportBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.dao.ItemsConsumptionReportDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.manager.ItemsConsumptionReportManager;
+
+@Service
+public class ItemsConsumptionReportManagerImpl  extends AbstractManagerImpl<ItemStockBean,ItemStockEntity > implements ItemsConsumptionReportManager{
+
+	@Autowired
+	ItemsConsumptionReportDao itemsConsumptionReportDao;
+	
+	@Override
+	@Transactional
+	public List<ItemConsumptionReportBean> fetchItemsConsumptionReport(PayloadBean payloadBean) {
+		List<ItemConsumptionReportBean> itemConsumptionReportBeanList=new ArrayList<>();
+		Set<Long> itemstockidList = new HashSet<>();
+		List<ItemStockEntityTO> ItemStockEntityTOList=itemsConsumptionReportDao.fetchItemsConsumptionReport(payloadBean);
+	
+			ItemConsumptionReportBean itemConsumptionReportBean = null;
+		
+		for (ItemStockEntityTO itemStockEntityTO:ItemStockEntityTOList) {
+			if (itemstockidList.contains(itemStockEntityTO.getItemStockId())) {	
+				
+				setDispenseQuantityMonthWise(itemConsumptionReportBean,itemStockEntityTO);
+				
+				 itemConsumptionReportBean.setTotalConsumedCost(null);
+				 itemConsumptionReportBean.setTotalConsumedCost(Math.round(((itemConsumptionReportBean.getTotalQuantityConsumed().doubleValue()/itemConsumptionReportBean.getPackSize().doubleValue())*(itemConsumptionReportBean.getUnitCost().doubleValue())))); 
+			}
+			else {
+				itemstockidList.add(itemStockEntityTO.getItemStockId());
+				itemConsumptionReportBean= new ItemConsumptionReportBean();
+				itemConsumptionReportBean.setItemCode(itemStockEntityTO.getItemCode());
+				itemConsumptionReportBean.setItemName(itemStockEntityTO.getItemName());
+				itemConsumptionReportBean.setLotNo(itemStockEntityTO.getLotNo());
+				itemConsumptionReportBean.setDispensedQuantitySum(itemStockEntityTO.getDispensedQuantitySum());
+				itemConsumptionReportBean.setExpiryDate(itemStockEntityTO.getExpiryDate());
+				itemConsumptionReportBean.setUnitCost(itemStockEntityTO.getUnitCost());
+				itemConsumptionReportBean.setQuantityReceived(itemStockEntityTO.getQuantityReceived());
+				itemConsumptionReportBean.setPackSize(itemStockEntityTO.getPackSize());
+				itemConsumptionReportBean.setTotalReceivedCost(itemStockEntityTO.getTotalReceivedCost());
+				
+				setDispenseQuantityMonthWise(itemConsumptionReportBean,itemStockEntityTO);
+				
+				itemConsumptionReportBean.setTotalConsumedCost(Math.round(((itemConsumptionReportBean.getTotalQuantityConsumed().doubleValue()/itemConsumptionReportBean.getPackSize().doubleValue())*(itemConsumptionReportBean.getUnitCost().doubleValue()))));
+				itemConsumptionReportBeanList.add(itemConsumptionReportBean);
+			}
+		}		
+		return itemConsumptionReportBeanList;
+	}
+	
+	
+	public void setDispenseQuantityMonthWise(ItemConsumptionReportBean itemConsumptionReportBean,ItemStockEntityTO itemStockEntityTO) {
+		
+		 switch(itemStockEntityTO.getDispensedMonth()){  
+		    //Case statements  
+		    case "January": itemConsumptionReportBean.setJan(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getJan());
+		    break;  
+		    case "February": itemConsumptionReportBean.setFeb(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getFeb());
+		    break;  
+		    case "March": itemConsumptionReportBean.setMar(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getMar());
+		    break;  
+		    case "April": itemConsumptionReportBean.setApril(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getApril());
+		    break;
+		    case "May": itemConsumptionReportBean.setMay(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getMay());
+		    break;
+		    case "June": itemConsumptionReportBean.setJune(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getJune());
+		    break;
+		    case "July": itemConsumptionReportBean.setJuly(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getJuly());
+		    break;
+		    case "August": itemConsumptionReportBean.setAug(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getAug());
+		    break;
+		    case "September": itemConsumptionReportBean.setSept(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getSept());
+		    break;
+		    case "October": itemConsumptionReportBean.setOct(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getOct());
+		    break;
+		    case "November": itemConsumptionReportBean.setNov(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getNov());
+		    break;
+		    case "December": itemConsumptionReportBean.setDec(itemStockEntityTO.getDispensedQuantitySum());
+		    itemConsumptionReportBean.setTotalQuantityConsumed((itemConsumptionReportBean.getTotalQuantityConsumed()!=null?itemConsumptionReportBean.getTotalQuantityConsumed():0)+itemConsumptionReportBean.getDec());
+		    break;
+		    } 
+	}
+
+}

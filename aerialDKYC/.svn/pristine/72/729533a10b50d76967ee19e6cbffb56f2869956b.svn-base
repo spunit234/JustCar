@@ -1,0 +1,108 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import com.edios.cdf.entity.AbstractEntity;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="patient_prescriptions")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PatientPrescriptionEntity extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name="PATIENT_PRESCRIPTION_ID")
+	private Long patientPrescriptionId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="NOTES")
+	private String notes;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="PRESCRIPTION_DATE_TIME")
+	private Date prescriptionDateTime;
+
+	@Column(name="PRESCRIPTION_STATUS")
+	private String prescriptionStatus;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to PatientPrescribedItem
+	@OneToMany(mappedBy="patientPrescription")
+	private List<PatientPrescribedItemEntity> patientPrescribedItems;
+
+	//bi-directional many-to-one association to PatientEncounter
+	@ManyToOne
+	@JoinColumn(name="PATIENT_ENCOUNTER_ID")
+	private PatientEncounterEntity patientEncounter;
+
+	@Column(name="PRESCRIPTION_NO")
+	private String prescriptionNo;
+	
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+	
+	@Column(name="QUEUE_NO")
+	private String queueNo;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="TROUBLE_DATE_TIME")
+	private Date troubleDateTime;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="RESOLVED_DATE_TIME")
+	private Date resolvedDateTime;
+	
+	@Column(name="TROUBLE_NOTES")
+	private String troubleNotes;
+	
+	@Column(name="RESOLVED_NOTES")
+	private String resolvedNotes;
+	
+	@Column(name="TROUBLE_STATUS")
+	private String troubleStatus;
+	
+
+}

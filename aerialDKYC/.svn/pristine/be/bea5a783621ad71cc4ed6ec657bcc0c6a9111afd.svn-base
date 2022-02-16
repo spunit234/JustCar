@@ -1,0 +1,49 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PatientEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+	
+	private String patientName;
+	private String patientNo;
+	private String mobilePhone;
+	private String address;
+	
+	
+	//Gurdeep
+	private Long patientId;
+	private String firstName;
+	private String lastName;
+	private String birthDate;
+	private String gender;
+	private String homePhone;
+	private String patientStatus;
+	private Long transactionCount;
+	
+	//
+	private Long dispensedQuantity;
+	
+	DateFormatter formatter = new DateFormatter();
+
+	public void setBirthDate(Date birthDate) {
+		this.birthDate=formatter.formaDate(birthDate);
+	}
+	
+	
+}

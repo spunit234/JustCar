@@ -1,0 +1,82 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.bean.common.ApplicationParameterListBean;
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.pms.bean.ItemCodeLinkageBean;
+import com.edios.pms.bean.ItemDrugSubstitutionBean;
+import com.edios.pms.bean.ItemInventorySettingBean;
+import com.edios.pms.bean.ItemPackSizeBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+
+public interface ItemsManager extends AbstractManager {
+
+	String addItemConfiguration(ItemsBean itemsBean);
+
+	List<ItemsEnityTO> fetchItems(Integer accountId, String searchParameter);
+
+	ItemsBean findItemById(Long id);
+
+	String updateItem(ItemsBean itemsBean);
+
+	String deleteItem(DeleteRecords deleteRecords);
+
+	List<ItemInventorySettingsTo> fetchPharmacyLocationNameAuto(Long userID);
+
+	List<ItemInventorySettingsTo> fetchPharmacyLocationCodeAuto();
+
+	List<ItemEntityTO> fetchParameterList(String searchParameter);
+
+	String addInventorySetting(ItemInventorySettingBean itemInventorySettingBean);
+
+	List<ItemInventorySettingsTo> fetchInventorySettings(Long id);
+
+	ItemInventorySettingBean editInventorySettings(Long id);
+
+	String updateInventorySetting(ItemInventorySettingBean itemInventorySettingBean);
+
+	String addPackSize(ItemPackSizeBean itemPackSizeBean);
+
+	List<ItemPackSizeEntityTO> fetchItemPackSize(Long id);
+
+	ItemPackSizeBean editItemPackSize(Long id);
+
+	String updateItemPackSize(ItemPackSizeBean itemPackSizeBean);
+
+	Boolean checkItemsRecord(Long itemId, Long pharmacyLocationId);
+
+	List<ItemEntityTO> fetchDrugSubstitutionAutoLookUpList(Long id);
+
+	String addDrugSubstitution(ItemDrugSubstitutionBean itemDrugSubstitutionBean);
+
+	List<ItemDrugSubstitutionEntityTO> fetchDrugSubstitution(Long id);
+
+	ItemDrugSubstitutionBean editDrugSubstitution(Long id);
+
+	String updateDrugSubstitution(ItemDrugSubstitutionBean itemDrugSubstitutionBean);
+
+	String addItemCodeLinkage(ItemCodeLinkageBean itemCodeLinkageBean);
+
+	List<ItemCodeLinkageEntityTO> fetchCodeLinkage(Long id);
+
+	ItemCodeLinkageBean editCodeLinkage(Long id);
+
+	String updateCodeLinkage(ItemCodeLinkageBean itemCodeLinkageBean);
+
+	boolean checkExistingDrugSubstitutes(Long itemId, Long long1);
+
+	boolean checkExistingPackSizes(Long packSize, Long itemId);
+
+	Boolean checkItemsInventoryRecord(Long itemId, Long pharmacyLocationId, Long inventorySettingId);
+
+
+
+}

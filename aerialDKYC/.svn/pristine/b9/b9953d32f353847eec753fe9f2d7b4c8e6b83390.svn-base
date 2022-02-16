@@ -1,0 +1,41 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.manager.CycleCountReportManager;
+
+@RestController
+public class CycleCountReportController extends AbstractController{
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	CycleCountReportManager cycleCountReportManager;
+	
+	@PostMapping("/fetch-cycle-count-report")
+	public ResponseEntity<List<CycleCountEntityTO>> fetchCycleCountReport(@RequestBody PayloadBean payloadBean) {
+		List<CycleCountEntityTO> cycleCountEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			cycleCountEntityTOList = cycleCountReportManager.fetchCycleCountReport(payloadBean);
+			return new ResponseEntity<List<CycleCountEntityTO>>(cycleCountEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	
+	
+}

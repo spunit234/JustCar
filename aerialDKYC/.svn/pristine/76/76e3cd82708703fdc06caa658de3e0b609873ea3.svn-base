@@ -1,0 +1,106 @@
+package com.edios.pms.bean;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemBean extends AbstractBean {
+
+	private Long itemId;
+
+	private String combination;
+
+	private String controlled;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String defaultSig;
+
+	private String din;
+
+	private String disableInventoryAdjust;
+
+	private String dispenseAsPack;
+
+	private String drugComments;
+
+	private String drugGroup;
+
+	private String dummyCode;
+
+	private String form;
+
+	private String gtin;
+
+	private String handlingInstructions;
+
+	private String immunization;
+
+	private Date inactivatedDate;
+
+	private String ipAddress;
+
+	private String itemCode;
+
+	private String itemGenericName;
+
+	private String itemName;
+
+	private String itemStatus;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String measurementUnit;
+
+	private String narcotic;
+
+	private String orderAsPack;
+
+	private Character recordType;
+
+	private String refrigerated;
+
+	private String reportable;
+
+	private String route;
+
+	private String rxComments;
+
+	private String strength;
+
+	private String strengthUnit;
+
+	private String totalVolume;
+
+	private String trackExpiry;
+
+	private String trackLotNumber;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	private String volume;
+
+	private String volumeUnit;
+
+	
+
+}

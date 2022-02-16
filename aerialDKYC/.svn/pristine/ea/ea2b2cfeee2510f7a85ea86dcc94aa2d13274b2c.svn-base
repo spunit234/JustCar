@@ -1,0 +1,214 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.ConfigureDashBoardBean;
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.dao.ConfigureDashboardDao;
+import com.edios.pms.entity.DashboardEntity;
+import com.edios.pms.entity.DashboardWidgetEntity;
+import com.edios.pms.entity.WidgetEntity;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.entity.to.DashboardWidgetTO;
+import com.edios.pms.entity.to.WidgetEntityTO;
+import com.edios.pms.manager.ConfigureDashboardManager;
+
+@Service
+public class ConfigureDashboardManagerImpl extends AbstractManagerImpl<DashboardBean,DashboardEntity> implements ConfigureDashboardManager{
+
+	@Autowired
+	ConfigureDashboardDao configureDashboardDao;
+	
+	@Override
+	@Transactional
+	public List<DashboardTO> getDashboardList(String customParameter) {
+		return configureDashboardDao.getDashboardList(customParameter);
+	}
+
+	@Override
+	@Transactional
+	public ConfigureDashBoardBean getDataByID(PayloadBean payloadBean) {
+		ConfigureDashBoardBean configureDashBoardBean= null;
+		configureDashBoardBean= configureDashboardDao.getDataByID(payloadBean);
+		
+		return configureDashBoardBean;
+	}
+
+	@Override
+	@Transactional
+	public String deleteDashboardWidget(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = configureDashboardDao.fetchTransactionDataById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		resultFlag = configureDashboardDao.deleteDashboardWidget(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public List<WidgetEntityTO> getAllWidget() {
+		// TODO Auto-generated method stub
+		return configureDashboardDao.getAllWidget();
+	}
+
+	@Override
+	@Transactional
+	public String uniqueCheck(PayloadBean payloadBean) {
+	
+		return  configureDashboardDao.uniqueCheck(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public String addConfigDashboard(ConfigureDashBoardBean configureDashBoardBean,HttpServletRequest request) {
+		String resultString = "";
+		Long id;
+		configureDashBoardBean.getDashboardEntity().setIpAddress(request.getRemoteAddr());
+		setAuditInfo(configureDashBoardBean.getDashboardEntity(),"newFlag");
+		id=configureDashboardDao.addDashBoard(configureDashBoardBean.getDashboardEntity());
+		if(id!=null) {
+			Long seq=1L;
+			for(DashboardWidgetTO dashboardWidgetTO:configureDashBoardBean.getDashboardWidgetTO()) {
+				DashboardWidgetEntity dashboardWidgetEntity=new DashboardWidgetEntity();
+				DashboardEntity dashboardEntity	=new DashboardEntity();
+				dashboardEntity.setDashboardID(id);
+				dashboardWidgetEntity.setDashboard(dashboardEntity);
+				WidgetEntity widgetEntity=new WidgetEntity();
+				widgetEntity.setWidgetID(dashboardWidgetTO.getWidgetID());
+				dashboardWidgetEntity.setWidget(widgetEntity);
+				dashboardWidgetEntity.setWidgetSequence(seq*10);
+				dashboardWidgetEntity.setIpAddress(request.getRemoteAddr());
+				dashboardWidgetEntity.setCreatedBy(configureDashBoardBean.getDashboardEntity().getCreatedBy());
+				setAuditInfo(dashboardWidgetEntity,"newFlag");
+				seq++;
+				 resultString=configureDashboardDao.addDashboardWidget(dashboardWidgetEntity);
+				
+			}
+		}
+		
+		return resultString;
+	}
+	
+	private void setAuditInfo(DashboardEntity dashboardEntity, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			dashboardEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			dashboardEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			dashboardEntity.setCreatedDate(new Date());
+		} else {
+			dashboardEntity.setTransactionCount(
+					dashboardEntity.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			dashboardEntity.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			dashboardEntity.setLastModifiedDate(new Date());
+		}
+		
+	}
+	private void setAuditInfo(DashboardWidgetEntity dashboardWidgetEntity, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			dashboardWidgetEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			dashboardWidgetEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			dashboardWidgetEntity.setCreatedDate(new Date());
+		} else {
+			dashboardWidgetEntity.setTransactionCount(
+					dashboardWidgetEntity.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			dashboardWidgetEntity.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			dashboardWidgetEntity.setLastModifiedDate(new Date());
+		}
+		
+	}
+
+	@Override
+	@Transactional
+	public String updateConfigDashboard(ConfigureDashBoardBean configureDashBoardBean, HttpServletRequest request) {
+		String resultString = "";
+		boolean result;
+		TransactionData latestData =configureDashboardDao.fetchDashTransactionDataById(configureDashBoardBean.getDashboardEntity().getDashboardID());
+		if (latestData.getTransactionCount() > (configureDashBoardBean.getDashboardEntity().getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		if(configureDashBoardBean.getDashboardEntity().getDashboardStatus().equalsIgnoreCase("InActive")) {
+			if(configureDashboardDao.checkDashboardAssigenedOrNot(configureDashBoardBean.getDashboardEntity().getDashboardID())) {
+				return "Assigned";
+			}
+		}
+		setAuditInfo(configureDashBoardBean.getDashboardEntity(),"update");
+		result=configureDashboardDao.updateDashBoard(configureDashBoardBean.getDashboardEntity());
+		if(result) {
+			Long seq=1L;
+			resultString="UPDATED";
+			for(DashboardWidgetTO dashboardWidgetTO:configureDashBoardBean.getDashboardWidgetTO()) {
+				DashboardWidgetEntity dashboardWidgetEntity=new DashboardWidgetEntity();
+				DashboardEntity dashboardEntity	=new DashboardEntity();
+				dashboardEntity.setDashboardID(configureDashBoardBean.getDashboardEntity().getDashboardID());
+				dashboardWidgetEntity.setDashboard(dashboardEntity);
+				WidgetEntity widgetEntity=new WidgetEntity();
+				widgetEntity.setWidgetID(dashboardWidgetTO.getWidgetID());
+				dashboardWidgetEntity.setWidget(widgetEntity);
+				dashboardWidgetEntity.setWidgetSequence(seq*10);
+				dashboardWidgetEntity.setIpAddress(request.getRemoteAddr());
+				if(dashboardWidgetTO.getDashboardWidgetID()==null) {
+					dashboardWidgetEntity.setCreatedBy(configureDashBoardBean.getDashboardEntity().getLastModifiedBy());
+					setAuditInfo(dashboardWidgetEntity,"newFlag");
+					resultString=configureDashboardDao.addDashboardWidget(dashboardWidgetEntity);
+				 }else {
+					 dashboardWidgetEntity.setDashboardWidgetID(dashboardWidgetTO.getDashboardWidgetID());
+					 dashboardWidgetEntity.setLastModifiedBy(configureDashBoardBean.getDashboardEntity().getLastModifiedBy());
+					 dashboardWidgetEntity.setTransactionCount(dashboardWidgetTO.getTransactionCount());
+					 setAuditInfo(dashboardWidgetEntity,"update");
+					resultString=configureDashboardDao.updateDashboardWidget(dashboardWidgetEntity);
+				 }
+				seq++;	
+			}
+		}
+		
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String deleteDashboard(DeleteRecords deleteRecords) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData =configureDashboardDao.fetchDashTransactionDataById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		if(configureDashboardDao.checkDashboardAssigenedOrNot(deleteRecords.getId())) {
+			return "Assigned";
+		}
+		
+		
+		resultFlag = configureDashboardDao.deleteDashboard(deleteRecords.getId());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+
+}

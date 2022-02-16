@@ -1,0 +1,30 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ClassificationItemsBean;
+import com.edios.pms.bean.FinalizeClassificationItemBean;
+import com.edios.pms.entity.ClassificationItemDetailsEntity;
+import com.edios.pms.entity.to.ClassificationItemDetailsEntityTO;
+import com.edios.pms.entity.to.ClassificationItemsEntityTO;
+
+public interface ClassificationItemsManager{
+
+	List<ClassificationItemsEntityTO> fetchClassificationItems(PayloadBean payloadBean);
+
+	List<ClassificationItemDetailsEntity> addClassificationItem(ClassificationItemsBean classificationItemsBean, HttpServletRequest request);
+
+	ClassificationItemsBean getClassificationItem(PayloadBean payloadBean);
+
+	List<ClassificationItemDetailsEntityTO> getClassificationListItem(PayloadBean payloadBean);
+
+	String discardClassification(PayloadBean payloadBean);
+
+	String finalizeClassification(FinalizeClassificationItemBean finalizeClassificationItemBean);
+
+	String saveToDraft(PayloadBean payloadBean);
+
+}

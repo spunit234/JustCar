@@ -1,0 +1,81 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+
+/**
+ * The persistent class for the item_order_details database table.
+ * 
+ */
+@Entity
+@Table(name="item_order_details")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemOrderDetailEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ITEM_ORDER_DETAIL_ID")
+	private Long itemOrderDetailId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="ORDER_QUANTITY")
+	private Long orderQuantity;
+
+	@Column(name="PACK_ORDER_QUANTITY")
+	private Long packOrderQuantity;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity item;
+
+	//bi-directional many-to-one association to ItemOrder
+	@ManyToOne
+	@JoinColumn(name="ITEM_ORDER_ID")
+	private ItemOrderEntity itemOrder;
+
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="PACK_SIZE_ID")
+	private ItemPackSizeEntity itemPackSize;
+
+	
+
+}

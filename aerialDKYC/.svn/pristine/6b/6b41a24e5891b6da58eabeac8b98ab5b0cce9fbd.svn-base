@@ -1,0 +1,62 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CompoundCompositeItemBean;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+
+public interface CompoundItemManager extends AbstractManager {
+	/*PharmacyLocationEntityTO getUserPharmacyLocation(Long userID);
+	
+	List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID);
+	
+	List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID);*/
+	
+	List<ItemEntityTO> getCompoundItemDetails(PayloadBean payloadBean);
+	
+	List<ItemEntityTO> getItemDetailsWithCombinationStatus(PayloadBean payloadBean);
+	
+	String addCompoundItem(CompoundCompositeItemBean objCompoundCompositeItemBean, HttpServletRequest request);
+	
+	List<CompoundItemEntityTO> getCompoundItemDetails(ConfigureCompoundItemsTO payloadBean);
+	
+	CompoundCompositeItemBean findCompoundItemBeanDetailsById(Long compoundItemId);
+	
+	String updateCompoundItemDetails(CompoundCompositeItemBean CompoundCompositeItemBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	String deleteCompoundItemDetailsById(DeleteRecords deleteRecords);
+	
+	String checkCompoundItemExistence(CompoundItemEntityTO objCompoundItemEntityTO);
+	
+	/*List<ItemOrderDetailBean> getAutoOrderItemDetails(PayloadBean payloadBean);
+	
+	List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	String createOrder(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request); 
+	
+	List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean);
+	
+	CreateOrderCompositeBean findItemOrderDetailsById(Long itemOrderId,String type);
+	
+	String updateItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request);
+	
+	//Auto Orders
+	CreateOrderCompositeBean findAutoItemOrderDetailsById(Long itemOrderId);
+	
+	String updateAutoItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	
+	String deleteItemOrderDetailsById(DeleteRecords deleteRecords);*/
+}

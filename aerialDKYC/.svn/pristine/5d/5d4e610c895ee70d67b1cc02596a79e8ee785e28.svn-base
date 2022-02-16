@@ -1,0 +1,16 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+
+public interface StockAdjustmentReportManager extends AbstractManager{
+
+	List<ItemStockAdjustmentEntityTO> searchStockAdjustmentReport(PayloadBean payloadBean);
+
+	List<PhysicalCountReportTO> searchPhysicalCountReport(PayloadBean payloadBean);
+
+}

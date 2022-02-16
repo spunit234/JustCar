@@ -1,0 +1,118 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.dao.ItemStockAdjustmentDao;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.manager.ItemStockAdjustmentManager;
+
+@Service
+public class ItemStockAdjustmentManagerImpl extends AbstractManagerImpl<ItemStockAdjustmentBean,ItemStockAdjustmentEntity > implements ItemStockAdjustmentManager{
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@Autowired
+	ItemStockAdjustmentDao itemStockAdjustmentDao;
+	
+	@Override
+	@Transactional
+	public List<ItemStockEntityTO> fetchItemStock(ItemEntityTO itemEntityTO) {
+		Long pharmacyLocationId = itemStockAdjustmentDao.fetchPharmacyLocationId(itemEntityTO.getUser());
+		return itemStockAdjustmentDao.fetchItemStock(itemEntityTO.getItemCode(),itemEntityTO.getItemName(),pharmacyLocationId);
+	}
+
+	@Override
+	@Transactional
+	public ItemStockEntityTO fetchItemStockInfo(Long id) {
+		return itemStockAdjustmentDao.fetchItemStockInfo(id);
+	}
+
+	private void setAuditInfo(ItemStockAdjustmentBean itemStockAdjustmentBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			itemStockAdjustmentBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			itemStockAdjustmentBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			itemStockAdjustmentBean.setCreatedDate(new Date());
+		} else {
+			itemStockAdjustmentBean.setTransactionCount(itemStockAdjustmentBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			itemStockAdjustmentBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			itemStockAdjustmentBean.setLastModifiedDate(new Date());
+		}
+	}
+	
+	@Override
+	@Transactional
+	public String updateInsertStockItems(ItemStockAdjustmentBean itemStockAdjustmentBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+//		// Optimistic Locking for Hibernate
+//		TransactionData latestData = itemStockAdjustmentDao.fetchTransactionDataById(itemStockAdjustmentBean.getItemStock().getItemStockId());
+//		if (latestData.getTransactionCount() > (itemStockAdjustmentBean.getItemStockTransactionCount())) {
+//			return "TransactionFailed";
+//		}
+//		else {
+//			resultFlag = itemStockAdjustmentDao.updateItemStock(itemStockAdjustmentBean.getItemStock().getItemStockId(),itemStockAdjustmentBean.getItemStockQuantityOnHand()
+//					,itemStockAdjustmentBean.getItemStockTransactionCount()+AppConstants.TRANSACTION_BEGIN,itemStockAdjustmentBean.getCreatedBy(),
+//					(itemStockAdjustmentBean.getQuantityAdjusted()+itemStockAdjustmentBean.getAdjustmentQuantity()));
+//			if (resultFlag) {
+//				setAuditInfo(itemStockAdjustmentBean, "newFlag");
+//				ItemStockAdjustmentEntity itemStockAdjustmentEntity = mapper.map(itemStockAdjustmentBean,ItemStockAdjustmentEntity.class);
+//				resultFlag = itemStockAdjustmentDao.insertItemStockAdjustment(itemStockAdjustmentEntity);
+//				if (resultFlag) {
+//					resultString = "UPDATED";
+//				}
+//				else {
+//					resultString = "ERROR";
+//				}
+//			}
+//			
+//		}
+		setAuditInfo(itemStockAdjustmentBean, "newFlag");
+		ItemStockAdjustmentEntity itemStockAdjustmentEntity = mapper.map(itemStockAdjustmentBean,ItemStockAdjustmentEntity.class);
+		resultFlag = itemStockAdjustmentDao.insertItemStockAdjustment(itemStockAdjustmentEntity);
+		if (resultFlag) {
+			resultString = "UPDATED";
+		}
+		else {
+			resultString = "ERROR";
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public List<ItemStockAdjustmentEntityTO> fetchStockAdjustmentRecords(PayloadBean payloadBean) {
+		return itemStockAdjustmentDao.fetchStockAdjustmentRecords(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<UserEntityTO> fetchuserlist(PayloadBean payloadBean) {
+		String values = itemStockAdjustmentDao.fetchApplicationParameterValues(payloadBean.getSearchParameter());
+		values="\'"+values+"\'";
+		values=values.replace(",", "\',\'");
+		return itemStockAdjustmentDao.fetchuserlist(values);
+		
+	}
+
+	@Override
+	@Transactional
+	public List<ItemStockAdjustmentEntityTO> fetchApprovalRoleList(PayloadBean payloadBean) {
+		return itemStockAdjustmentDao.fetchApprovalRoleList(payloadBean);
+	}
+
+}

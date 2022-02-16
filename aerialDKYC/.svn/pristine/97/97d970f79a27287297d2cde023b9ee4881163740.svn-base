@@ -1,0 +1,125 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="item_stock")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemStockEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ITEM_STOCK_ID")
+	private Long itemStockId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="EXPIRY_DATE")
+	private Date expiryDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="LOT_NO")
+	private String lotNo;
+
+	@Column(name="QUANTITY_BLOCKED")
+	private Long quantityBlocked;
+
+	@Column(name="QUANTITY_RECEIVED")
+	private Long quantityInStock;
+
+	@Column(name="QUANTITY_ON_HAND")
+	private Long quantityOnHand;
+	
+	@Column(name="QUANTITY_TRANSFERRED")
+	private Long quantityTransferred;
+	
+	@Column(name="QUANTITY_ADJUSTED")
+	private Long quantityAdjusted;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TOTAL_COST")
+	private Double totalCost;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="UNIT_COST")
+	private Double unitCost;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	
+	//bi-directional many-to-one association to _item
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity item;
+
+	//bi-directional many-to-one association to ItemOrderDetail
+	@ManyToOne
+	@JoinColumn(name="ITEM_ORDER_DETAIL_ID")
+	private ItemOrderDetailEntity itemOrderDetail;
+
+	//bi-directional many-to-one association to ItemOrder
+	@ManyToOne
+	@JoinColumn(name="ITEM_ORDER_ID")
+	private ItemOrderEntity itemOrder;
+
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="PACK_SIZE_ID")
+	private ItemPackSizeEntity itemPackSize;
+
+	//bi-directional many-to-one association to PharmacyLocation
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+	
+	@Column(name="ITEM_STOCK_STATUS")
+	private String itemStockStatus;
+	
+	@Column(name="ON_HOLD_NOTES")
+	private String onHoldNotes;
+	
+	@Column(name="RESUMED_NOTES")
+	private String resumedNotes;
+
+}

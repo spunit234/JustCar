@@ -1,0 +1,386 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.CreateOrderDao;
+import com.edios.pms.entity.ItemOrderDetailEntity;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyStoreEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+
+@Repository
+public class CreateOrderDaoImpl extends BaseDaoImpl<ItemOrderEntity> implements CreateOrderDao {
+	@Autowired
+	MessageSource messageSource;
+	
+	@Override
+	public PharmacyLocationEntityTO getUserPharmacyLocation(Long userID) {
+		List<PharmacyLocationEntityTO> objPharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select pharmacyLoc.pharmacyLocationId as pharmacyLocationId,concat(site.siteName,'(',pharmacyLoc.pharmacyLocationName,')') as pharmacyLocationName from PharmacyLocationUserEntity plue left join plue.pharmacyLocation pharmacyLoc"
+					+ " left join pharmacyLoc.siteId site "
+					+ " left join plue.userId user"
+					+ " where user.userID =:userID";
+					objPharmacyLocationEntityTOList = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("userID", userID)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+			
+			if(objPharmacyLocationEntityTOList==null || objPharmacyLocationEntityTOList.isEmpty())
+			{
+				return null;
+			}
+			else {
+				return objPharmacyLocationEntityTOList.get(0);
+			}
+		
+		//return applicationParameterListTO;
+	}
+
+	@Override
+	public List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID) {
+
+		List<PharmacyLocationEntityTO> objPharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select phLocUserEn.pharmacyLocationId as pharmacyLocationId,phLocUserEn.pharmacyLocationName as pharmacyLocationName from"
+					+ " PharmacyLocationEntity phLocUserEn where phLocUserEn.pharmacyLocationId not in ("
+					+"select pharmacyLoc.pharmacyLocationId from PharmacyLocationUserEntity plue left join plue.pharmacyLocation pharmacyLoc"
+					+ " left join plue.userId user where user.userID =:userID) and phLocUserEn.siteId.siteID=("
+					+"select pharmacyLoc.siteId.siteID from PharmacyLocationUserEntity plue left join plue.pharmacyLocation pharmacyLoc"
+					+ " left join plue.userId user where user.userID =:userID) and phLocUserEn.recordType<>'D' and phLocUserEn.pharmacyLocationStatus='Active'";
+					objPharmacyLocationEntityTOList = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("userID", userID)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+			
+			
+		
+		return objPharmacyLocationEntityTOList;
+	
+	}
+
+	@Override
+	public List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID) {
+
+		List<PharmacyStoreEntityTO> objPharmacyStoreEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select phStoreEn.pharmacyStoreId as pharmacyStoreId,phStoreEn.pharmacyStoreName as pharmacyStoreName from PharmacyStoreEntity phStoreEn where  phStoreEn.siteId.siteID=("
+					 +"select pharmacyLoc.siteId.siteID from PharmacyLocationUserEntity plue left join plue.pharmacyLocation pharmacyLoc"
+						+ " left join plue.userId user"
+						+ " where user.userID =:userID) and phStoreEn.recordType<>'D' and phStoreEn.pharmacyStoreStatus='Active'";
+			objPharmacyStoreEntityTOList = (List<PharmacyStoreEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("userID", userID)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyStoreEntityTO.class)).list();
+			
+			
+		
+		return objPharmacyStoreEntityTOList;
+	
+	}
+
+	@Override
+	public List<ItemEntityTO> getItemDetails(PayloadBean payloadBean) {
+
+		List<ItemEntityTO> objItemEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select item.itemId as itemId,item.itemName as itemName,item.itemCode as itemCode,item.orderAsPack as orderAsPack from ItemEntity item"
+						+ " where item.itemStatus =:itemStatus";
+			objItemEntityTOList = (List<ItemEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("itemStatus", payloadBean.getSearchParameter())
+					.setResultTransformer(Transformers.aliasToBean(ItemEntityTO.class)).list();
+			
+			
+		
+		return objItemEntityTOList;
+	
+	}
+
+	@Override
+	public List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean) {
+
+		List<ItemPackSizeEntityTO> objItemPackSizeEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select itemPackSize.packSizeId as packSizeId,itemPackSize.packSize as packSize from ItemPackSizeEntity itemPackSize"
+					+ " left join itemPackSize.item items"
+						+ " where items.itemId =:itemId and itemPackSize.packSizeStatus=:packSizeStatus order by itemPackSize.packSize asc";
+			objItemPackSizeEntityTOList = (List<ItemPackSizeEntityTO>) session.createQuery(sqlQuery)
+					.setParameter("itemId", payloadBean.getId())
+					.setParameter("packSizeStatus", payloadBean.getSearchParameter())
+					.setResultTransformer(Transformers.aliasToBean(ItemPackSizeEntityTO.class)).list();
+			
+			
+		
+		return objItemPackSizeEntityTOList;
+	
+	}
+
+	@Override
+	public ItemStockEntityTO fetchItemQuantityOnHandDetail(ItemStockEntityTO itemStockEntityTO) {
+
+
+		ItemStockEntityTO objItemPackSizeEntityTO = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select sum(itemStockEntity.quantityOnHand) as quantityOnHand from ItemStockEntity itemStockEntity"
+					+ " left join itemStockEntity.pharmacyLocation phLoc"
+					+ " left join itemStockEntity.item items"
+					+ " left join itemStockEntity.itemPackSize packSize"
+						+ " where itemStockEntity.itemStockStatus='InStock' and itemStockEntity.recordType <>'D' and phLoc.pharmacyLocationId=:pharmacyLocationId and items.itemId =:itemId and packSize.packSizeId=:packSizeId";
+			objItemPackSizeEntityTO = (ItemStockEntityTO) session.createQuery(sqlQuery)
+					.setParameter("pharmacyLocationId", itemStockEntityTO.getPharmacyLocationId())
+					.setParameter("itemId", itemStockEntityTO.getItemId())
+					.setParameter("packSizeId", itemStockEntityTO.getPackSizeId())
+					.setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).getSingleResult();
+		}catch(NoResultException noResultException)	{
+			objItemPackSizeEntityTO=new ItemStockEntityTO();
+		}
+			
+		
+		return objItemPackSizeEntityTO;
+	
+	
+	}
+
+	@Override
+	public Long addItemOrder(ItemOrderEntity ItemOrderEntity) {
+		entityManager.persist(ItemOrderEntity);
+		ItemOrderEntity.setIndentNo(messageSource.getMessage("IndentNo", null, "", Locale.US)+ItemOrderEntity.getItemOrderId());
+		return ItemOrderEntity.getItemOrderId();
+	}
+
+	@Override
+	public boolean addItemOrderDetails(ItemOrderDetailEntity ItemOrderDetailEntity) {
+		entityManager.persist(ItemOrderDetailEntity);
+		return true;
+	}
+
+	@Override
+	public List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean) {
+
+		List<ItemOrderEntityTO> objItemOrderEntityTOList = null;
+		String sqlQuery = "",whereClause="";
+		System.out.println(payloadBean.getCustomParameter());
+		if(payloadBean.getCustom1()==null) {
+			whereClause=" and itemOrder.orderType in ('Manual','Auto') ";
+		}
+		else {
+			whereClause=" and itemOrder.orderType in ('"+payloadBean.getCustom1()+"') ";
+		}
+		if(payloadBean.getCustomParameter()!=null && !payloadBean.getCustomParameter().trim().equals("")) {
+			whereClause+=" and itemOrder.indentNo='"+payloadBean.getCustomParameter()+"' ";
+		}
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select itemOrder.itemOrderId as itemOrderId,itemOrder.indentNo as indentNo,itemOrder.orderDate as orderDate,"
+					+ "itemOrder.orderPlace as orderPlace,pharmacyLoc.pharmacyLocationName as otPharmacyLocationName,pharmacyStore.pharmacyStoreName as otPharmacyStoreName,itemOrder.ofPharmacyLocation.pharmacyLocationName as ofPharmacyLocationName,"
+					+ "itemOrder.orderStatus as orderStatus"
+					+ " from ItemOrderEntity itemOrder"
+					+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemOrder.ofPharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+					+ " left join itemOrder.otPharmacyLocation pharmacyLoc"
+					+ " left join itemOrder.otPharmacyStore pharmacyStore"
+						+ " where itemOrder.recordType<>'D' and pharmacyLocationUser.userId.userID=:userID and itemOrder.orderStatus=:orderStatus "+whereClause+" order by itemOrder.itemOrderId asc";
+			objItemOrderEntityTOList = (List<ItemOrderEntityTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId()).setParameter("orderStatus", payloadBean.getSearchParameter())
+					.setResultTransformer(Transformers.aliasToBean(ItemOrderEntityTO.class)).list();
+			
+			
+		
+		return objItemOrderEntityTOList;
+	
+	}
+
+	@Override
+	public ItemOrderEntity findItemOrderById(Long itemOrderId) {
+		
+		return entityManager.find(ItemOrderEntity.class, itemOrderId);
+	}
+
+	@Override
+	public List<ItemOrderDetailEntity> findItemOrderDetailsByItemOrderPK(Long itemOrderId) {
+
+		List<ItemOrderDetailEntity> objItemOrderDetailBeanList = null;
+		String sqlQuery = "";
+		//String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			//sqlQuery ="select itemOrder.itemOrderId as itemOrderId,itemOrder.indentNo as indentNo,DATE_FORMAT(itemOrder.orderDate,'" + dateFormat + "' ) as orderDate,"
+			sqlQuery= "from ItemOrderDetailEntity itemOrderDetail"
+					//+ " left join itemOrderDetail.itemOrder itemOrderDetails"
+						+ " where itemOrderDetail.itemOrder.itemOrderId in :itemOrderId";
+			objItemOrderDetailBeanList =  session.createQuery(sqlQuery)
+					.setParameter("itemOrderId", itemOrderId).list();
+					//.setResultTransformer(Transformers.aliasToBean(ItemOrderDetailEntity.class)).list();
+			
+		}catch(Exception e) {
+			System.out.println(itemOrderId);
+			e.printStackTrace();
+		}
+		
+		return objItemOrderDetailBeanList;
+	
+	}
+
+	@Override
+	public boolean updateItemOrder(ItemOrderEntity ItemOrderEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(ItemOrderEntity);
+		return true;
+	}
+
+	@Override
+	public boolean updateItemOrderDetail(ItemOrderDetailEntity ItemOrderDetailEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(ItemOrderDetailEntity);
+		return true;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long id) {
+
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType"
+					+ " from  ItemOrderEntity table where table.itemOrderId=:itemOrderId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemOrderId", id)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		
+		return transactionData;
+	
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataOfItemOrderDetailById(Long id) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType"
+					+ " from  ItemOrderDetailEntity table where table.itemOrderDetailId=:itemOrderDetailId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemOrderDetailId", id)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		
+		return transactionData;
+	}
+
+	@Override
+	public ItemStockEntityTO fetchDistributedQunatityByItemOrderDetailID(Long itemOrderDetailId) {
+
+
+		ItemStockEntityTO objItemPackSizeEntityTO = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select sum(itemOrderProcc.distributedQuantity) as distributeQuantity from ItemOrderProcessingEntity itemOrderProcc"
+					+ " left join itemOrderProcc.itemOrderDetail itemOrderDetail"
+						+ " where itemOrderDetail.itemOrderDetailId=:itemOrderDetailId and itemOrderProcc.recordType <>'D' group by itemOrderDetail.itemOrderDetailId";
+			objItemPackSizeEntityTO = (ItemStockEntityTO) session.createQuery(sqlQuery)
+					.setParameter("itemOrderDetailId", itemOrderDetailId)
+					.setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).getSingleResult();
+		}catch(NoResultException noResultException)	{
+			objItemPackSizeEntityTO=new ItemStockEntityTO();
+		}
+		return objItemPackSizeEntityTO;
+	
+	
+	}
+	@Override
+	public List<ReportsTO> fetchAutoOrdersMinimumQuantityItemDetails(PayloadBean payloadBean) {
+		Session session = (Session) entityManager.getDelegate();
+		
+		String sqlQuery = "select itemDetail.itemId as itemId,itemDetail.itemName as itemName,itemDetail.itemCode as itemCode,itemDetail.dispenseAsPack as dispenseAsPack"
+				+ " ,sum(itemStock.quantityOnHand) as quantityOnHand,iis.aoMinQuantity as aoMinQuantity,iis.reorderQuantity as reorderQuantity,pharmacyLocationDetail.pharmacyLocationId as pharmacyLocationId"
+				+ " from ItemStockEntity itemStock"
+				+ " left join itemStock.item itemDetail"
+				+ " left join  itemStock.pharmacyLocation pharmacyLocationDetail"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on pharmacyLocationDetail.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " inner join ItemInventorySettingEntity iis on iis.item.itemId= itemDetail.itemId "
+				+ "  where itemDetail.itemStatus='Active' and itemStock.recordType <>'D' and pharmacyLocationUser.userId.userID=:userID and iis.aoMinQuantity is not null and iis.pharmacyLocation.pharmacyLocationId=(select pharmacyLocation.pharmacyLocationId from PharmacyLocationUserEntity where userId.userID="+payloadBean.getId()+")"
+				+ " group by itemDetail.itemId,itemDetail.itemName,itemDetail.itemCode,itemDetail.dispenseAsPack," 
+				+ " iis.aoMinQuantity,iis.reorderQuantity,pharmacyLocationDetail.pharmacyLocationId";
+		return (List<ReportsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).list();
+	}
+
+	@Override
+	public ReportsTO fetchRecorderQuantityOfItemCorrespondingPharmacyLocation(Long pharmacyLocationId, Long itemId) {
+	String sqlQuery = "";
+	ReportsTO objReportsTO=null;
+	try {
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="select iis.reorderQuantity as reorderQuantity from ItemInventorySettingEntity iis"
+				+ " where iis.pharmacyLocation.pharmacyLocationId=:pharmacyLocationId and item.itemId=:itemId and iis.recordType<>'D'";
+		objReportsTO = (ReportsTO) session.createQuery(sqlQuery)
+				.setParameter("pharmacyLocationId", pharmacyLocationId)
+				.setParameter("itemId", itemId)
+				.setResultTransformer(Transformers.aliasToBean(ReportsTO.class)).getSingleResult();
+	}catch(NoResultException noResultException)	{
+		objReportsTO=new ReportsTO();
+	}
+	return objReportsTO;}
+
+	@Override
+	public boolean deleteItemOrderDetailsById(DeleteRecords deleteRecords) {
+		String sqlQuery="";
+		int count=0;
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery ="delete from ItemOrderDetailEntity"
+				+ " where itemOrderDetailId=:itemOrderDetailId";
+		 count=session.createQuery(sqlQuery).setParameter("itemOrderDetailId", deleteRecords.getId())
+				.executeUpdate();
+		 if(count>0)
+			 return true;
+		 else
+			 return false;
+	}
+
+	@Override
+	public ItemStockEntityTO fetchItemQuantityOnHandOfStoreDetail(ItemStockEntityTO itemStockEntityTO) {
+
+
+		ItemStockEntityTO objItemPackSizeEntityTO = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select sum(itemStockEntity.quantityOnHand) as quantityOnHand from ItemStockEntity itemStockEntity"
+					+ " left join itemStockEntity.pharmacyLocation phLoc"
+					+ " left join itemStockEntity.item items"
+					+ " left join itemStockEntity.itemPackSize packSize"
+						+ " where itemStockEntity.itemStockStatus='InStock' and itemStockEntity.recordType <>'D' and phLoc.pharmacyLocationId=:pharmacyLocationId and items.itemId =:itemId and packSize.packSizeId=:packSizeId";
+			objItemPackSizeEntityTO = (ItemStockEntityTO) session.createQuery(sqlQuery)
+					.setParameter("pharmacyLocationId", itemStockEntityTO.getPharmacyLocationId())
+					.setParameter("itemId", itemStockEntityTO.getItemId())
+					.setParameter("packSizeId", itemStockEntityTO.getPackSizeId())
+					.setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).getSingleResult();
+		}catch(NoResultException noResultException)	{
+			objItemPackSizeEntityTO=new ItemStockEntityTO();
+		}
+			
+		
+		return objItemPackSizeEntityTO;
+	
+	
+	}
+}

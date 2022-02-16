@@ -1,0 +1,52 @@
+package com.edios.pms.bean;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.CompoundItemDetailEntity;
+import com.edios.pms.entity.ItemEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CompoundItemBean extends AbstractBean {
+
+	private Long compoundItemId;
+
+	private Double compoundQuantity;
+
+	private Date configurationDate;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+
+	private List<CompoundItemDetailBean> compoundItemDetails;
+
+	private ItemBean item;
+
+}

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="LoanScreen2" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="100" bottomMargin="20" uuid="624cb7fd-3e82-4aa7-9056-b2fc952c69bf">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="address" class="java.lang.String"/>
+	<field name="bankName" class="java.lang.String"/>
+	<field name="amount" class="java.lang.String"/>
+	<field name="modelName" class="java.lang.String"/>
+	<field name="loanAmountinWords" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="19" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="555" height="19" uuid="a6427806-fcd0-4b2e-a80f-b7a57c53be5f"/>
+				<text><![CDATA[                                                            BOARD RESOLUTION(For Private Ltd Firm)]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="485" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="89" width="555" height="62" uuid="467b2352-6220-4305-984d-faf0cc789b72"/>
+				<text><![CDATA[It was term of the arrangements that the Company would charge by way of Hypothecation of its above vehicle/vehicles now owned/to be acquired with such loan to the Bank as set out in the Composite Agreement for Auto-Loan and Guarantee and the Power of Attorney both included in the above loan documents which was tabled in the meeting.
+IT WAS RESOLVED as follows:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="0" y="14" width="555" height="75" uuid="4b72deb8-d988-4d0a-ace8-118d50692708"/>
+				<box leftPadding="1"/>
+				<textElement markup="html">
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Extract from the Minutes of the Meeting of the Board of Directors of "+$F{customerName} +" duly conveyed, held and constituted on ___at the " +$F{address} +" The Chairperson reported that arrangements were proposed with " +$F{bankName} +".,whereby the Company would be granted a loan facility of " + $F{amount} +" " + $F{loanAmountinWords} + " for the purpose of meeting the costs of acquiring of one (1) Motor vehicle/vehicles "+$F{modelName} +" on the terms set out in the printed loan documents of the Bank for such loan which was tabled at the meeting."]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="151" width="555" height="334" uuid="d1dd6254-63a2-4300-8978-64368f7d8d39"/>
+				<textElement markup="html"/>
+				<text><![CDATA[<br><b>1)</b>That this loan of Rs. 2988500/- twenty nine lacs eighty eight thousands five hundered only) (Loan Amount & Amount In words) to be repayable in equated monthly installments not exceeding (36) months(Duration) be arranged by the Company with the Bank on the terms set out in the above loan documents now produced to the meeting and approved.<br>
+<br><b>2)</b>That the Company do charge by way of Hypothecation in favour of the Bank as continuing security of its vehicle/vehicles  mentioned above to secure repayment of the monies, obligations and liabilities covenanted to be paid in the composite Agreement for Auto Loan and Guarantee included in the above loan documents which was produced at the meeting.<br>
+<br><b>3)</b>That the said Agreement and the Power of Attorney (included in the above loan documents) in favour of the Bank and produced at the meeting be and same are hereby approved.<br><br><b>4)</b> Mr./Mrs.(Bhuwan goel) of the Company is instructed and authorized to sign and execute, (a) Composite Agreement for Auto Loan and Guarantee, (b) Power of Attorney, (c) Promissory Note and, (d) Any  other document that may be required by the Bank on behalf of the Company and deliver the same to the Bank and to arrange for the  filing with the Registrar of  Companies (if required in law) of all necessary forms consequent upon the business deal with at this meeting.<br><br><b>5)</b>The Company undertakes to submit copy of  Post Delivery Documents (Invoice, RC Book & Insurance) to the Bank within 30 days of disbursement of the loan<br> <br><b> IT IS HEREBY CERTIFIED</b> that the above is a true extract from the Minutes of the Meeting of the Board of Directors of the Company and that the resolution set out above were  duly passed in accordance with and comply with the Memorandum and Articles of Association and the Provisions of the appropriate Statutes, Rules and Regulations relating to the management and affairs of the Company and that neither such resolutions nor drawing under above facility will infringe any restrictions on borrowing, changing or otherwise affecting the Company or the Board.<br>]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="218" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="469" height="20" uuid="79bf64e9-f2ed-4692-b195-7a7d4227d893"/>
+				<text><![CDATA[For (Name of the company)]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="20" width="109" height="20" uuid="3d79d6be-4f71-42c4-894c-1ed8d9d7d07e"/>
+				<textFieldExpression><![CDATA[$F{customerName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="40" width="171" height="23" uuid="f4940e54-8cba-42a0-a27b-1632e2143e87"/>
+				<text><![CDATA[Authorized Signatory (Director)]]></text>
+			</staticText>
+		</band>
+	</columnFooter>
+</jasperReport>

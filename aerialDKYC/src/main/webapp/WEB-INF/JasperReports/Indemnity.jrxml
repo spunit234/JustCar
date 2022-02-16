@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Indemnity" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="45" bottomMargin="20" uuid="a3d5b318-76cc-4399-8cb0-db306f2e5507">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<field name="contactNo" class="java.lang.String"/>
+	<field name="adharNo" class="java.lang.String"/>
+	<field name="panNo" class="java.lang.String"/>
+	<field name="fatherName" class="java.lang.String"/>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="ifsc" class="java.lang.String"/>
+	<field name="accountNo" class="java.lang.String"/>
+	<field name="loanAmountinWords" class="java.lang.String"/>
+	<field name="chassisNo" class="java.lang.String"/>
+	<field name="engineNo" class="java.lang.String"/>
+	<field name="registrationNo" class="java.lang.String"/>
+	<field name="amount" class="java.lang.String"/>
+	<field name="makeandmodel" class="java.lang.String"/>
+	<field name="benAmount" class="java.lang.String"/>
+	<field name="rtoChargesi" class="java.lang.String"/>
+	<field name="insurencei" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="83" splitType="Stretch">
+			<textField isStretchWithOverflow="true" evaluationTime="Auto" pattern="">
+				<reportElement positionType="Float" x="0" y="0" width="555" height="20" uuid="a2f4354a-1789-4006-bb8f-f49e087b9b00"/>
+				<textElement verticalAlignment="Top" markup="html">
+					<paragraph lineSpacing="Single" firstLineIndent="1" leftIndent="1"/>
+				</textElement>
+				<textFieldExpression><![CDATA["With reference to my Used Car Loan Application for availing finance against the vehicle "+$F{makeandmodel}+ " this is to "]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="20" width="555" height="20" uuid="dd4ff2be-91f0-4fbc-87ed-726f627679a9"/>
+				<textFieldExpression><![CDATA[" confirm and acknowledge that an amount of RS "+$F{amount}+"-/ has been disbursed by CHOLAMANDALAM"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="40" width="555" height="20" uuid="eec2f9b1-de15-40f2-abfd-d0fd54fe87c9"/>
+				<text><![CDATA[ INVESTMENT AND FINANCE COMPANY LIMITED.to the account of M/s << PANKAJ GOEL HUF>>]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="60" width="478" height="20" uuid="9339bcc4-0c62-4c63-a79d-184c2dfc4065"/>
+				<text><![CDATA[ pursuant to Payment Authority Letter issued by me towards disbursement of Used Car Vehicle]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="559" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="256" height="20" uuid="9f818b54-362a-44c3-a1ba-ce22b2a10793"/>
+				<text><![CDATA[Particulars of vehicles are mentioned below]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="20" width="100" height="20" uuid="ac8e00e0-11ba-497b-96d2-ef4d97b6dbe7"/>
+				<text><![CDATA[Vehicle Regn no.  :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="108" y="20" width="100" height="20" uuid="ed95b089-50ef-46f3-bc85-42d383a182eb"/>
+				<textFieldExpression><![CDATA[$F{registrationNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="40" width="100" height="20" uuid="495d9c95-d89f-48a7-86fd-bb0f0b977f88"/>
+				<text><![CDATA[Engine No. :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="108" y="40" width="100" height="20" uuid="ed19f4e1-22c8-4f3b-b006-bec82e1b1563"/>
+				<textFieldExpression><![CDATA[$F{engineNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="60" width="100" height="20" uuid="52d7fc9a-0c84-46cb-ab7a-5bc33732cd76"/>
+				<text><![CDATA[Chassis No.  :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="108" y="60" width="100" height="20" uuid="35e15779-33c0-4125-92a0-dd0b1cca01e0"/>
+				<textFieldExpression><![CDATA[$F{chassisNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="80" width="542" height="23" uuid="a6f23a2a-5b70-4c8f-91e7-e501cb097172"/>
+				<text><![CDATA[I hereby further confirm that I have issued Instruction to << << PANKAJ GOEL HUF to make a payment of]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="103" width="555" height="20" uuid="eea75588-a48d-4a86-85aa-e48b22ae8060"/>
+				<textFieldExpression><![CDATA[$F{benAmount}+"-/ "+$F{loanAmountinWords} + " to "+$F{customerName}+" having PAN No. " +$F{panNo} +" from my  "]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="123" width="542" height="20" uuid="18edb555-df73-4fe5-865a-3b1b1ba73aaf"/>
+				<textFieldExpression><![CDATA["disbursement amount, in account no. "+$F{accountNo}+ " IFSC "+$F{ifsc}+ " I have no objection to that"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="143" width="442" height="20" uuid="d95f52d1-782f-48da-8c48-b6f629e7e8cf"/>
+				<text><![CDATA[I hereby further confirm that I have received the balance disbursement amount.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="256" width="100" height="20" uuid="4be0de42-0255-4655-a6c9-2bf944867aac"/>
+				<text><![CDATA[Thanking you.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="276" width="100" height="20" uuid="b9db1f3a-63ed-44da-97aa-9e2e1880292b"/>
+				<text><![CDATA[Yours Truly,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="316" width="208" height="20" uuid="aa0a394d-83dc-44ad-b8b0-c417202184e2"/>
+				<text><![CDATA[______________________________]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="336" width="161" height="20" uuid="bd7ec5be-0384-4907-8f61-54c9bc80dce4"/>
+				<text><![CDATA[Signature of the Customer]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="380" width="335" height="20" uuid="a0195f2a-34f7-4c71-a425-310fc16ed574"/>
+				<textFieldExpression><![CDATA['Name of Customer '+$F{customerName}+"  S/O "+$F{fatherName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="163" width="132" height="20" uuid="57223cea-1450-4e7f-bbf1-c475e062e69f"/>
+				<text><![CDATA[I also Authorise to pay:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="252" width="555" height="24" uuid="e77184a3-f1c7-4a88-8fb7-d91703d0dc2a"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="207" width="555" height="47" uuid="6cffcac3-6289-406f-8d4b-2ee21373bf3a"/>
+				<textFieldExpression><![CDATA[$F{rtoChargesi}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="183" width="555" height="24" uuid="d1e8e9cc-ee6e-4471-8c07-2616b72bfb99"/>
+				<textFieldExpression><![CDATA[$F{insurencei}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

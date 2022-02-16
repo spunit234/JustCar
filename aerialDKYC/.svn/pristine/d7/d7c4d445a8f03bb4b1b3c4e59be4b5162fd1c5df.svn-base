@@ -1,0 +1,170 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.PharmacyLocationUserBean;
+import com.edios.pms.dao.AssignPharmacyLocationDao;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyLocationUserEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.manager.AssignPharmacyLocationManager;
+
+
+
+@Service("assignPharmacyLocationManager")
+public class AssignPharmacyLocationManagerImpl extends AbstractManagerImpl<PharmacyLocationBean, PharmacyLocationEntity>implements AssignPharmacyLocationManager{
+	@Autowired
+	AssignPharmacyLocationDao assignPharmacyLocationDao;
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationBean> PharmacyLocationNames(PayloadBean payloadBean) {
+		try {		
+			return  (List<PharmacyLocationBean>) assignPharmacyLocationDao.PharmacyLocationNames(payloadBean); 					
+		}
+		catch (Exception e) {
+		e.printStackTrace();
+		return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> searchLocationNames(PayloadBean payloadBean) {
+		
+		try {		
+			return  (List<PharmacyLocationEntityTO>) assignPharmacyLocationDao.searchLocationNames(payloadBean); 					
+		}
+		catch (Exception e) {
+		e.printStackTrace();
+		return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public AssignPharmacyLocationScreenBean findPharmacyLocationById(Long id) {
+		
+		return null;
+	}
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> searchLocationCode(PayloadBean payloadBean) {
+		try {		
+			return  (List<PharmacyLocationEntityTO>) assignPharmacyLocationDao.searchLocationCode(payloadBean); 					
+		}
+		catch (Exception e) {
+		e.printStackTrace();
+		return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public String updatePharmacyLocation(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		assignPharmacyLocationScreenBean.getUserId().setUserID(assignPharmacyLocationScreenBean.getDublicateUserId());
+		System.out.println(assignPharmacyLocationScreenBean);
+		
+		// Optimistic Locking for Hibernate
+		TransactionData latestData =assignPharmacyLocationDao.fetchTransactionDataById(assignPharmacyLocationScreenBean.getPharmacyLocationUserId());
+		if (latestData.getTransactionCount() > (assignPharmacyLocationScreenBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		setAuditInfo(assignPharmacyLocationScreenBean, "editFlag");
+		PharmacyLocationUserEntity pharmacyLocationUserEntity = mapper.map(assignPharmacyLocationScreenBean,PharmacyLocationUserEntity.class);
+		resultFlag = assignPharmacyLocationDao.updatePharmacyLocation(pharmacyLocationUserEntity);
+		
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+	
+	private void setAuditInfo(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			assignPharmacyLocationScreenBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			assignPharmacyLocationScreenBean.setCreatedDate(new Date());
+		} else {
+			assignPharmacyLocationScreenBean.setTransactionCount(
+					assignPharmacyLocationScreenBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			assignPharmacyLocationScreenBean.setLastModifiedDate(new Date());
+			assignPharmacyLocationScreenBean.setCreatedDate(new Date());
+			//assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		}
+		
+	}
+
+	@Override
+	@Transactional
+	public String addPharmacyLocation(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean) {
+		String resultString="";
+		 boolean resultFlag=false;
+			assignPharmacyLocationScreenBean.getUserId().setUserID(assignPharmacyLocationScreenBean.getDublicateUserId());
+			System.out.println(assignPharmacyLocationScreenBean);
+		 setAuditInfo(assignPharmacyLocationScreenBean,"newFlag");
+		 PharmacyLocationUserEntity pharmacyLocationUserEntity = mapper.map(assignPharmacyLocationScreenBean,PharmacyLocationUserEntity.class);
+		 resultFlag=assignPharmacyLocationDao.addPharmacyLocation(pharmacyLocationUserEntity);
+		 if(resultFlag) {
+			 return "ADDED";
+		 }
+		 
+		 return resultString;
+	 }
+
+	@Override
+	@Transactional
+	public String deletePharmacyUser(PharmacyLocationUserBean pharmacyLocationUserBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = assignPharmacyLocationDao.fetchTransactionDataById(pharmacyLocationUserBean.getPharmacyLocationUserId());
+		if (latestData.getTransactionCount() > (pharmacyLocationUserBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		PharmacyLocationUserEntity pharmacyLocationUserEntity = mapper.map(pharmacyLocationUserBean,PharmacyLocationUserEntity.class);
+		System.out.println(pharmacyLocationUserEntity);
+		resultFlag = assignPharmacyLocationDao.deletePharmacyUser(pharmacyLocationUserEntity);
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String isPharmacyLocationAssignedToUser(String username) {
+		// TODO Auto-generated method stub
+		List<PharmacyLocationEntityTO> objList=assignPharmacyLocationDao.isPharmacyLocationAssignedToUser(username);
+		if(objList!=null && !objList.isEmpty()) {
+			return "ASSIGNED";
+		}
+		else {
+			return "NOTASSIGNED";
+		}
+		
+	}
+	
+}

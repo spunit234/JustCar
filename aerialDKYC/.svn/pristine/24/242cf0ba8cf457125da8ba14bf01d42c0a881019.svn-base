@@ -1,0 +1,306 @@
+package com.edios.pms.dao.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.hibernate.type.StandardBasicTypes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.DataSourceDao;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.DataSourceTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.ibm.icu.util.CharsTrie.Entry;
+import com.ibm.icu.util.CharsTrie.Iterator;
+
+@Repository
+public class DataSourceDaoImpl extends BaseDaoImpl<DataSourceEntity> implements DataSourceDao {
+	@Autowired
+	MessageSource messageSource;
+
+	@Override
+	public List<DataSourceTO> getDataSourcesDetails(PayloadBean payloadBean) {
+
+		List<DataSourceTO> objDataSourceTOList = null;
+		String sqlQuery = "",whereClause="where dse.recordType<>'D' and dse.dataSourceStatus = '"+payloadBean.getSearchParameter()+"'";
+		if(payloadBean.getCustomParameter()!=null && !payloadBean.getCustomParameter().trim().equals("")) {
+			whereClause+=" and dse.dataSourceName = '"+payloadBean.getCustomParameter()+"'";
+		}
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select dse.dataSourceId as dataSourceId,dse.dataSourceName as dataSourceName,dse.dataSourceType as dataSourceType,"
+					+ "dse.dataSourceStatus as dataSourceStatus"
+					+ ",dse.transactionCount as transactionCount,dse.viewName as viewName"
+					+ " from DataSourceEntity dse "+whereClause+" order by dse.dataSourceName";
+			objDataSourceTOList = (List<DataSourceTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(DataSourceTO.class)).list();
+			
+			
+		
+		return objDataSourceTOList;
+	
+	}
+
+
+
+	@Override
+	public List<String> getViewAndTableDetail(PayloadBean payloadBean){
+		List<String> siteEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "SELECT upper(table_name) FROM INFORMATION_SCHEMA.TABLES" + 
+					" WHERE TABLE_TYPE =:table_type order by table_name asc";
+			siteEntityTOList = (List<String>) session.createNativeQuery(sqlQuery).setParameter("table_type", payloadBean.getCustomParameter()).list();
+		return siteEntityTOList;
+	}
+
+
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<DataSourceFieldTO> getViewTableDescription(String name) {
+
+		List<DataSourceFieldTO> PharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select upper(column_name) As fieldActualName,upper(column_name) As fieldDisplayName,data_type as fieldDataType,character_maximum_length as fieldLength,"
+					+ "ordinal_position as ordinalPostion"
+					+ " from  INFORMATION_SCHEMA.COLUMNS"
+					+ " where table_name=:name order by column_name asc";
+			PharmacyLocationEntityTOList = (List<DataSourceFieldTO>) session.createNativeQuery(sqlQuery)
+					.addScalar("fieldActualName", StandardBasicTypes.STRING)
+					.addScalar("fieldDisplayName", StandardBasicTypes.STRING)
+					.addScalar("fieldDataType", StandardBasicTypes.STRING)
+					.addScalar("fieldLength", StandardBasicTypes.LONG)
+					.addScalar("ordinalPostion", StandardBasicTypes.LONG)
+					.setParameter("name", name)
+					.setResultTransformer(Transformers.aliasToBean(DataSourceFieldTO.class)).list();
+		return PharmacyLocationEntityTOList;
+	
+	}
+
+
+
+	@Override
+	public boolean isDataSourceNameExist(String dataSourceName,Long dataSourceId) {
+		try {
+			return entityManager.createQuery(
+					"select table.dataSourceName as dataSourceName from DataSourceEntity table where "
+							+ "table.dataSourceName='"+dataSourceName+"' and table.dataSourceId!="+dataSourceId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		}
+	
+	}
+
+	@Override
+	public Long addDataSource(DataSourceEntity objDataSourceEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objDataSourceEntity);
+		return objDataSourceEntity.getDataSourceId();
+	}
+	
+	@Override
+	public boolean addDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objDataSourceFieldEntity);
+		return true;
+	}
+
+	
+	@Override
+	public DataSourceEntity findDataSourceById(Long dataSourceId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(DataSourceEntity.class, dataSourceId);
+	}
+	
+	@Override
+	public DataSourceFieldEntity findDataSourceFieldById(Long dataSourceFieldId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(DataSourceFieldEntity.class, dataSourceFieldId);
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataById(Long dataSourceId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  DataSourceEntity table where table.dataSourceId=:dataSourceId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("dataSourceId", dataSourceId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataByFieldId(Long dataSourceFieldId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  DataSourceFieldEntity table where table.dataSourceFieldId=:dataSourceFieldId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("dataSourceFieldId", dataSourceFieldId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+
+	@Override
+	public boolean updateDataSource(DataSourceEntity objDataSourceEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(objDataSourceEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean updateDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objDataSourceFieldEntity);
+		return true;
+	}
+	
+	
+	@Override
+	public List verifyDynamicSQL(PayloadBean payloadBean){
+		List<String> siteEntityTOList = new ArrayList<>();
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = payloadBean.getSearchParameter();
+			try {
+				siteEntityTOList = (List) session.createSQLQuery(sqlQuery).list();
+					
+			}catch(Exception exception) {
+				return null;
+			}
+			
+		return siteEntityTOList;
+	}
+	
+	@Override
+	public boolean isAssignWorkStationCodeExist(Long workStationID, String workStationCode, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationCode as workStationCode from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationCode='"+workStationCode+"' and table.workStationID!="+workStationID)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean addAssignWorkStation(WorksStationAssignmentEntity objWorksStationAssignmentEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objWorksStationAssignmentEntity);
+		return true;
+	}
+
+
+
+	@Override
+	public WorksStationAssignmentEntity findWorkStationById(Long workStationID) {
+		// TODO Auto-generated method stub
+		return entityManager.find(WorksStationAssignmentEntity.class, workStationID);
+	}
+
+	
+
+
+
+	@Override
+	public boolean deleteDataSourceField(Long dataSourceFieldId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from DataSourceFieldEntity where dataSourceFieldId="+dataSourceFieldId).executeUpdate();
+		return true;
+	}
+	
+	@Override
+	public List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id) {
+		List<PharmacyLocationRobotEntityTO> pharmacyLocationRobotEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "SELECT robot.robotName AS robotName,robot.robotId AS robotId FROM  PharmacyLocationRobotEntity robot WHERE robot.pharmacyLocation ="+id+" "
+					+ " AND robot.robotStatus='Active'  Order by robot.robotName";
+			pharmacyLocationRobotEntityTOList = (List<PharmacyLocationRobotEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationRobotEntityTO.class)).list();
+		return pharmacyLocationRobotEntityTOList;
+	}
+
+
+
+	@Override
+	public boolean isAssignWorkStationIpAddressExist(String ipAddress, Long workStationId, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationName as workStationName from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationIpAdd='"+ipAddress+"' and table.workStationID!="+workStationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean isAssignWorkStationMACAddressExist(String macAddress, Long workStationId, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationName as workStationName from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationMacAdd='"+macAddress+"' and table.workStationID!="+workStationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean updateAssignWorkStation(WorksStationAssignmentEntity WorksStationAssignmentEntity) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+}

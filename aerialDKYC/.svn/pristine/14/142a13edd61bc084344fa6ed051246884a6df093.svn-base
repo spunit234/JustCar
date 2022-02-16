@@ -1,0 +1,12 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+
+public interface SlowMovingMedicationsManager {
+
+	List<PatientDispensedItemsTO> getSlowMovingMedication(PayloadBean payloadBean);
+
+}

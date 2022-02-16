@@ -1,0 +1,99 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.bean.common.ApplicationParameterListBean;
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.ItemCodeLinkageEntity;
+import com.edios.pms.entity.ItemDrugSubstitutionEntity;
+import com.edios.pms.entity.ItemInventorySettingEntity;
+import com.edios.pms.entity.ItemPackSizeEntity;
+import com.edios.pms.entity.ItemsEntity;
+import com.edios.pms.entity.to.ItemCodeLinkageEntityTO;
+import com.edios.pms.entity.to.ItemDrugSubstitutionEntityTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemInventorySettingsTo;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+
+public interface ItemsDao extends BaseDao<ItemsEntity>{
+
+	boolean addItemConfiguration(ItemsEntity itemsEntity);
+
+	List<ItemsEnityTO> fetchItems(Integer accountId, String searchParameter);
+
+	ItemsEntity findItemById(Long id);
+
+	TransactionData fetchTransactionDataById(Long itemId);
+
+	boolean updateItem(ItemsEntity itemsEntity);
+
+	boolean deleteItem(Long id, Integer modifiedBy);
+	List<ItemEntityTO> fetchParameterList(String searchParameter);
+	
+	
+	//-----Second Tab----------//
+
+	
+	List<ItemInventorySettingsTo> fetchPharmacyLocationNameAuto(Long userID);
+
+	List<ItemInventorySettingsTo> fetchPharmacyLocationCodeAuto();
+
+	boolean addInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity);
+
+	List<ItemInventorySettingsTo> fetchInventorySettings(Long itemID);
+
+	ItemInventorySettingEntity editInventorySettings(Long id);
+
+	boolean updateInventorySetting(ItemInventorySettingEntity itemInventorySettingEntity);
+
+	TransactionData fetchInventoryTransactionDataById(Long inventorySettingId);
+
+	boolean addPackSize(ItemPackSizeEntity itemPackSizeEntity);
+
+	List<ItemPackSizeEntityTO> fetchItemPackSize(Long itemID);
+
+	ItemPackSizeEntity editItemPackSize(Long packSizeid);
+
+	TransactionData fetchPackSizeTransactionDataById(Long packSizeId);
+
+	boolean updateItemPackSize(ItemPackSizeEntity itemPackSizeEntity);
+
+	Boolean checkItemsRecord(Long itemId, Long pharmacyLocationId);
+
+	List<ItemEntityTO> fetchDrugSubstitutionAutoLookUpList(Long itemId);
+
+	boolean addDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity);
+
+	List<ItemDrugSubstitutionEntityTO> fetchDrugSubstitution(Long itemID);
+
+	ItemDrugSubstitutionEntity editDrugSubstitution(Long drugSubstitutionid);
+
+	TransactionData fetchDrugSubstitutionTransactionDataById(Long drugSubstitutionId);
+
+	boolean updateDrugSubstitution(ItemDrugSubstitutionEntity itemDrugSubstitutionEntity);
+
+	boolean addItemCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity);
+
+	List<ItemCodeLinkageEntityTO> fetchCodeLinkage(Long itemID);
+
+	ItemCodeLinkageEntity editCodeLinkage(Long codeLinkageId);
+
+	TransactionData fetchCodeLinkageTransactionDataById(Long codeLinkageId);
+
+	boolean updateCodeLinkage(ItemCodeLinkageEntity itemCodeLinkageEntity);
+
+	boolean checkExistingDrugSubstitutes(Long substituteItemId, Long itemId);
+
+	boolean checkExistingPackSizes(Long packSize, Long itemId);
+
+	Boolean checkItemsInventoryRecord(Long itemId, Long pharmacyLocationId, Long inventorySettingId);
+
+	Long checkItemUsageInItemStockAndItemOrderDetails(Long id);
+
+	
+
+
+
+}

@@ -1,0 +1,66 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.entity.to.UserActivityLogEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AdminReportSearchParameterBean;
+import com.edios.pms.manager.AdminReportManager;
+
+@RestController
+public class AdminReportController extends AbstractController {
+
+	@Autowired
+	MessageSource message;
+	@Autowired
+	AdminReportManager adminReportManager;
+
+	@PostMapping("/fetch-user-activity-log")
+	public ResponseEntity<List<UserActivityLogEntityTO>> fetchUserActivityLog(
+			@RequestBody AdminReportSearchParameterBean adminReportSearchParameterBean) {
+		List<UserActivityLogEntityTO> userActivityLogList = null;
+		userActivityLogList = adminReportManager.fetchUserActivityLog(adminReportSearchParameterBean);
+		return new ResponseEntity<List<UserActivityLogEntityTO>>(userActivityLogList, HttpStatus.OK);
+	}
+
+	@PostMapping("/fetch-saved-cliked-user-activity-log")
+	public ResponseEntity<List<UserActivityLogEntityTO>> fetchSavedClickedUserActivityLog(
+			@RequestBody PayloadBean payloadBean) {
+		List<UserActivityLogEntityTO> savedClickedActivityLogList = null;
+		if (payloadBean.getSignatureKey().equals(message.getMessage("signatureKey", null, "", Locale.US))) {
+			savedClickedActivityLogList = adminReportManager.fetchSavedClickedUserActivityLog(payloadBean);
+			return new ResponseEntity<List<UserActivityLogEntityTO>>(savedClickedActivityLogList, HttpStatus.OK);
+		} else
+			return new ResponseEntity<List<UserActivityLogEntityTO>>(savedClickedActivityLogList, HttpStatus.UNAUTHORIZED);
+	}
+	@PostMapping("/fetch-Searched-user-activity-log")
+	public ResponseEntity<UserActivityLogEntityTO> fetchSearchedUserActivityLog(
+			@RequestBody PayloadBean payloadBean) {
+		   UserActivityLogEntityTO searchedActivityLog = null;
+		if (payloadBean.getSignatureKey().equals(message.getMessage("signatureKey", null, "", Locale.US))) {
+			searchedActivityLog = adminReportManager.fetchSearchedUserActivityLog(payloadBean);
+			return new ResponseEntity<UserActivityLogEntityTO>(searchedActivityLog, HttpStatus.OK);
+		} 
+		return new ResponseEntity<UserActivityLogEntityTO>(searchedActivityLog, HttpStatus.UNAUTHORIZED);
+	}
+	
+	@PostMapping("/user-audit-log-report")
+	public ResponseEntity<List<UserActivityLogEntityTO>> fetchUserAuditLog(
+			@RequestBody AdminReportSearchParameterBean adminReportSearchParameterBean) {
+		List<UserActivityLogEntityTO> userActivityLogList = null;
+		userActivityLogList = adminReportManager.fetchUserAuditLog(adminReportSearchParameterBean);
+		return new ResponseEntity<List<UserActivityLogEntityTO>>(userActivityLogList, HttpStatus.OK);
+	}
+
+
+}

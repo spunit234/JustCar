@@ -1,0 +1,63 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemOrderDetailEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+
+	private Long itemOrderProcessingId;
+	
+	private Long itemOrderDetailId;
+	
+	private Long itemStockId;
+
+	private String itemName;
+	
+	private String itemCode;
+	
+	private String orderAsPack;
+	
+	private String lotNo;
+	
+	private String expiryDate;
+	
+	private String expiryDate1;
+	
+	private Long distributedQuantity;
+	
+	private Long itemsCount;
+	
+	private Long orderQuantity;
+	
+	private Long packSize;
+	
+	private Long receivedQuantity;
+	
+	private String matched;
+	
+	private Long transactionCount;
+	
+	private Double packOrderQuantity;
+	
+	private String notes;
+	
+	DateFormatter format = new DateFormatter();
+	
+	public void setExpiryDate(Date expiryDate) {
+		this.expiryDate = format.formaDate(expiryDate);
+	}
+	
+}

@@ -1,0 +1,19 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.entity.to.UserActivityLogEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AdminReportSearchParameterBean;
+
+public interface AdminReportManager {
+
+	List<UserActivityLogEntityTO> fetchUserActivityLog(AdminReportSearchParameterBean adminReportSearchParameterBean);
+
+	List<UserActivityLogEntityTO> fetchSavedClickedUserActivityLog(PayloadBean payloadBean);
+
+	UserActivityLogEntityTO fetchSearchedUserActivityLog(PayloadBean payloadBean);
+
+	List<UserActivityLogEntityTO> fetchUserAuditLog(AdminReportSearchParameterBean adminReportSearchParameterBean);
+
+}

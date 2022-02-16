@@ -1,0 +1,105 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+
+
+/**
+ * The persistent class for the ` item_order_processing` database table.
+ * 
+ */
+@Entity
+@Table(name="item_order_processing")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemOrderProcessingEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ITEM_ORDER_PROCESSING_ID")
+	private Long itemOrderProcessingId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="DISTRIBUTED_QUANTITY")
+	private Long distributedQuantity;
+
+	@Column(name="DQ_TOTAL_COST")
+	private Double dqTotalCost;
+
+	@Column(name="DQ_UNIT_COST")
+	private Double dqUnitCost;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="EXPIRY_DATE")
+	private Date expiryDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="LOT_NO")
+	private String lotNo;
+
+	@Column(name="RECEIVED_QUANTITY")
+	private Long receivedQuantity;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="RQ_TOTAL_COST")
+	private Double rqTotalCost;
+
+	@Column(name="RQ_UNIT_COST")
+	private Double rqUnitCost;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to _itemStock
+	@ManyToOne
+	@JoinColumn(name="ITEM_STOCK_ID")
+	private ItemStockEntity itemStock;
+
+	//bi-directional many-to-one association to ItemOrderDetail
+	@ManyToOne
+	@JoinColumn(name="ITEM_ORDER_DETAIL_ID")
+	private ItemOrderDetailEntity itemOrderDetail;
+
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="PACK_SIZE_ID")
+	private ItemPackSizeEntity itemPackSize;
+	
+	@Column(name="NOTES")
+	private String notes;
+	
+	
+
+	
+
+}

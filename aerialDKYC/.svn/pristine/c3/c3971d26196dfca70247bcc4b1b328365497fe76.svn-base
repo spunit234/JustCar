@@ -1,0 +1,65 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ClassificationItemsBean extends AbstractBean{/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private Long classificationId;
+	
+	private PharmacyLocationBean pharmacyLocation;
+	
+	private String classificationName;
+	
+	private Date classificationDate;
+	
+	private Date dispensedToDate;
+	
+	private Date dispensedFromDate;
+	
+	private Long noOfItems;
+	
+	private String classificationStatus;
+	
+	private String notes;
+	
+	private String ipAddress;
+	
+	private Long createdBy;
+
+	private Integer lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+	
+	private Date createdDate;
+
+}

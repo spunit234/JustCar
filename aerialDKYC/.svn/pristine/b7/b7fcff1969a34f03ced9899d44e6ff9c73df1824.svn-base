@@ -1,0 +1,38 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.dao.StockAdjustmentReportDao;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.PhysicalCountReportTO;
+import com.edios.pms.manager.StockAdjustmentReportManager;
+
+@Service("stockAdjustmentReportManager")
+public class StockAdjustmentReportMangerImpl extends AbstractManagerImpl<ItemStockAdjustmentBean, ItemStockAdjustmentEntity>
+implements StockAdjustmentReportManager{
+
+	@Autowired
+	StockAdjustmentReportDao  stockAdjustmentReportDao;
+	
+	@Override
+	@Transactional
+	public List<ItemStockAdjustmentEntityTO> searchStockAdjustmentReport(PayloadBean payloadBean) {
+		return stockAdjustmentReportDao.searchStockAdjustmentReport(payloadBean);
+	}
+	@Override
+	@Transactional
+	public List<PhysicalCountReportTO> searchPhysicalCountReport(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return stockAdjustmentReportDao.searchPhysicalCountReport(payloadBean);
+	}
+
+}

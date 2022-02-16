@@ -1,0 +1,106 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="ADHOC_REPORTS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class AdhocReportEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ADHOC_REPORT_ID")
+	private Long adhocReportId;
+	
+	@Column(name="REPORT_NAME")
+	private String reportName;
+
+	@Column(name="REPORT_DESCRIPTION")
+	private String reportDescription;
+	
+	@Column(name="ACCESS_TYPE")
+	private String accessType;
+
+	@Column(name="REPORT_INPUT_PARAMETERS")
+	private String reportInputParameter;
+	
+	@Column(name="REPORT_SELECTION_CRITERIA")
+	private String reportSelectionCriteria;
+	
+	@Column(name="REPORT_SORT_CRITERIA")
+	private String reportSortCriteria;
+	
+	@Column(name="REPORT_STATUS")
+	private String reportStatus;
+	
+	@Column(name="NO_OF_DATA_SOURCES")
+	private String noOfDataSources;
+
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_ID1")
+	private DataSourceEntity dataSource1;
+	
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_ID2")
+	private DataSourceEntity dataSource2;
+	
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+	
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_ID1_RFID")
+	private DataSourceFieldEntity dataSourceId1RfId;
+	
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_ID2_RFID")
+	private DataSourceFieldEntity dataSourceId2RfId;
+
+	@Column(name="ACCESS_TYPE_CATEGORY")
+	private String accessTypeCategory;
+	
+
+}

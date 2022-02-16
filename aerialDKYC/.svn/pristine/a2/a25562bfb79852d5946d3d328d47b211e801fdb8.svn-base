@@ -1,0 +1,28 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemTransactionBean;
+import com.edios.pms.dao.GeneralLedgerDao;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.to.GeneralLedgerTo;
+import com.edios.pms.manager.GeneralLedgerManager;
+@Service("generalLedgerManager")
+public class GeneralLedgerManagerImpl extends AbstractManagerImpl<ItemTransactionBean,ItemTransactionEntity> implements GeneralLedgerManager{
+@Autowired
+GeneralLedgerDao generalLedgerDao;
+	@Override
+	@Transactional
+	public List<GeneralLedgerTo> getGeneralLedgerReport(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return generalLedgerDao.getGeneralLedgerReport(payloadBean);
+	}
+
+}

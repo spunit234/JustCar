@@ -1,0 +1,83 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.InventoryCountItemsEntity;
+import com.edios.pms.entity.InventoryCountMismatchEntity;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+
+public interface CycleCountDao extends BaseDao<CycleCountEntity> {
+
+	Long fetchPharmacyLocationID(Long id);
+
+	Long fetchItemCount(Long locationID, String itemClass);
+
+	Long addCycleCount(InventoryCountEntity inventoryCountEntity);
+
+	List<PhysicalCountEntityTo> fetchCycleCountItems(Long pharmacyLocationId, String itemClass);
+
+	Long addCycleCountItems(InventoryCountItemsEntity inventoryCountItemsEntity);
+
+	List<PhysicalCountEntityTo> fetchPhysicalCountItems(Long invCountId);
+
+	TransactionData fetchInvCountItemTransactionDataById(Long invCountItemId);
+
+	boolean updateCycleCount(InventoryCountItemsEntity inventoryCountItemsEntity);
+
+	Long checkExistingRecordInCountItemMismatch(Long invCountItemId);
+
+	Long deletePhysicalCountMisMatchItemsById(Long invCountItemId);
+
+	Long checkAllExistingRecordInCountItemMismatch(String invCountItemList);
+
+	Long deleteAllPhysicalCountMisMatchItemsById(String invCountItemList);
+
+	Long updateCycleCountItems(CycleCountEntityTO cycleCountEntityTO, Long lastModifiedBy, String ipAddress);
+
+	List<PhysicalCountEntityTo> fetchStockItems(Long itemId, Long pharmacyLocationId);
+
+	Long insertPhysicalCountMismatchItems(InventoryCountMismatchEntity inventoryCountMismatchEntity);
+
+	Long fetchInvCountItemsPk(PhysicalCountEntityTo physicalCountEntityTo);
+
+	List<Long> fetchItemStockIdFromInvCountMismatch(Long invCountItemsPK);
+
+	List<PhysicalCountEntityTo> fetchStockItemsOnEdit(Long itemId, Long pharmacyLocationId, Long invCountItemsPK,
+			List<Long> itemStockList);
+
+	List<PhysicalCountEntityTo> searchCycleCount(PayloadBean payloadBean, Long locationID);
+
+	InventoryCountEntity searchCycleCountById(Long id);
+
+	TransactionData fetchTransactionDataById(Long invCountId);
+
+	boolean updateInvCycleCount(InventoryCountEntity inventoryCountEntity);
+
+	List<Long> checkAllExistingRecordsInInventoryCountItems(Long invCountId);
+
+	List<InventoryCountMismatchEntity> fetchInventoryMismatchItemsByIds(List<Long> invCountItemsPKList);
+
+	Long insertStockAdjustment(ItemStockAdjustmentEntity itemStockAdjustmentEntity);
+
+	Long fetchPendingInvCountItems(Long invCountId);
+
+	Long checkForNonMatchedRecordsInInvCountItems(Long invCountId);
+
+	List<PhysicalCountEntityTo> fetchFinalizedPhysicalCountItems(Long id);
+
+	
+
+	
+
+	
+
+	
+}

@@ -1,0 +1,36 @@
+package com.edios.pms.entity.to;
+
+import java.util.Date;
+
+import com.edios.pms.bean.ItemBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemTransactionTO {private Long itemTransactionId;
+
+private Long balanceQuantity;
+
+private Double balanceQuantityCost;
+
+
+private Long transactionCount;
+
+private Date transactionDate;
+
+private String transactionNotes;
+
+private Long transactionQuantity;
+
+private Double transactionQuantityCost;
+
+private PharmacyLocationBean pharmacyLocation;
+
+private ItemBean item;}

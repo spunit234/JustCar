@@ -1,0 +1,52 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.SlowMovingMedicationsDao;
+import com.edios.pms.entity.PatientDispensedItemEntity;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+
+@Repository
+public class SlowMovingMedicationsDaoImpl extends BaseDaoImpl<PatientDispensedItemEntity> implements SlowMovingMedicationsDao{
+
+	@Override
+	public List<PatientDispensedItemsTO> getSlowMovingMedication(PayloadBean payloadBean) {
+		List<PatientDispensedItemsTO> patientDispensedItemsTO=null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		String fromDate = null;
+		String toDate = null;
+		if((payloadBean.getFromDate()!=null)) {
+		    	 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");  
+		    	 fromDate= formatter.format(payloadBean.getFromDate())+" 00:00:00";  
+				 toDate= formatter.format(payloadBean.getToDate())+" 23:59:59";
+		}		 
+		try {
+
+	sqlQuery="SELECT SUM(pDispensed.dispensedQuantity) AS dispensedQuantity,item.itemName AS itemName,item.itemCode AS itemCode ,"
+			+ "ROUND((SUM(pDispensed.dispensedQuantity )/"+payloadBean.getDaysCount()+"),0) AS avgQuantityDispensed, "
+			+ "(SELECT SUM(stock.quantityOnHand) FROM ItemStockEntity stock inner join PharmacyLocationUserEntity pharmacyLocationUser on stock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId WHERE stock.item =(SELECT stock.item  FROM ItemStockEntity stock"
+			+ "  WHERE stock.itemStockId=pDispensed.itemStock.itemStockId) and pharmacyLocationUser.userId.userID=:userID GROUP BY stock.item) AS quantityOnHand"
+			+ " FROM PatientDispensedItemEntity pDispensed LEFT JOIN pDispensed.itemStock itemStock"
+			+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+			+ " LEFT JOIN itemStock.item item WHERE pDispensed.dispensedDateTime>'"+fromDate+"' AND pDispensed.dispensedDateTime<'"+toDate+"'"
+			+ " and pharmacyLocationUser.userId.userID=:userID"
+			+ " GROUP BY pDispensed.itemStock.item,item.itemName,item.itemCode,pDispensed.itemStock.itemStockId HAVING"
+			+ " SUM(pDispensed.dispensedQuantity) <"+Long.parseLong(payloadBean.getSearchParameter())+"";
+
+			patientDispensedItemsTO = (List<PatientDispensedItemsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getId()).setResultTransformer(Transformers.aliasToBean(PatientDispensedItemsTO.class)).list();	
+		}catch(Exception e ) {
+			e.printStackTrace();
+		}
+		
+		return patientDispensedItemsTO;
+	}
+
+}

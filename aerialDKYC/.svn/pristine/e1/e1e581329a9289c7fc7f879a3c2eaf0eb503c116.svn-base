@@ -1,0 +1,250 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.PatientDispensingDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.PatientDispensedItemEntity;
+import com.edios.pms.entity.PatientEntity;
+import com.edios.pms.entity.PatientPrescribedItemEntity;
+import com.edios.pms.entity.PatientPrescriptionEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEncounterEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PatientPrescriptionEntityTO;
+
+@Repository
+public class PatientDispensingDaoImpl extends BaseDaoImpl<PatientEntity> implements PatientDispensingDao {
+	@Autowired
+	MessageSource messageSource;
+
+	@Override
+	public List<PatientEntityTO> getPatientDetails(PatientEntityTO payloadBean) {
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		List<PatientEntityTO> objPatientEntityTOList = null;
+		String sqlQuery = "", whereClause = "";
+		if (payloadBean.getPatientNo() != null && !payloadBean.getPatientNo().trim().equals("")) {
+			whereClause = "and patientNo = '" + payloadBean.getPatientNo() + "' ";
+		}
+		if (payloadBean.getFirstName() != null && !payloadBean.getFirstName().trim().equals("")) {
+			whereClause += "and firstName = '" + payloadBean.getFirstName() + "' ";
+		}
+		if (payloadBean.getLastName() != null && !payloadBean.getLastName().trim().equals("")) {
+			whereClause += "and lastName = '" + payloadBean.getLastName() + "' ";
+		}
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select patientId as patientId,patientNo as patientNo,firstName as firstName,lastName as lastName,birthDate"
+				+ " as birthDate"
+				+ ",gender as gender,homePhone as homePhone,mobilePhone as mobilePhone,patientStatus as patientStatus,transactionCount as transactionCount"
+				+ " from PatientEntity " + " where patientStatus =:patientStatus " + whereClause
+				+ "order by patientId asc";
+		objPatientEntityTOList = (List<PatientEntityTO>) session.createQuery(sqlQuery)
+				.setParameter("patientStatus", payloadBean.getPatientStatus())
+				.setResultTransformer(Transformers.aliasToBean(PatientEntityTO.class)).list();
+
+		return objPatientEntityTOList;
+
+	}
+
+	@Override
+	public PatientEntity getPatientDetailsById(PayloadBean PatientEntity) {
+		// TODO Auto-generated method stub
+		return entityManager.find(PatientEntity.class, PatientEntity.getId()); 
+	}
+
+	@Override
+	public List<PatientEncounterEntityTO> getPatientPatientEncounterDetailsById(PayloadBean payloadBean) {
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		List<PatientEncounterEntityTO> objPatientEncounterEntityList = null;
+		String sqlQuery="";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select patientEncounter.patientEncounterId as patientEncounterId,patientEncounter.admitDateTime as admitDateTime,patientEncounter.visitNumber as visitNumber,"
+				+ "patientEncounter.patientType as patientType,patientEncounter.admissionType as admissionType,patientEncounter.attendingDoctor as attendingDoctor,patientEncounter.referringDoctor as referringDoctor,"
+				+ "patientEncounter.dischargeDateTime as dischargeDateTime from PatientEncounterEntity patientEncounter left join patientEncounter.patient pat where pat.patientId =:patienId "
+				+ "order by admitDateTime desc";
+		objPatientEncounterEntityList = (List<PatientEncounterEntityTO>) session.createQuery(sqlQuery).setParameter("patienId", payloadBean.getId())
+				.setResultTransformer(Transformers.aliasToBean(PatientEncounterEntityTO.class)).list();
+
+		return objPatientEncounterEntityList;
+	}
+
+	@Override
+	public List<PatientPrescriptionEntityTO> getPatientPatientPrescribedDetailsByEncounterId(Long encounterId) {
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		List<PatientPrescriptionEntityTO> objPatientPrescriptionEntityTOList = null;
+		String sqlQuery="";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select patPres.patientPrescriptionId as patientPrescriptionId,patientPrescribedItem.prescribedItemId as prescribedItemId,patPres.prescriptionDateTime as prescriptionDateTime,item.itemName as itemName,"
+				+ "patientPrescribedItem.itemSig as itemSig,patientPrescribedItem.prescribedQuantity as prescribedQuantity,patientPrescribedItem.prescribedStatus as prescribedStatus,"
+				+ "sum(patientDispensedItem.dispensedQuantity) as dispensedQuantity,patPres.patientEncounter.patient.patientId as patientId"
+				+ " ,patPres.transactionCount as patientPrescriptionTransactionCount,patientPrescribedItem.transactionCount as patientPrescriptionItemTransactionCount"
+				+ " from PatientDispensedItemEntity patientDispensedItem"
+				+ " right join patientDispensedItem.patientPrescribedItem patientPrescribedItem"
+				+ " left join patientPrescribedItem.patientPrescription patPres "
+				+ "left join patientPrescribedItem.item item "
+				+ "where patPres.patientEncounter.patientEncounterId =:patientEncounterId "
+				+ "group by patientPrescribedItem.prescribedItemId,patPres.patientPrescriptionId,patientPrescribedItem.prescribedItemId,patPres.prescriptionDateTime,item.itemName,"
+				+ "patientPrescribedItem.itemSig,patientPrescribedItem.prescribedQuantity,patientPrescribedItem.prescribedStatus,patPres.patientEncounter.patient.patientId,patPres.transactionCount,patientPrescribedItem.transactionCount order by itemName asc";
+		objPatientPrescriptionEntityTOList = (List<PatientPrescriptionEntityTO>) session.createQuery(sqlQuery).setParameter("patientEncounterId", encounterId)
+				.setResultTransformer(Transformers.aliasToBean(PatientPrescriptionEntityTO.class)).list();
+
+		return objPatientPrescriptionEntityTOList;
+	}
+
+	@Override
+	public List<PatientDispensedItemsTO> getPerscribedItemsToBeDispensed(PatientDispensedItemsTO payloadBean) {
+		SimpleDateFormat objSimpleDateFormat= new SimpleDateFormat("yyyy-MM-dd");
+		List<PatientDispensedItemsTO> objPatientDispensedItemsTOList = null;
+		List<PatientDispensedItemsTO> objPatientDispensedItemsTOMainList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		String dateFormat = messageSource.getMessage("dateFormat", null, "", Locale.US);
+		sqlQuery ="select dispensedDetail.dispensedItemId as dispensedItemId,patPreItemDetail.prescribedItemId as prescribedItemId,dispensedDetail.dispensedQuantity as dispensedQuantity,dispensedDetail.dispensedQuantity as dupliDispensedQuantity,itemStock.itemStockId as itemStockId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+				+ "itemStock.item.itemName as itemName,itemStock.quantityOnHand as quantityOnHand,itemStock.transactionCount as itemStockTransactionCount,dispensedDetail.transactionCount as dispensedTransactionCount"
+				+ " from PatientDispensedItemEntity dispensedDetail"
+				+ " right join dispensedDetail.patientPrescribedItem patPreItemDetail"
+				+ " left join patPreItemDetail.patientPrescription patPresDetail"
+				+ " left join dispensedDetail.itemStock itemStock"
+				//+ " left join itemDetail."
+				//+ " inner join ItemStockEntity itemStock on itemStock.item.itemId=patPreItemDetail.item.itemId"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " where  itemStock.itemStockStatus='InStock' and itemStock.recordType<>'D' and pharmacyLocationUser.userId.userID=:userID and patPreItemDetail.prescribedItemId=:prescribedItemId and SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10)>'"+objSimpleDateFormat.format(new Date())+"' order by dispensedDetail.dispensedDateTime desc";
+		objPatientDispensedItemsTOList = (List<PatientDispensedItemsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getUserId()).setParameter("prescribedItemId", payloadBean.getPrescribedItemId())
+				.setResultTransformer(Transformers.aliasToBean(PatientDispensedItemsTO.class)).list();
+		
+		
+		
+		sqlQuery ="select patPreItemDetail.prescribedItemId as prescribedItemId,itemStock.itemStockId as itemStockId,itemStock.lotNo as lotNo,itemStock.expiryDate as expiryDate,"
+				+ "itemStock.item.itemName as itemName,itemStock.quantityOnHand as quantityOnHand,itemStock.transactionCount as itemStockTransactionCount"
+				+ " from PatientPrescribedItemEntity patPreItemDetail"
+				+ " left join patPreItemDetail.item item"
+				+ " inner join ItemStockEntity itemStock on itemStock.item.itemId=item.itemId"
+				//+ " left join itemDetail."
+				//+ " inner join ItemStockEntity itemStock on itemStock.item.itemId=patPreItemDetail.item.itemId"
+				+ " inner join PharmacyLocationUserEntity pharmacyLocationUser on itemStock.pharmacyLocation.pharmacyLocationId= pharmacyLocationUser.pharmacyLocation.pharmacyLocationId "
+				+ " where  itemStock.itemStockStatus='InStock' and itemStock.recordType<>'D' and pharmacyLocationUser.userId.userID=:userID and patPreItemDetail.prescribedItemId=:prescribedItemId and SUBSTRING(CAST(itemStock.expiryDate AS string), 1, 10)>'"+objSimpleDateFormat.format(new Date())+"'";
+		objPatientDispensedItemsTOMainList = (List<PatientDispensedItemsTO>) session.createQuery(sqlQuery).setParameter("userID", payloadBean.getUserId()).setParameter("prescribedItemId", payloadBean.getPrescribedItemId())
+				.setResultTransformer(Transformers.aliasToBean(PatientDispensedItemsTO.class)).list();
+	
+		boolean flag=true;
+		for(PatientDispensedItemsTO objItemOrderEntityTO : objPatientDispensedItemsTOMainList)
+		{
+			flag=true;
+			for(PatientDispensedItemsTO objItemOrderEntityTO1 : objPatientDispensedItemsTOList)
+			{
+				if(objItemOrderEntityTO.getItemStockId().equals(objItemOrderEntityTO1.getItemStockId())) {
+					flag=false;
+					break;
+				}
+			}
+			if(flag) {
+				objPatientDispensedItemsTOList.add(objPatientDispensedItemsTOList.size(), objItemOrderEntityTO);
+			}
+		}
+		
+		return objPatientDispensedItemsTOList;
+	
+	}
+
+	@Override
+	public PatientDispensedItemEntity fetchPatientDispensedItemEntityById(Long dispensedItemId) {
+		return entityManager.find(PatientDispensedItemEntity.class, dispensedItemId);
+		
+	}
+
+	@Override
+	public boolean updatePatientDispensedItemEntity(PatientDispensedItemEntity objPatientDispensedItemEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objPatientDispensedItemEntity);
+		return true;
+	}
+
+	@Override
+	public boolean addPatientDispensedItemEntity(PatientDispensedItemEntity objPatientDispensedItemEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.persist(objPatientDispensedItemEntity);
+		return true;
+	}
+
+	@Override
+	public PatientPrescribedItemEntity fetchPrescribedItemEntityById(Long id) {
+		return entityManager.find(PatientPrescribedItemEntity.class, id);
+	}
+
+	@Override
+	public boolean updatePrescribedItemEntity(PatientPrescribedItemEntity objPatientPrescribedItemEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objPatientPrescribedItemEntity);
+		return true;
+	}
+
+	@Override
+	public List<PatientPrescriptionEntityTO> fetchPrescribedItemStatus(Long prescriptionId) {
+		List<PatientPrescriptionEntityTO> objPatientPrescriptionEntityTOList = null;
+		String sqlQuery="";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select patPres.patientPrescriptionId as patientPrescriptionId"
+				+ " from PatientPrescribedItemEntity patientPrescribedItem left join patientPrescribedItem.patientPrescription patPres where patPres.patientPrescriptionId =:patientPrescriptionId and patientPrescribedItem.prescribedStatus!='Dispensed' ";
+		objPatientPrescriptionEntityTOList = (List<PatientPrescriptionEntityTO>) session.createQuery(sqlQuery).setParameter("patientPrescriptionId", prescriptionId)
+				.setResultTransformer(Transformers.aliasToBean(PatientPrescriptionEntityTO.class)).list();
+
+		return objPatientPrescriptionEntityTOList;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataOfPatientPrescription(Long patientPrescriptionId) {
+
+
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType"
+					+ " from  PatientPrescriptionEntity table where table.patientPrescriptionId=:patientPrescriptionId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("patientPrescriptionId", patientPrescriptionId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		
+		return transactionData;
+	
+	
+	}
+
+	@Override
+	public PatientPrescriptionEntity fetchPatientPrescriptionEntityById(Long id) {
+		return entityManager.find(PatientPrescriptionEntity.class, id);
+	}
+
+	@Override
+	public boolean updatePatientPrescriptionEntity(PatientPrescriptionEntity objPatientPrescriptionEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objPatientPrescriptionEntity);
+		return true;
+	}
+
+	@Override
+	public boolean deletePatientDispensedItems(Long id) {
+		String sqlQuery="";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "delete from PatientDispensedItemEntity table where table.dispensedItemId=:dispensedItemId";
+		int result=session.createQuery(sqlQuery).setParameter("dispensedItemId", id).executeUpdate();
+		if(result>0)
+		return true;
+		else
+			return false;
+	}
+
+
+}

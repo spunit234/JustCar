@@ -1,0 +1,80 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.SiteEntity;
+import com.edios.cdf.entity.security.UserEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+
+/**
+ * The persistent class for the pharmacy_stores database table.
+ * 
+ */
+@Entity
+@Table(name="widgets")
+@Setter
+@Getter
+@NoArgsConstructor
+public class WidgetEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="WIDGET_ID")
+	private Long widgetID;
+
+	@Column(name="WIDGET_NAME")
+	private String widgetName;
+
+	@Column(name="WIDGET_STATUS")
+	private String widgetStatus;
+	
+	@Column(name="WIDGET_IMAGE_FILENAME")
+	private String widgetImageFileName;
+	
+	@Column(name="WIDGET_SCREEN_URL")
+	private String widgetScreenURL;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+	
+	@Column(name="WIDGET_SEQUENCE")
+	private Long widgetSequence;
+
+	//New Column
+	@Column(name="WIDGET_IMAGE_COLOUR")
+	private String widgetImageColour;	
+
+}

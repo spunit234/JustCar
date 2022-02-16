@@ -1,0 +1,98 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.SiteEntity;
+import com.edios.cdf.entity.security.UserEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+
+/**
+ * The persistent class for the pharmacy_stores database table.
+ * 
+ */
+@Entity
+@Table(name="work_station_assignment")
+@Setter
+@Getter
+@NoArgsConstructor
+public class WorksStationAssignmentEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="WORK_STATION_ID")
+	private Long workStationID;
+
+	@Column(name="WORK_STATION_CODE")
+	private String workStationCode;
+	
+	@Column(name="WORK_STATION_NAME")
+	private String workStationName;
+	
+	@ManyToOne
+	@JoinColumn(name="SITE_ID")
+	private SiteEntity site;
+	
+	@ManyToOne
+	@JoinColumn(name="PHARMACY_LOCATION_ID")
+	private PharmacyLocationEntity pharmacyLocation;
+
+	@Column(name="WORK_STATION_IPADD")
+	private String workStationIpAdd;
+	
+	@Column(name="WORK_STATION_MACADD")
+	private String workStationMacAdd;
+	
+	@Column(name="PRINTER_INFO")
+	private String printerInfo;
+	
+//	@Column(name="ROBOTIC_INFO")
+//	private String roboticInfo;
+	
+	@ManyToOne
+	@JoinColumn(name="ROBOT_ID")
+	private PharmacyLocationRobotEntity robot;
+	
+	@Column(name="WORK_STATION_STATUS")
+	private String workStationStatus;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	
+
+}

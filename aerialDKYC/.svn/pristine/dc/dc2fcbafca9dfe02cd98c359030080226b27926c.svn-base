@@ -1,0 +1,35 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.PharmacyLocationUserBean;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+public interface AssignPharmacyLocationManager extends AbstractManager{
+
+	List<PharmacyLocationBean> PharmacyLocationNames(PayloadBean payloadBean);
+
+	List<PharmacyLocationEntityTO> searchLocationNames(PayloadBean payloadBean);
+
+	AssignPharmacyLocationScreenBean findPharmacyLocationById(Long id);
+
+	List<PharmacyLocationEntityTO> searchLocationCode(PayloadBean payloadBean);
+
+//	String updatePharmacyLocation(PharmacyLocationUserBean pharmacyLocationUserBean);
+
+	String updatePharmacyLocation(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean);
+
+	String addPharmacyLocation(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean);
+
+	String deletePharmacyUser(PharmacyLocationUserBean pharmacyLocationUserBean);
+	
+	String isPharmacyLocationAssignedToUser(String username);
+
+}

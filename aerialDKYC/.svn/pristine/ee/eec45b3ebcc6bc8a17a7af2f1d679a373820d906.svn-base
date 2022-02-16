@@ -1,0 +1,31 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ConfigureDashBoardBean;
+import com.edios.pms.entity.to.DashboardTO;
+import com.edios.pms.entity.to.WidgetEntityTO;
+
+public interface ConfigureDashboardManager {
+
+	List<DashboardTO> getDashboardList(String customParameter);
+
+	ConfigureDashBoardBean getDataByID(PayloadBean payloadBean);
+
+	String deleteDashboardWidget(DeleteRecords deleteRecords);
+
+	List<WidgetEntityTO> getAllWidget();
+
+	String uniqueCheck(PayloadBean payloadBean);
+
+	String addConfigDashboard(ConfigureDashBoardBean configureDashBoardBean, HttpServletRequest request);
+
+	String updateConfigDashboard(ConfigureDashBoardBean configureDashBoardBean, HttpServletRequest request);
+
+	String deleteDashboard(DeleteRecords deleteRecords);
+
+}

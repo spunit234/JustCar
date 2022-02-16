@@ -1,0 +1,54 @@
+package com.edios.pms.dao.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.GeneralLedgerDao;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.to.GeneralLedgerTo;
+@Repository
+public class GeneralLedgerDaoImpl extends BaseDaoImpl<ItemTransactionEntity> implements GeneralLedgerDao{
+
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public List<GeneralLedgerTo> getGeneralLedgerReport(PayloadBean payloadBean) {
+		List<GeneralLedgerTo> generalLedgerTo = new ArrayList<>();
+		String sqlQuery = "";
+		try {
+			String datefrom = null;
+			String dateto = null;
+			if (payloadBean.getFromDate() != null && payloadBean.getToDate() != null) {
+				SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+				datefrom = formatter.format(payloadBean.getFromDate()) + " 00:00:00";
+				dateto = formatter.format(payloadBean.getToDate()) + " 23:59:59";
+			
+
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery =" select itemTran.transactionDate"
+					+ " as transactionDate ,itemTran.transactionType As transactionType ,user.firstName as transactedBy,itemTran.itemTransactionId AS itemTransactionId, "
+					+ " itemTran.transactionQuantityCost AS transactedValue,itemTran.transactionQuantity AS transactedQty, "
+					+ " itemTran.balanceQuantityCost as balanceValue,itemTran.balanceQuantity as balanceQty"
+					+ " from ItemTransactionEntity itemTran left join UserEntity as user on itemTran.createdBy=user.userID "
+					+ " WHERE itemTran.recordType<>'D'and  ";
+				sqlQuery += "itemTran.transactionDate >= '" + datefrom
+						+ "' AND  itemTran.transactionDate <= '" + dateto
+						+ "' and itemTran.item.itemName=:itemName  ORDER BY itemTran.itemTransactionId  ";
+				generalLedgerTo = (List<GeneralLedgerTo>) session.createQuery(sqlQuery)
+						.setParameter("itemName", payloadBean.getItemName())
+						.setResultTransformer(Transformers.aliasToBean(GeneralLedgerTo.class)).list();
+			}
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return generalLedgerTo;
+	}
+
+}

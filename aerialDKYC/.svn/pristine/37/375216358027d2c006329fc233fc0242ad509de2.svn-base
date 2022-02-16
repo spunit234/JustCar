@@ -1,0 +1,37 @@
+package com.edios.pms.entity.to;
+
+import java.util.Date;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PhysicalCountReportTO {
+	private String itemCode;
+	private String itemName;
+private String lotNo;
+private String expiryDate;
+private Long quantityOnHand;
+private String defaultShelfLoc;
+private String shelfLocation;
+private String defaultShelfLoc2;
+//private String countedQuantity:any;
+//private String countedBy:any;
+//private String checkedBy:any;
+
+private String itemNameReport;
+
+DateFormatter formatter = new DateFormatter();
+
+public void setExpiryDate(Date expiryDate) {
+	this.expiryDate=formatter.formaDate(expiryDate);
+}
+
+}

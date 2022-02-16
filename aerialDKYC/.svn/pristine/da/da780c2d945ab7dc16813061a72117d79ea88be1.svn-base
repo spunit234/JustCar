@@ -1,0 +1,68 @@
+package com.edios.pms.bean;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.cdf.entity.security.SiteEntity;
+import com.edios.cdf.entity.security.UserEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PharmacyStoreBean extends AbstractBean {
+	private static final long serialVersionUID = -7959006084525327336L;
+	
+	private Long pharmacyStoreId;
+
+	private String contactPersonAltphone;
+
+	private String contactPersonEmail;
+
+	private String contactPersonName;
+
+	private String contactPersonPhone;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	private String pharmacyStoreCode;
+
+	private String pharmacyStoreName;
+
+	private String pharmacyStoreStatus;
+
+	private Character recordType;
+
+	private SiteEntity siteId;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+	
+	private Long loginDetailId;
+	private String screenName;
+	private String activityName;
+	private Boolean activityFlag;
+
+	
+
+}

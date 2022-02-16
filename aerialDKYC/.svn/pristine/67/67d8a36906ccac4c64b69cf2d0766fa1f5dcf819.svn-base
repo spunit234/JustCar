@@ -1,0 +1,147 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.bean.UserDashboardBean;
+import com.edios.pms.dao.AssignDashboardNameDao;
+import com.edios.pms.entity.PharmacyLocationUserEntity;
+import com.edios.pms.entity.UserDashboardEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.manager.AssignDashboardNameManager;
+
+@Service("assignDashboardNameManager")
+public class AssignDashboardNameManagerImpl extends AbstractManagerImpl<UserDashboardBean, UserDashboardEntity>implements AssignDashboardNameManager {
+	@Autowired
+	AssignDashboardNameDao assignDashboardNameDao;
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> searchDashboardName(PayloadBean payloadBean) {
+		//System.out.println("5555555555555555555555&&&&&&&&&&&&&&&&&&&&"+payloadBean.getId());
+		try {		
+			return  (List<PharmacyLocationEntityTO>) assignDashboardNameDao.searchDashboardName(payloadBean); 					
+		}
+		catch (Exception e) {
+		e.printStackTrace();
+		return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<DashboardBean> dashboardNamesAutolookup(PayloadBean payloadBean) {
+		try {		
+			return  (List<DashboardBean>) assignDashboardNameDao.dashboardNamesAutolookup(payloadBean); 					
+		}
+		catch (Exception e) {
+		e.printStackTrace();
+		return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> searchDashboardCode(PayloadBean payloadBean) {
+		try {		
+			return  (List<PharmacyLocationEntityTO>) assignDashboardNameDao.searchDashboardCode(payloadBean); 					
+		}
+		catch (Exception e) {
+		e.printStackTrace();
+		return null;
+		}
+	}
+
+	@Override
+	@Transactional
+	public String updateDashboardUser(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		assignPharmacyLocationScreenBean.getUser().setUserID(assignPharmacyLocationScreenBean.getDublicateUserId());
+		System.out.println(assignPharmacyLocationScreenBean);
+		
+		// Optimistic Locking for Hibernate
+		TransactionData latestData =assignDashboardNameDao.fetchTransactionDataById(assignPharmacyLocationScreenBean.getUserDashboardID());
+		if (latestData.getTransactionCount() > (assignPharmacyLocationScreenBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		setAuditInfo(assignPharmacyLocationScreenBean, "editFlag");
+		UserDashboardEntity userDashboardEntity = mapper.map(assignPharmacyLocationScreenBean,UserDashboardEntity.class);
+		resultFlag = assignDashboardNameDao.updateDashboardUser(userDashboardEntity);
+		
+		if (resultFlag) {
+			return "UPDATED";
+		}
+		return resultString;
+	}
+	
+	private void setAuditInfo(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			assignPharmacyLocationScreenBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			assignPharmacyLocationScreenBean.setCreatedDate(new Date());
+		} else {
+			assignPharmacyLocationScreenBean.setTransactionCount(
+					assignPharmacyLocationScreenBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			assignPharmacyLocationScreenBean.setLastModifiedDate(new Date());
+			assignPharmacyLocationScreenBean.setCreatedDate(new Date());
+			//assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		}
+		
+	}
+
+	@Override
+	@Transactional
+	public String addDashboardUser(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean) {
+		String resultString="";
+		 boolean resultFlag=false;
+			assignPharmacyLocationScreenBean.getUser().setUserID(assignPharmacyLocationScreenBean.getDublicateUserId());
+			System.out.println(assignPharmacyLocationScreenBean);
+		 setAuditInfo(assignPharmacyLocationScreenBean,"newFlag");
+		 UserDashboardEntity userDashboardEntity = mapper.map(assignPharmacyLocationScreenBean,UserDashboardEntity.class);
+		 resultFlag=assignDashboardNameDao.addPharmacyLocation(userDashboardEntity);
+		 if(resultFlag) {
+			 return "ADDED";
+		 }
+		 
+		 return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String deleteDashboardUser(UserDashboardBean userDashboardBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = assignDashboardNameDao.fetchTransactionDataById(userDashboardBean.getUserDashboardID());
+		if (latestData.getTransactionCount() > (userDashboardBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		//PharmacyLocationUserEntity pharmacyLocationUserEntity = mapper.map(pharmacyLocationUserBean,PharmacyLocationUserEntity.class);
+		//System.out.println(pharmacyLocationUserEntity);
+		resultFlag = assignDashboardNameDao.deletePharmacyUser(userDashboardBean.getUserDashboardID());
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+
+
+}

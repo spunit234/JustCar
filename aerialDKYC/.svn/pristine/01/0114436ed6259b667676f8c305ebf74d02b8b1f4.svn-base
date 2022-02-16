@@ -1,0 +1,85 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="INV_COUNT_MISMATCH")
+@Setter
+@Getter
+@NoArgsConstructor
+public class InventoryCountMismatchEntity extends AbstractEntity implements Serializable {
+	
+
+	private static final long serialVersionUID = -1845656515301970156L;
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="INV_COUNT_MISMATCH_ID")
+	private Long invCountMismatchId;
+	
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="INV_COUNT_ITEM_ID")
+	private InventoryCountItemsEntity invCountItem;
+	
+	//bi-directional many-to-one association to ItemPackSize
+	@ManyToOne
+	@JoinColumn(name="ITEM_STOCK_ID")
+	private ItemStockEntity itemStock;
+	
+	@Column(name="QUANTITY_ON_HAND")
+	private Long quantityOnHand;
+	
+	@Column(name="COUNTED_QUANTITY")
+	private Long countedQuantity;	
+	
+	@Column(name="NOTES")
+	private String notes;
+	
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+	
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+	
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+	
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+	
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+	
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+	
+	
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+}

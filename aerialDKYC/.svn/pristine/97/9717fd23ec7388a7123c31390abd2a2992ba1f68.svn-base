@@ -1,0 +1,53 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PatientEncounterEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+	
+	private Long patientEncounterId;
+	private String admissionType;
+	private String admitDateTime;
+	private String attendingDoctor;
+	private String dischargeDateTime;
+	private String patientType;
+	private String referringDoctor;
+	private Long transactionCount;
+	private String visitNumber;
+	
+	DateFormatter formatter = new DateFormatter();
+
+	public void setAdmitDateTime(Date admitDateTime) {
+		this.admitDateTime=formatter.formaDate(admitDateTime);
+	}
+	
+	public void setDischargeDateTime(Date dischargeDateTime) {
+		this.dischargeDateTime=formatter.formaDate(dischargeDateTime);
+	}
+	
+	private Long patientId;
+	private String prescriptionNo;
+	private String prescriptionDateTime;
+	
+	public void setPrescriptionDateTime(Date prescriptionDateTime) {
+		this.prescriptionDateTime=formatter.formaDate(prescriptionDateTime);
+	}
+	
+	private String prescriptionStatus;
+	private Long patientPrescriptionId;
+}

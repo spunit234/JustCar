@@ -1,0 +1,219 @@
+package com.edios.pms.manager.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.validation.Payload;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.PharmacyLocationRobotBean;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.dao.PhamacyLocationsDao;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyLocationRobotEntity;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.manager.PharmacyLocationsManager;
+
+@Service
+public class PharmacyLocationsManagerImpl extends AbstractManagerImpl<PharmacyLocationBean,PharmacyLocationEntity> implements PharmacyLocationsManager {
+	
+	@Autowired
+	PhamacyLocationsDao phamacyLocationsDao;
+	
+	private static final Long TRANSACTION_BEGIN = 1l;
+	private static final Character RECORDTYPE_INSERT = 'I';
+	private static final Character RECORDTYPE_UPDATE = 'U';	
+	
+	private void setAuditInfo(PharmacyLocationBean pharmacyLocationBean, String string) {
+
+		if (string.equalsIgnoreCase("newFlag")) {
+			pharmacyLocationBean.setTransactionCount(TRANSACTION_BEGIN);
+			pharmacyLocationBean.setRecordType(RECORDTYPE_INSERT);
+			pharmacyLocationBean.setCreatedDate(new Date());
+		} else {
+			pharmacyLocationBean.setTransactionCount(pharmacyLocationBean.getTransactionCount() + TRANSACTION_BEGIN);
+			pharmacyLocationBean.setRecordType(RECORDTYPE_UPDATE);
+			pharmacyLocationBean.setLastModifiedDate(new Date());
+		}
+	}
+	
+	@Override
+	@Transactional
+	public List<PharmacyLocationEntityTO> fetchPharmacyLocations(PayloadBean payloadBean) {
+		return phamacyLocationsDao.fetchPharmacyLocations(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public String deletePharmacy(DeleteRecords deleteRecords,String ipAddress) {
+		String resultString = "";
+		boolean resultFlag = false;
+		TransactionData latestData = phamacyLocationsDao.fetchTransactionDataById(deleteRecords.getId());
+		if (latestData.getTransactionCount() > (deleteRecords.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		resultFlag = phamacyLocationsDao.isPharmacyLocationAssigned(deleteRecords.getId());
+		if (resultFlag) 
+			return "LOCATION_EXISTS";
+		
+		resultFlag = phamacyLocationsDao.deletePharmacyLocation(deleteRecords,ipAddress);
+		if (resultFlag)
+			return "DELETED";
+
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public boolean checkLocationCode(String pharmacyLocationCode,Long locationId) {
+		return phamacyLocationsDao.checkLocationCode(pharmacyLocationCode,locationId);
+	}
+
+	@Override
+	@Transactional
+	public String addPharmacyLocation(PharmacyLocationBean pharmacyLocationBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		
+		resultFlag = phamacyLocationsDao.checkLocationName(pharmacyLocationBean.getPharmacyLocationName(), pharmacyLocationBean.getPharmacyLocationId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = phamacyLocationsDao.checkLocationCode(pharmacyLocationBean.getPharmacyLocationCode(), pharmacyLocationBean.getPharmacyLocationId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+		
+		
+		setAuditInfo(pharmacyLocationBean, "newFlag");
+		PharmacyLocationEntity pharmacyLocationEntity = mapper.map(pharmacyLocationBean, PharmacyLocationEntity.class);
+		resultFlag = phamacyLocationsDao.addPharmacyLocation(pharmacyLocationEntity,pharmacyLocationBean);
+		if (resultFlag) {
+			resultString = "ADDED";
+			if(pharmacyLocationBean.getPharmacyLocationRobotBean()!=null) {
+				for(PharmacyLocationRobotBean robotBean:pharmacyLocationBean.getPharmacyLocationRobotBean()) {
+					setAuditInfo(robotBean, "newFlag");
+					robotBean.setCreatedBy(pharmacyLocationBean.getCreatedBy());
+					robotBean.setIpAddress(pharmacyLocationBean.getIpAddress());
+					PharmacyLocationRobotEntity pharmacyLocationRobotEntity = mapper.map(robotBean,PharmacyLocationRobotEntity.class);
+					pharmacyLocationRobotEntity.setPharmacyLocation(pharmacyLocationEntity);
+					phamacyLocationsDao.addPharmacyLocationRobot(pharmacyLocationRobotEntity, pharmacyLocationBean);
+				}
+			}
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public PharmacyLocationBean findPharmacyLocationById(PayloadBean payloadBean) {
+		PharmacyLocationEntity pharmacyLocationEntity=phamacyLocationsDao.findPharmacyById(payloadBean);
+		PharmacyLocationBean pharmacyLocationBean = mapper.map(pharmacyLocationEntity, PharmacyLocationBean.class);
+		return pharmacyLocationBean;
+	}
+
+	@Override
+	@Transactional
+	public String updatePharmacyLocations(PharmacyLocationBean pharmacyLocationBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		
+		resultFlag = phamacyLocationsDao.checkLocationName(pharmacyLocationBean.getPharmacyLocationName(), pharmacyLocationBean.getPharmacyLocationId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+
+		resultFlag = phamacyLocationsDao.checkLocationCode(pharmacyLocationBean.getPharmacyLocationCode(), pharmacyLocationBean.getPharmacyLocationId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}		
+		
+		TransactionData latestData = phamacyLocationsDao.fetchTransactionDataById(pharmacyLocationBean.getPharmacyLocationId());
+		if (latestData.getTransactionCount() > (pharmacyLocationBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		setAuditInfo(pharmacyLocationBean,"Update");
+		PharmacyLocationEntity pharmacyLocationEntity= mapper.map(pharmacyLocationBean, PharmacyLocationEntity.class);
+		resultFlag = phamacyLocationsDao.updatePharmacyLocations(pharmacyLocationEntity,pharmacyLocationBean);
+		if (resultFlag) {
+			resultString= "UPDATED";
+			if(pharmacyLocationBean.getPharmacyLocationRobotBean()!=null) {
+				for(PharmacyLocationRobotBean robotBean:pharmacyLocationBean.getPharmacyLocationRobotBean()) {
+					if(robotBean.getRobotId()!=null) {
+						setAuditInfo(robotBean,"Update");
+						robotBean.setLastModifiedBy(pharmacyLocationBean.getLastModifiedBy());
+						PharmacyLocationRobotEntity pharmacyLocationRobotEntity = mapper.map(robotBean,PharmacyLocationRobotEntity.class);
+						phamacyLocationsDao.updatePharmacyLocationRobot(pharmacyLocationRobotEntity,pharmacyLocationBean);
+					}else {
+					setAuditInfo(robotBean, "newFlag");
+					robotBean.setCreatedBy(pharmacyLocationBean.getCreatedBy());
+					robotBean.setIpAddress(pharmacyLocationBean.getIpAddress());
+					PharmacyLocationRobotEntity pharmacyLocationRobotEntity = mapper.map(robotBean,PharmacyLocationRobotEntity.class);
+					pharmacyLocationRobotEntity.setPharmacyLocation(pharmacyLocationEntity);
+					phamacyLocationsDao.addPharmacyLocationRobot(pharmacyLocationRobotEntity, pharmacyLocationBean);
+					}
+				}
+			}
+		}
+			
+
+		return resultString;
+	}
+	
+	private void setAuditInfo(PharmacyLocationRobotBean pharmacyLocationRobotBean, String string) {
+
+		if (string.equalsIgnoreCase("newFlag")) {
+			pharmacyLocationRobotBean.setTransactionCount(TRANSACTION_BEGIN);
+			pharmacyLocationRobotBean.setRecordType(RECORDTYPE_INSERT);
+			pharmacyLocationRobotBean.setCreatedDate(new Date());
+		} else {
+			pharmacyLocationRobotBean.setTransactionCount(pharmacyLocationRobotBean.getTransactionCount() + TRANSACTION_BEGIN);
+			pharmacyLocationRobotBean.setRecordType(RECORDTYPE_UPDATE);
+			pharmacyLocationRobotBean.setLastModifiedDate(new Date());
+		}
+	}
+
+
+	@Override
+	@Transactional
+	public List<PharmacyLocationRobotBean> fetchPharmacyLocationRobots(Long id) {
+		List<PharmacyLocationRobotBean> pharmacyLocationRobotList=new ArrayList<PharmacyLocationRobotBean>();
+		List<PharmacyLocationRobotEntity> pharmacyLocationRobotEntityList=phamacyLocationsDao.fetchPharmacyLocationRobots(id);
+		for(PharmacyLocationRobotEntity pharmacyLocationRobotEntity:pharmacyLocationRobotEntityList) {
+			PharmacyLocationRobotBean pharmacyLocationRobotBean = mapper.map(pharmacyLocationRobotEntity, PharmacyLocationRobotBean.class);
+		pharmacyLocationRobotList.add(pharmacyLocationRobotBean);
+		}
+		return pharmacyLocationRobotList;
+	}
+
+	@Override
+	public String RobotValidation(PayloadBean payloadBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag = phamacyLocationsDao.checkRobotName(payloadBean.getSearchParameter(),payloadBean.getId());
+		if (resultFlag) {
+			return "NameAlreadyExist";
+		}
+		resultFlag = phamacyLocationsDao.checkRobotCode(payloadBean.getCustomParameter(),payloadBean.getId());
+		if (resultFlag) {
+			return "CodeAlreadyExist";
+		}
+		return resultString;
+	}
+}

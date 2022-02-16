@@ -1,0 +1,13 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemConsumptionReportBean;
+
+public interface ItemsConsumptionReportManager  extends AbstractManager {
+
+	List<ItemConsumptionReportBean> fetchItemsConsumptionReport(PayloadBean payloadBean);
+
+}

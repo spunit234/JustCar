@@ -1,0 +1,72 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.cdf.bean.security.SiteBean;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class DataSourceFieldBean extends AbstractBean {
+	private static final long serialVersionUID = 1L;
+
+	private Long dataSourceFieldId;
+	
+	private String fieldActualName;
+
+	private String fieldDisplayName;
+	
+	private String fieldStatus;
+
+	private String fieldDataType;
+	
+	private Long fieldLength;
+	
+	private Long fieldSequence;
+	
+	private boolean refrenceField;
+	
+	private String fixList;
+	
+	private String dynamicSQL;
+
+	private DataSourceBean dataSource;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private String notes;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Long userActivityId;
+	
+
+}

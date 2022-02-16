@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="UsedVehicleLoan" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="70" bottomMargin="20" uuid="76bcc9f8-05c9-4279-9b9e-68695ea1a440">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="139"/>
+	<field name="contactNo" class="java.lang.String"/>
+	<field name="panNo" class="java.lang.String"/>
+	<field name="adharNo" class="java.lang.String"/>
+	<field name="fatherName" class="java.lang.String"/>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="chassisNo" class="java.lang.String"/>
+	<field name="engineNo" class="java.lang.String"/>
+	<field name="registrationNo" class="java.lang.String"/>
+	<field name="amount" class="java.lang.String"/>
+	<field name="makeandmodel" class="java.lang.String"/>
+	<field name="refNo" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="137" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="20" uuid="19c80c4a-9d8d-4de6-b897-14981b34ba7f"/>
+				<text><![CDATA[To]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="34" width="100" height="20" uuid="c85dcf46-722c-43cb-8ea0-7f2b1523a5ee"/>
+				<text><![CDATA[The Manager,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="54" width="100" height="20" uuid="c6bbec48-a48c-4bc8-89b9-e5de3fc9ce5f"/>
+				<text><![CDATA[Hdfc Bank Ltd.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="74" width="100" height="20" uuid="fdfe4c50-4fff-4629-ad6a-00941ac3a349"/>
+				<text><![CDATA[Mumbai.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="94" width="100" height="20" uuid="2b0ff7c3-4728-4586-b3fe-a661255dde75"/>
+				<text><![CDATA[Dear Sir / Madam,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="114" width="322" height="20" uuid="49df6c44-b71a-4aad-8e0a-971317661743"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Ref: Disbursement of my Used Car Loan - ( PURCHASE )Ref.No]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="309" y="114" width="100" height="20" uuid="33c6cbbe-f677-4b80-8bca-aa0625b1e7f8"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<<"+$F{refNo}+">>"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="183" y="0" width="149" height="20" uuid="99c63ae6-9bc3-46f8-9dc7-47acd2311ddd"/>
+				<text><![CDATA[Vehicle Loan – User Car Purchase]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="476" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="100" width="100" height="20" uuid="18168206-172d-4694-ba62-8d1a8873cfdb"/>
+				<text><![CDATA[Vehicle Regn. No.: ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="133" y="100" width="100" height="20" uuid="45ad6fb3-39e2-4dfa-aad2-fca5cee387ad"/>
+				<textFieldExpression><![CDATA[$F{registrationNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="120" width="100" height="20" uuid="d29b5baf-d8de-401d-8292-26d112c1add7"/>
+				<text><![CDATA[Engine No.:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="133" y="120" width="100" height="20" uuid="3847b56a-4e94-4648-8d52-5e20363012bf"/>
+				<textFieldExpression><![CDATA[$F{engineNo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="133" y="140" width="100" height="20" uuid="b07af8f1-4c95-43d4-a51c-e5c409b2e667"/>
+				<textFieldExpression><![CDATA[$F{chassisNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="140" width="100" height="20" uuid="369153e1-f90f-44bd-8b33-baa2770e83bc"/>
+				<text><![CDATA[Chassis No.:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="160" width="555" height="31" uuid="c49e6288-873b-4e90-ab40-65ea7b64e007"/>
+				<text><![CDATA[I Authorize PANKAJ GOEL HUF to deduct amt of Rs 5000/-  toward the reimbursement of rto charges for transfer of  rc on my name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="191" width="555" height="28" uuid="fb6d4427-6f68-4d4d-a65f-ad532e4aebd2"/>
+				<text><![CDATA[I hereby further confirm that I have received full and final payment and have taken the delivery of the vehicle with particulars as detailed above. ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="219" width="100" height="20" uuid="0dfb677d-b185-4b33-a71a-1350da38bbc5"/>
+				<text><![CDATA[Thanking you.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="239" width="100" height="20" uuid="4ec5a831-b5e4-44f6-b599-faf6749e2473"/>
+				<text><![CDATA[Yours truly]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="279" width="555" height="27" uuid="f0cc02b6-c7f5-43c4-9f39-14493540021e"/>
+				<text><![CDATA[Signature of the Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="326" width="115" height="20" uuid="534ca91a-fe8e-4e32-9162-219150e0d216"/>
+				<text><![CDATA[Name of the Customer:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="115" y="326" width="100" height="20" uuid="0c75f0bb-e22c-4442-8275-26b825db82c8"/>
+				<textFieldExpression><![CDATA[$F{customerName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="33" width="555" height="67" uuid="dcbf4d33-10a3-419c-9dc0-c2799e84c283"/>
+				<textFieldExpression><![CDATA["With reference to my Used Car Loan Application for purchase of Vehicle to "+$F{makeandmodel} +" LOS number as mentioned above,this is to confirm and acknowledge that an amount of Rs "+$F{amount}+"- has been disbursed by Hdfc Bank to the account of M/s << PANKAJ GOEL HUF>> pursuant to Payment Authority Letter issued by me towards disbursement of Used Car Vehicle funding as detailed below."]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="13" width="290" height="20" uuid="d70e4042-492a-4006-8405-693dbf34b027"/>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Sub: Loan Acknowledgment  Receipt.]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

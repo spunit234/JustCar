@@ -1,0 +1,272 @@
+package com.edios.pms.manager.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CycleCountBean;
+import com.edios.pms.bean.CycleCountItemsBean;
+import com.edios.pms.dao.CycleCountDao;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.CycleCountItemsEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.manager.CycleCountManager;
+
+@Service("cycleCountManager")
+public class CycleCountManagerImpl extends AbstractManagerImpl<CycleCountBean, CycleCountEntity>
+		implements CycleCountManager {
+	@Autowired
+	CycleCountDao cycleCountDao;
+
+	@Autowired
+	MessageSource messageSource;
+
+	@Override
+	@Transactional
+	public List<CycleCountEntityTO> searchCycleCount(PayloadBean payloadBean) {
+
+		return cycleCountDao.searchCycleCount(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public CycleCountBean searchCycleCountById(PayloadBean payloadBean) {
+
+		CycleCountBean cycleCountBean = null;
+		try {
+			CycleCountEntity cycleCountEntity = cycleCountDao.searchCycleCountById(payloadBean.getId());
+			if (cycleCountEntity instanceof CycleCountEntity)
+				cycleCountBean = mapper.map(cycleCountEntity, CycleCountBean.class);
+			return cycleCountBean;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+
+	@Override
+	@Transactional
+	public List<CycleCountEntityTO> searchCycleCountItems(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return cycleCountDao.searchCycleCountItems(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<CycleCountEntityTO> fetchItemDetailForNewCycleCount(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return cycleCountDao.fetchItemDetailForNewCycleCount(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public String addCycleCountAndCountItems(CycleCountBean cycleCountBean) { // throws TransactionFailedException
+		String resultString = "";
+		boolean resultFlag = false;
+		CycleCountEntity cycleCountEntity = null;
+		// cycleCountBean.getUser().setUserID(assignPharmacyLocationScreenBean.getDublicateUserId());
+		// System.out.println(assignPharmacyLocationScreenBean);
+		// if(cycleCountBean.getCycleCountID()!=null) {
+		// //Update cycle count entity
+		// TransactionData latestData2 =
+		// cycleCountDao.fetchTransactionDataById(cycleCountBean.getCycleCountID());
+		// if (latestData2.getTransactionCount() >
+		// (cycleCountBean.getTransactionCount()))
+		// {
+		// return "TransactionFailed";
+		// }
+		// if (latestData2.getRecordType() == 'D') {
+		// return "recordDeleted";
+		// }
+		//
+		// }
+		// else {
+		// add cycle count entity
+		setAuditInfo(cycleCountBean, "newFlag");
+		cycleCountEntity = mapper.map(cycleCountBean, CycleCountEntity.class);
+		Long cycleCountPK = cycleCountDao.addCycleCountAndCountItems(cycleCountEntity);
+		cycleCountEntity.setCycleCountID(cycleCountPK);
+		// }
+
+		if (cycleCountPK != null) {
+			for (CycleCountEntityTO insertUpdatecycleCountItemsBean : cycleCountBean.getCycleCountItemBean2()) {
+				// if (insertUpdatecycleCountItemsBean.getCycleCountItemID() == null) {
+				if(insertUpdatecycleCountItemsBean.getCountedQuantity()==null || insertUpdatecycleCountItemsBean.getCountedQuantity().toString().trim().equals(""))
+					continue;
+				resultString = InsertCycleCountItems(insertUpdatecycleCountItemsBean, cycleCountEntity);
+				/*
+				 * } else {
+				 * 
+				 * CycleCountItemsEntity
+				 * objCycleCountItemsEntity=cycleCountDao.fetchCycleCountItemsEntityById(id)
+				 * 
+				 * if (objCycleCountItemsEntity.getTransactionCount() >
+				 * (payloadBean.getItemStockTransactionCount())) { throw new
+				 * TransactionFailedException(messageSource.getMessage(
+				 * "transactionFailedUpdateMessage", null, "", Locale.US)); } if
+				 * (latestData.getRecordType() == 'D') { throw new
+				 * TransactionFailedException(messageSource.getMessage(
+				 * "transactionFailedDeleteMessage", null, "", Locale.US)); }
+				 * CycleCountItemsEntity cycleCountItemsEntity = new CycleCountItemsEntity();
+				 * 
+				 * TransactionData latestData2 = cycleCountDao.fetchTransactionDataById2(
+				 * cycleCountBean.getCycleCountItemBean2().get(i).getCycleCountItemID()); if
+				 * (latestData2.getTransactionCount() >
+				 * (cycleCountBean.getCycleCountItemBean2().get(i) .getTransactionCount())) {
+				 * return "TransactionFailed"; } if (latestData2.getRecordType() == 'D') {
+				 * return "recordDeleted"; }
+				 * 
+				 * cycleCountItemsEntity.getItemId().setItemId(cycleCountBean.
+				 * getCycleCountItemBean2().get(i).getItemId());
+				 * cycleCountItemsEntity.getCycleCountID()
+				 * .setCycleCountID(cycleCountBean.getCycleCountItemBean2().get(i).
+				 * getCycleCountID()); cycleCountItemsEntity
+				 * .setCountedQuantity(cycleCountBean.getCycleCountItemBean2().get(i).
+				 * getCountedQuantity()); cycleCountItemsEntity
+				 * .setQuantityMatched(cycleCountBean.getCycleCountItemBean2().get(i).
+				 * getQuantityMatched()); cycleCountItemsEntity
+				 * .setQuantityOnHand(cycleCountBean.getCycleCountItemBean2().get(i).
+				 * getQuantityOnHand());
+				 * cycleCountItemsEntity.setNotes(cycleCountBean.getCycleCountItemBean2().get(i)
+				 * .getNotes()); cycleCountItemsEntity
+				 * .setCycleCountItemID(cycleCountBean.getCycleCountItemBean2().get(i).
+				 * getCycleCountItemID());
+				 * cycleCountItemsEntity.setIpAddress(cycleCountBean.getIpAddress());
+				 * cycleCountItemsEntity.setLastModifiedBy(cycleCountBean.getLastModifiedBy());
+				 * cycleCountItemsEntity
+				 * .setTransactionCount(cycleCountBean.getTransactionCount() +
+				 * AppConstants.TRANSACTION_BEGIN);
+				 * cycleCountItemsEntity.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+				 * cycleCountItemsEntity.setCreatedBy(cycleCountBean.getCreatedBy());
+				 * cycleCountItemsEntity.setLastModifiedDate(new Date());
+				 * cycleCountItemsEntity.setCreatedDate(new Date());
+				 * 
+				 * resultFlag2 = cycleCountDao.updateCycleCountItems(cycleCountItemsEntity);
+				 */
+				// }
+
+			}
+
+		}
+
+		return resultString;
+	}
+
+	public String InsertCycleCountItems(CycleCountEntityTO cycleCountBean, CycleCountEntity cycleCountEntity) {
+		boolean resultFlag = false;
+		CycleCountItemsEntity cycleCountItemsEntity = new CycleCountItemsEntity();
+		// List<CycleCountItemsEntity> cycleCountItemsEntityList = new
+		// ArrayList<CycleCountItemsEntity>();
+		// System.out.println(cycleCountBean.getCycleCountItemBean2().size());
+		// for (int i = 0; i < cycleCountBean.getCycleCountItemBean2().size(); i++) {
+		cycleCountItemsEntity.getItemId().setItemId(cycleCountBean.getItemId());
+		cycleCountItemsEntity.setCycleCountID(cycleCountEntity);
+		cycleCountItemsEntity.setCountedQuantity(cycleCountBean.getCountedQuantity());
+		cycleCountItemsEntity.setQuantityMatched(cycleCountBean.getQuantityMatched());
+		cycleCountItemsEntity.setQuantityOnHand(cycleCountBean.getQuantityOnHand());
+		cycleCountItemsEntity.setNotes(cycleCountBean.getNotes());
+
+		cycleCountItemsEntity.setIpAddress(cycleCountEntity.getIpAddress());
+		cycleCountItemsEntity.setCreatedBy(cycleCountEntity.getCreatedBy());
+		cycleCountItemsEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+		cycleCountItemsEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		cycleCountItemsEntity.setCreatedDate(new Date());
+		resultFlag = cycleCountDao.addCycleCountItems(cycleCountItemsEntity);
+		// }
+
+		// resultFlag=cycleCountDao.addCycleCountItems(cycleCountItemsEntityList);
+
+		if (resultFlag)
+			return "ADDED";
+		else
+			return "";
+	}
+
+	private void setAuditInfo(CycleCountBean cycleCountBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			cycleCountBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			cycleCountBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			cycleCountBean.setCreatedDate(new Date());
+		} else {
+			cycleCountBean.setTransactionCount(cycleCountBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			cycleCountBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			cycleCountBean.setLastModifiedDate(new Date());
+			cycleCountBean.setCreatedDate(new Date());
+			// assignPharmacyLocationScreenBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+		}
+
+	}
+
+	@Override
+	@Transactional(rollbackOn = TransactionFailedException.class)
+	public String updateCycle(CycleCountBean cycleCountBean) throws TransactionFailedException {
+		String resultString = "";
+		boolean resultFlag = false;
+		boolean resultFlag2 = false;
+
+		// Optimistic Locking for Hibernate
+		TransactionData latestData = cycleCountDao.fetchTransactionDataById(cycleCountBean.getCycleCountID());
+		if (latestData.getTransactionCount() > (cycleCountBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+
+		setAuditInfo(cycleCountBean, "editFlag");
+		CycleCountEntity cycleCountEntity = mapper.map(cycleCountBean, CycleCountEntity.class);
+		resultFlag = cycleCountDao.updateCycleCount(cycleCountEntity);
+
+		if (resultFlag) {
+			for (CycleCountEntityTO insertUpdatecycleCountItemsBean : cycleCountBean.getCycleCountItemBean2()) {
+				if (insertUpdatecycleCountItemsBean.getCycleCountItemID() == null) {
+					resultString = InsertCycleCountItems(insertUpdatecycleCountItemsBean, cycleCountEntity);
+				} else {
+
+					CycleCountItemsEntity objCycleCountItemsEntity = cycleCountDao
+							.fetchCycleCountItemsEntityById(insertUpdatecycleCountItemsBean.getCycleCountItemID());
+
+					if (objCycleCountItemsEntity
+							.getTransactionCount() > (insertUpdatecycleCountItemsBean.getTransactionCount())) {
+						throw new TransactionFailedException(
+								messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+					} else if (latestData.getRecordType() == 'D') {
+						throw new TransactionFailedException(
+								messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+					} else {
+						objCycleCountItemsEntity
+								.setCountedQuantity(insertUpdatecycleCountItemsBean.getCountedQuantity());
+						objCycleCountItemsEntity
+								.setQuantityOnHand(insertUpdatecycleCountItemsBean.getQuantityOnHand());
+						objCycleCountItemsEntity
+								.setQuantityMatched(insertUpdatecycleCountItemsBean.getQuantityMatched());
+						objCycleCountItemsEntity.setNotes(insertUpdatecycleCountItemsBean.getNotes());
+						objCycleCountItemsEntity.setTransactionCount(objCycleCountItemsEntity.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+						objCycleCountItemsEntity.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+						objCycleCountItemsEntity.setLastModifiedDate(new Date());
+						objCycleCountItemsEntity.setLastModifiedBy(cycleCountEntity.getLastModifiedBy());
+						boolean updateFlag = cycleCountDao.updateCycleCountItems(objCycleCountItemsEntity);
+						if(updateFlag)
+							resultString="UPDATED";
+					}
+				}
+				
+			}
+		}
+		return resultString;
+	}
+
+}

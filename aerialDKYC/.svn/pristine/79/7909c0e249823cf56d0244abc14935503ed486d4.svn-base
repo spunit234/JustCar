@@ -1,0 +1,14 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+
+public interface ItemsConsumptionReportDao extends BaseDao<ItemStockEntity> {
+
+	List<ItemStockEntityTO> fetchItemsConsumptionReport(PayloadBean payloadBean);
+
+}

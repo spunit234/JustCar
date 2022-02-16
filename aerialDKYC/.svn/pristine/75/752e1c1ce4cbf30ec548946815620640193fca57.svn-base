@@ -1,0 +1,30 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.PatientDispensedItemBean;
+import com.edios.pms.dao.SlowMovingMedicationsDao;
+import com.edios.pms.entity.PatientDispensedItemEntity;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.manager.SlowMovingMedicationsManager;
+
+@Service
+public class SlowMovingMedicationsManagerImpl  extends AbstractManagerImpl<PatientDispensedItemBean,PatientDispensedItemEntity > implements SlowMovingMedicationsManager  {
+
+	@Autowired
+	SlowMovingMedicationsDao slowMovingMedicationsDao;
+	
+	@Override
+	@Transactional
+	public List<PatientDispensedItemsTO> getSlowMovingMedication(PayloadBean payloadBean) {
+		
+		return slowMovingMedicationsDao.getSlowMovingMedication(payloadBean);
+	}
+
+}

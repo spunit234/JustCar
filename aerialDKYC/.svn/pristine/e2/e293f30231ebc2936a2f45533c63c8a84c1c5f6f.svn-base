@@ -1,0 +1,33 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyStoreTO;
+
+
+
+public interface PharmacyStoreManager extends AbstractManager{
+
+	List<PharmacyStoreTO> fetchPharmacyLookUp();
+
+	String addPharmacy(PharmacyStoreBean pharmacyStoreBean);
+
+	List<PharmacyStoreTO> fetchPharmacy(String searchParameter);
+
+	PharmacyStoreBean findPharmacyById(Long id);
+
+	String deletePharmacy(DeleteRecords deleteRecords);
+
+	String updatePharmacy(PharmacyStoreBean pharmacyStoreBean);
+	
+
+
+
+
+
+
+}

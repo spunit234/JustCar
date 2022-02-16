@@ -1,0 +1,128 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.CycleCountBean;
+import com.edios.pms.entity.UserDashboardEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+import com.edios.pms.manager.CycleCountManager;
+@RestController
+public class CycleCountController extends AbstractController{
+@Autowired
+MessageSource messageSource;
+ @Autowired
+ CycleCountManager cycleCountManager;
+ 
+ @PostMapping("/serchCycleCount")
+ public ResponseEntity<List<CycleCountEntityTO>> searchCycleCount(@RequestBody PayloadBean payloadBean){
+	 System.out.println("hellolllllllllllllllllllllllllllll"+payloadBean);
+	 List<CycleCountEntityTO> cycleCountEntityTOList=null;
+	if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+		cycleCountEntityTOList=cycleCountManager.searchCycleCount(payloadBean);
+		
+		}
+	return new ResponseEntity<List<CycleCountEntityTO>>(cycleCountEntityTOList, HttpStatus.OK);
+ }
+
+ @PostMapping("/searchCycleCountByID")
+ public ResponseEntity<CycleCountBean> searchCycleCountById(@RequestBody PayloadBean payloadBean){
+
+	 CycleCountBean cycleCountBean=null;
+	if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+		cycleCountBean=cycleCountManager.searchCycleCountById(payloadBean);
+		return new ResponseEntity <CycleCountBean>(cycleCountBean, HttpStatus.OK);
+		}
+	
+	else {
+		return new ResponseEntity<>(null, HttpStatus.OK);
+	}
+ }
+ 
+ @PostMapping("/serchCycleCountItems")
+ public ResponseEntity<List<CycleCountEntityTO>> searchCycleCountItems(@RequestBody PayloadBean payloadBean){
+	 //System.out.println("hellolllllllllllllllllllllllllllll"+payloadBean);
+	 List<CycleCountEntityTO> cycleCountEntityTOList=null;
+	if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+		cycleCountEntityTOList=cycleCountManager.searchCycleCountItems(payloadBean);
+		
+		}
+	return new ResponseEntity<List<CycleCountEntityTO>>(cycleCountEntityTOList, HttpStatus.OK);
+ }
+ 
+ @PostMapping("/fetch-items-while-adding-cycle")
+ public ResponseEntity<List<CycleCountEntityTO>> fetchItemDetailForNewCycleCount(@RequestBody PayloadBean payloadBean){
+	 //System.out.println("hellolllllllllllllllllllllllllllll"+payloadBean);
+	 List<CycleCountEntityTO> cycleCountEntityTOList=null;
+	if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+		cycleCountEntityTOList=cycleCountManager.fetchItemDetailForNewCycleCount(payloadBean);
+		
+		}
+	return new ResponseEntity<List<CycleCountEntityTO>>(cycleCountEntityTOList, HttpStatus.OK);
+ }
+ 
+ @PutMapping("/update-cycle-count")
+	public BaseResponse updateCycleCount(@RequestBody CycleCountBean cycleCountBean, HttpServletRequest request) {
+	BaseResponse baseResponse = null;
+		System.out.println("In update Dashboard location method");
+	try {
+		cycleCountBean.setIpAddress(request.getRemoteAddr());	
+	String resultString = cycleCountManager.updateCycle(cycleCountBean);
+	if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("")) {
+		baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+	}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+		baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+				messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+	} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+		baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+				messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+	}
+	return baseResponse;
+}catch(Exception exception) {
+	exception.printStackTrace();
+	if(exception instanceof TransactionFailedException) {
+		return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+				exception.getMessage());
+	}
+	else
+	return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+}
+	}
+ 
+ @PostMapping("/add-cycleCount")
+	public BaseResponse addCycleCountAndCountItems(@RequestBody CycleCountBean cycleCountBean, HttpServletRequest request) {
+	BaseResponse baseResponse = null;
+	cycleCountBean.setIpAddress(request.getRemoteAddr());
+	try {
+		String resultString = cycleCountManager.addCycleCountAndCountItems(cycleCountBean);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} 
+		return baseResponse;
+	}catch(Exception e) {
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+	
+
+}
+
+	
+
+}

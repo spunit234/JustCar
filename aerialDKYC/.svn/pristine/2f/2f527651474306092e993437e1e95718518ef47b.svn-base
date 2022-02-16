@@ -1,0 +1,27 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CycleCountBean;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+
+public interface CycleCountManager extends AbstractManager {
+
+	List<CycleCountEntityTO> searchCycleCount(PayloadBean payloadBean);
+
+	CycleCountBean searchCycleCountById(PayloadBean payloadBean);
+
+	List<CycleCountEntityTO> searchCycleCountItems(PayloadBean payloadBean);
+
+	String addCycleCountAndCountItems(CycleCountBean cycleCountBean) ;//throws TransactionFailedException;
+
+	String updateCycle(CycleCountBean cycleCountBean) throws TransactionFailedException;
+	
+	List<CycleCountEntityTO> fetchItemDetailForNewCycleCount(PayloadBean payloadBean);
+
+	//String updateDashboardUser(CycleCountBean cycleCountBean);
+
+}

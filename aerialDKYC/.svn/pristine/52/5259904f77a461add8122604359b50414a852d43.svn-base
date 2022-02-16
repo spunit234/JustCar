@@ -1,0 +1,38 @@
+package com.edios.pms.entity.to;
+
+import com.edios.cdf.bean.security.SiteBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class WorksStationAssignmentTO {
+	private Long workStationID;
+
+	private String workStationCode;
+	
+	private String workStationName;
+	
+	private String siteName;
+	
+	private String pharmacyLocationName;
+
+	private String workStationIpAdd;
+	
+	private String workStationMacAdd;
+	
+	private String printerInfo;
+	
+	private String roboticInfo;
+	
+	private String workStationStatus;
+	
+	private Long transactionCount;
+
+}

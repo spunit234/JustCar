@@ -1,0 +1,145 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Date;
+import java.util.List;
+
+
+/**
+ * The persistent class for the ` items` database table.
+ * 
+ */
+@Entity
+@Table(name="items")
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ITEM_ID")
+	private Long itemId;
+
+	private String combination;
+
+	private String controlled;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="DEFAULT_SIG")
+	private String defaultSig;
+
+	private String din;
+
+	@Column(name="DISABLE_INVENTORY_ADJUST")
+	private String disableInventoryAdjust;
+
+	@Column(name="DISPENSE_AS_PACK")
+	private String dispenseAsPack;
+
+	@Column(name="DRUG_COMMENTS")
+	private String drugComments;
+
+	@Column(name="DRUG_GROUP")
+	private String drugGroup;
+
+	@Column(name="DUMMY_CODE")
+	private String dummyCode;
+
+	private String form;
+
+	private String gtin;
+
+	@Column(name="HANDLING_INSTRUCTIONS")
+	private String handlingInstructions;
+
+	private String immunization;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="INACTIVATED_DATE")
+	private Date inactivatedDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="ITEM_CODE")
+	private String itemCode;
+
+	@Column(name="ITEM_GENERIC_NAME")
+	private String itemGenericName;
+
+	@Column(name="ITEM_NAME")
+	private String itemName;
+
+	@Column(name="ITEM_STATUS")
+	private String itemStatus;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="MEASUREMENT_UNIT")
+	private String measurementUnit;
+
+	private String narcotic;
+
+	@Column(name="ORDER_AS_PACK")
+	private String orderAsPack;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	private String refrigerated;
+
+	private String reportable;
+
+	private String route;
+
+	@Column(name="RX_COMMENTS")
+	private String rxComments;
+
+	private String strength;
+
+	@Column(name="STRENGTH_UNIT")
+	private String strengthUnit;
+
+	@Column(name="TOTAL_VOLUME")
+	private String totalVolume;
+
+	@Column(name="TRACK_EXPIRY")
+	private String trackExpiry;
+
+	@Column(name="TRACK_LOT_NUMBER")
+	private String trackLotNumber;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	private String volume;
+
+	@Column(name="VOLUME_UNIT")
+	private String volumeUnit;	
+	
+
+}

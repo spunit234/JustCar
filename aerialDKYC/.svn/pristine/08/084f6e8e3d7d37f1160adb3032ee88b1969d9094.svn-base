@@ -1,0 +1,115 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.stereotype.Repository;
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.BatchRecallDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+
+@Repository
+public class BatchRecallDaoImpl extends BaseDaoImpl<ItemStockEntity> implements BatchRecallDao{
+
+	@Override
+	public List<ItemStockEntityTO> fetchItemStock(ItemStockEntityTO itemStockEntityTO) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select item.itemName as itemName,item.itemCode as itemCode,stock.lotNo as lotNo,pack.packSize as packSize,stock.quantityInStock as quantityReceived,"
+				+ "stock.quantityOnHand as quantityOnHand,stock.itemStockStatus as itemStockStatus,stock.onHoldNotes as onHoldNotes,stock.itemStockId as itemStockId,stock.transactionCount as transactionCount "
+				+ "from ItemStockEntity stock left join stock.item as item left join stock.itemPackSize as pack where item.recordType<>'D'  ";
+		if (itemStockEntityTO.getItemStockStatus()!=null) {
+			sqlQuery+="and stock.itemStockStatus='"+itemStockEntityTO.getItemStockStatus()+"'";
+		}
+		if (itemStockEntityTO.getItemName()!=null) {
+			sqlQuery+="and item.itemName like '%"+itemStockEntityTO.getItemName().trim()+"%'";
+		}
+		if (itemStockEntityTO.getItemCode()!=null) {
+			sqlQuery+="and item.itemCode like '%"+itemStockEntityTO.getItemCode().trim()+"%'";
+		}
+		List<ItemStockEntityTO> itemEntityTOList = (List<ItemStockEntityTO>) session.createQuery(sqlQuery)
+				
+				.setResultTransformer(Transformers.aliasToBean(ItemStockEntityTO.class)).list();
+		
+		return itemEntityTOList;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long itemStockId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  ItemStockEntity table where table.itemStockId=:itemStockId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("itemStockId", itemStockId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean updateItemStock(Long itemStockId, String itemStockStatus, Long lastModifiedBy, Date lastModifiedDate,
+			Character recordType, Long transactionCount,String onHoldNotes,String ipAddress) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "update ItemStockEntity set itemStockStatus='"+itemStockStatus+"',lastModifiedBy="+lastModifiedBy+",recordType='"+recordType+"',"
+				+ "transactionCount="+transactionCount+",lastModifiedDate=:lastModifiedDate,onHoldNotes='"+onHoldNotes+"',ipAddress='"+ipAddress+"' "
+				+ " where itemStockId="+itemStockId+"  ";
+		
+		long id = session.createQuery(sqlQuery).setParameter("lastModifiedDate",  new Date(),TemporalType.TIMESTAMP).executeUpdate();
+		if (id>0) {
+			return true;
+			
+		}
+		else {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean updateItemStockResume(Long itemStockId, String itemStockStatus, Long lastModifiedBy,
+			Date lastModifiedDate, Character recordType, Long transactionCount, String resumedNotes, String ipAddress) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "update ItemStockEntity set itemStockStatus='"+itemStockStatus+"',lastModifiedBy="+lastModifiedBy+",recordType='"+recordType+"',"
+				+ "transactionCount="+transactionCount+",lastModifiedDate=:lastModifiedDate,resumedNotes='"+resumedNotes+"',ipAddress='"+ipAddress+"' "
+				+ " where itemStockId="+itemStockId+"  ";
+		
+		long id = session.createQuery(sqlQuery).setParameter("lastModifiedDate",  new Date(),TemporalType.TIMESTAMP).executeUpdate();
+		if (id>0) {
+			return true;
+			
+		}
+		else {
+			return false;
+		}
+	}
+
+	@Override
+	public List<PatientEntityTO> fetchPatientList(Long id) {
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+		sqlQuery = "select concat(patient.firstName,' ',coalesce(patient.lastName,'')) as patientName,patient.patientNo as patientNo,"
+				+ "concat(patient.addressLine1,' ',coalesce(patient.addressLine2,'')) as address,patient.mobilePhone as mobilePhone from "
+				+ "PatientDispensedItemEntity dispense left join dispense.patientPrescribedItem as prescribedItem left join prescribedItem.patientPrescription as prescription "
+				+ "left join prescription.patientEncounter as encounter left join encounter.patient as patient where dispense.itemStock.itemStockId="+id+" ";
+		
+			List<PatientEntityTO> patientEntityTOList = (List<PatientEntityTO>) session.createQuery(sqlQuery)
+							
+							.setResultTransformer(Transformers.aliasToBean(PatientEntityTO.class)).list();
+			
+			return patientEntityTOList;
+	}
+
+}

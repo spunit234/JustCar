@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RTOletter1" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="35" bottomMargin="20" uuid="c4f48dd2-ea8c-45e4-bd39-5ca89dd59799">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<field name="bankName" class="java.lang.String"/>
+	<field name="loanNo" class="java.lang.String"/>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="makeandmodel" class="java.lang.String"/>
+	<field name="registrationNo" class="java.lang.String"/>
+	<field name="rtoCharges" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="32" splitType="Stretch">
+			<staticText>
+				<reportElement x="169" y="0" width="504" height="29" uuid="22c88f7d-40db-495f-9926-36ed6fecb8c7"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[                                           RTO AGENT ACKNOWLEDGMENT]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="461" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="20" uuid="943d863d-a436-4115-bdb3-c510d8890428"/>
+				<textElement>
+					<font size="11"/>
+				</textElement>
+				<text><![CDATA[To,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="22" width="21" height="18" uuid="74f89eaa-7a4e-4379-9c43-436972e25180"/>
+				<text><![CDATA[The]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="21" y="22" width="100" height="20" uuid="08e3aad2-224c-48d4-a495-1389ab5ec8e1"/>
+				<textFieldExpression><![CDATA[$F{bankName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="111" width="111" height="16" uuid="34fc0c20-d5db-4a51-b688-b0875ddaceff"/>
+				<textElement markup="html">
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Dear sir,
+                                                                                                                  ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="258" y="137" width="100" height="20" uuid="27694f41-9312-46d4-89a4-3fd4e69c8c89"/>
+				<textElement markup="html"/>
+				<textFieldExpression><![CDATA[$F{loanNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="157" width="740" height="46" uuid="5492f4ef-06a9-4e43-9e21-413ba5e4c072"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[I confirm that I for the following customer/vehicle, I have received the following documents for confirmation of possibility of name
+transfer and HDFC Bank’s HP endorsement on the same:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="223" width="248" height="23" uuid="f0794b99-c85a-48ba-85ae-890bf353f9cd"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Loan No.                                     :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="276" y="223" width="100" height="20" uuid="da47a454-9189-402e-8b24-4e2e6b5f473e"/>
+				<textFieldExpression><![CDATA[$F{loanNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="246" width="248" height="20" uuid="e612388a-6502-416d-8e84-eeb8aab6eb5e"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Name of the customer                :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="276" y="246" width="100" height="20" uuid="86c4c0ce-24c5-40b3-8dae-b484f74c6859"/>
+				<textFieldExpression><![CDATA[$F{customerName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="266" width="248" height="25" uuid="d11ab349-60f0-425c-b197-58a9160eb378"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Vehicle make and mode             :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="276" y="271" width="100" height="20" uuid="d7b6d314-185a-425c-a5b5-52334d31dcd4"/>
+				<textFieldExpression><![CDATA[$F{makeandmodel}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="291" width="248" height="20" uuid="f4ecd821-6a9d-41f5-b1ba-336c1f39d2d6"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Registration No. of the vehicle    :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="276" y="294" width="100" height="20" uuid="16351f83-3d6d-4c29-a54d-f0805cde6cb5"/>
+				<textFieldExpression><![CDATA[$F{registrationNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="314" width="296" height="20" uuid="ccc30513-acdd-4f97-b6f4-ade160188dfa"/>
+				<textElement>
+					<font size="12" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Case Details HP Enter+Security Number Plate]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="334" width="480" height="23" uuid="9d58505f-4868-453e-9d9e-98faf403b2ba"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[( E.g : Purchase with Hyp / Purchase without Hyp / Refinance with / without Hyp Etc)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="357" width="100" height="26" uuid="eae38866-e929-4ed0-8601-5db7afef0118"/>
+				<textElement>
+					<font size="12" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[RTO Charges –  ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="399" width="100" height="20" uuid="78f816f0-835a-45fe-8050-e4ee1b35d888"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Signature :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="435" width="100" height="20" uuid="4bbc4bb0-c2ef-48b1-bf67-1278042e7e5a"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Date  :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="111" y="357" width="100" height="20" uuid="b8810d3d-51af-4da5-a886-9e2ec5361c20"/>
+				<textElement>
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{rtoCharges}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="137" width="258" height="20" uuid="9df189de-302d-4c0b-a877-c7c1b34626a4"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Confirmation 1: Receipt of Doc's  UCL<b> LOAN No. :]]></text>
+			</staticText>
+		</band>
+		<band height="50"/>
+	</detail>
+</jasperReport>

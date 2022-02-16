@@ -1,0 +1,74 @@
+package com.edios.pms.manager.impl;
+
+import java.util.Date;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.bean.security.UserActivityDetailsBean;
+import com.edios.cdf.entity.security.UserActivityDetailsEntity;
+import com.edios.cdf.entity.security.UserLoginDetailsEntity;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.dao.UserActivityDetailsManagerDao;
+import com.edios.pms.manager.UserActivityDetailsManager;
+
+@Service
+public class UserActivityDetailsManagerImpl extends AbstractManagerImpl<UserActivityDetailsBean, UserActivityDetailsEntity>
+implements UserActivityDetailsManager {
+
+	@Autowired
+	UserActivityDetailsManagerDao userActivityDetailsManagerDao;
+
+	@Override
+	@Transactional
+	public String insertScreenActivity(PayloadBean payloadBean) {
+		String result = "";
+		
+		UserActivityDetailsEntity userActivityDetailsEntity = new UserActivityDetailsEntity();
+		UserLoginDetailsEntity userLoginDetailsEntity = new UserLoginDetailsEntity();
+		userLoginDetailsEntity.setUserLoginId(payloadBean.getLoginDetailId());
+		userActivityDetailsEntity.setUserLoginDetails(userLoginDetailsEntity);
+		userActivityDetailsEntity.setScreenName(payloadBean.getScreenName());
+		userActivityDetailsEntity.setActivityName(payloadBean.getActivityName());
+		userActivityDetailsEntity.setActivityDateTime(new Date());
+		userActivityDetailsEntity.setRemarks(payloadBean.getRemarks());
+		
+		Long pk = userActivityDetailsManagerDao.insertScreenActivity(userActivityDetailsEntity);
+		
+		if (pk>0) {
+		    result = "ADDED"; 
+		}
+		return result;
+		
+	}
+
+	@Override
+	@Transactional
+	public String insertScreenActivityOnStatic(PayloadBean payloadBean) {
+	String result = "";
+		
+		UserActivityDetailsEntity userActivityDetailsEntity = new UserActivityDetailsEntity();
+		UserLoginDetailsEntity userLoginDetailsEntity = new UserLoginDetailsEntity();
+		userLoginDetailsEntity.setUserLoginId(payloadBean.getLoginDetailId());
+		userActivityDetailsEntity.setUserLoginDetails(userLoginDetailsEntity);
+		userActivityDetailsEntity.setScreenName(payloadBean.getScreenName());
+		userActivityDetailsEntity.setActivityName(payloadBean.getActivityName());
+		userActivityDetailsEntity.setActivityDateTime(new Date());
+		userActivityDetailsEntity.setTableName(payloadBean.getTableName());
+		userActivityDetailsEntity.setPkColName(payloadBean.getPkColName());
+		userActivityDetailsEntity.setPkColValue(payloadBean.getPkColValue());
+		
+		
+		Long pk = userActivityDetailsManagerDao.insertScreenActivityOnStatic(userActivityDetailsEntity);
+		
+		if (pk>0) {
+		    result = "ADDED"; 
+		}
+		return result;
+	}
+
+	
+	
+}

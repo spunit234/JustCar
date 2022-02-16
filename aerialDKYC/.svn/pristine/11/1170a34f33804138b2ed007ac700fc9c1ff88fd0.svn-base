@@ -1,0 +1,14 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.entity.CycleCountEntity;
+import com.edios.pms.entity.to.CycleCountEntityTO;
+
+public interface CycleCountReportDao extends BaseDao<CycleCountEntity>{
+
+	List<CycleCountEntityTO> fetchCycleCountReport(PayloadBean payloadBean);
+
+}

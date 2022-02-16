@@ -1,0 +1,109 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.ItemStockAdjustmentBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.bean.ItemsBean;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.ItemsEnityTO;
+import com.edios.pms.manager.ItemStockAdjustmentManager;
+
+@RestController
+public class ItemStockAdjustmentController extends AbstractController {
+
+	@Autowired
+	MessageSource messageSource;
+	
+	
+	@Autowired
+	ItemStockAdjustmentManager itemStockAdjustmentManager;
+	
+	@PostMapping("/fetch-item-stockList")
+	public ResponseEntity<List<ItemStockEntityTO>> fetchItemStock(@RequestBody ItemEntityTO itemEntityTO) {
+		List<ItemStockEntityTO> itemStockEntityTOList=null;
+		if(itemEntityTO.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemStockEntityTOList = itemStockAdjustmentManager.fetchItemStock(itemEntityTO);
+			return new ResponseEntity<List<ItemStockEntityTO>>(itemStockEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-item-stock")
+	public ResponseEntity<ItemStockEntityTO> fetchItemStockInfo(@RequestBody PayloadBean payloadBean) {
+		ItemStockEntityTO itemStockEntityTO = null;
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			itemStockEntityTO = itemStockAdjustmentManager.fetchItemStockInfo(payloadBean.getId());
+			return new ResponseEntity<ItemStockEntityTO>(itemStockEntityTO, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+		}
+	}
+	
+	
+	@PostMapping("/saveUpdate-stockAdjustment")
+	public BaseResponse saveUpdateItemStockAdjustment(@RequestBody ItemStockAdjustmentBean itemStockAdjustmentBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			itemStockAdjustmentBean.setIpAddress(request.getRemoteAddr());
+			String resultString = itemStockAdjustmentManager.updateInsertStockItems(itemStockAdjustmentBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			else {
+				baseResponse = new BaseResponse(HttpStatus.OK, "ERROR","Something Went Wrong. Please Contact Site Administration");
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse;
+		}
+	}
+	
+	@PostMapping("/fetch-stock-adjustment-records")
+	public ResponseEntity<List<ItemStockAdjustmentEntityTO>> fetchStockAdjustmentRecords(@RequestBody ItemStockAdjustmentBean itemStockAdjustmentBean) {
+		List<ItemStockAdjustmentEntityTO> itemStockAdjustmentBeanList=null;
+		itemStockAdjustmentBeanList = itemStockAdjustmentManager.fetchStockAdjustmentRecords(itemStockAdjustmentBean);
+			return new ResponseEntity<List<ItemStockAdjustmentEntityTO>>(itemStockAdjustmentBeanList, HttpStatus.OK);		
+		}
+	
+	@PostMapping("/fetch-user-list")
+	public ResponseEntity<List<UserEntityTO>> fetchuserlist(@RequestBody PayloadBean payloadBean) {
+		List<UserEntityTO> userEntityTOList=null;
+		userEntityTOList = itemStockAdjustmentManager.fetchuserlist(payloadBean);
+			return new ResponseEntity<List<UserEntityTO>>(userEntityTOList, HttpStatus.OK);		
+		}
+	
+//	@PostMapping("/fetch-approval_role_list")
+//	public ResponseEntity<List<ItemStockAdjustmentEntityTO>> fetchApprovalRoleList(@RequestBody PayloadBean payloadBean) {
+//		List<ItemStockAdjustmentEntityTO> adjustmentRoleList=null;
+//		adjustmentRoleList = itemStockAdjustmentManager.fetchApprovalRoleList(payloadBean);
+//			return new ResponseEntity<List<ItemStockAdjustmentEntityTO>>(adjustmentRoleList, HttpStatus.OK);		
+//		}
+
+	
+}

@@ -1,0 +1,37 @@
+package com.edios.pms.bean;
+
+import java.util.Date;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PatientPrescribedItemBean extends AbstractBean {
+	
+	private static final long serialVersionUID = 2274827598484051640L;
+	
+
+	private Long prescribedItemId;
+	private Long createdBy;
+	private Date createdDate;
+	private String ipAddress;
+	private String itemSig;
+	private Long lastModifiedBy;
+	private Date lastModifiedDate;
+	private String notes;
+	private Long prescribedQuantity;
+	private String prescribedStatus;
+	private Character recordType;
+	private Long transactionCount;
+	private Long userActivityId;
+	private PatientPrescriptionBean patientPrescription;
+	private ItemBean item;
+
+}

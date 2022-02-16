@@ -1,0 +1,34 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CreateOrderCompositeBean;
+import com.edios.pms.bean.ItemOrderBean;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.ItemOrderDetailEntityTO;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemPackSizeEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyStoreEntityTO;
+
+public interface ReceiveOrderManager extends AbstractManager {
+
+	CreateOrderCompositeBean findReceivedItemOrderDetailsById(Long itemOrderId);
+	
+	List<ItemOrderDetailEntityTO> getParticluarReceivedItemOrderDeatils(Long itemOrderDetailId);
+	
+	String updatePaticularReceivedItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	String updateReceivedItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	
+	
+}

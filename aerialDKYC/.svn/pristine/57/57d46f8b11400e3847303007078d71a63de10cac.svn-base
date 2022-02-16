@@ -1,0 +1,246 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.Date;
+import java.util.List;
+import java.util.StringJoiner;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.CompoundCompositeItemBean;
+import com.edios.pms.bean.PreparedCompoundItemBean;
+import com.edios.pms.bean.PreparedCompoundItemDetailBean;
+import com.edios.pms.dao.PreparedCompoundItemDao;
+import com.edios.pms.entity.CompoundItemEntity;
+import com.edios.pms.entity.PreparedCompoundItemDetailEntity;
+import com.edios.pms.entity.PreparedCompoundItemEntity;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.manager.PreparedCompoundItemManager;
+
+@Service("preparedCompoundItemManagerImpl")
+public class PreparedCompoundItemManagerImpl extends AbstractManagerImpl<PreparedCompoundItemBean,PreparedCompoundItemEntity > implements PreparedCompoundItemManager {
+
+	@Autowired
+	PreparedCompoundItemDao preparedCompoundItemDao;
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	
+	@Override
+	@Transactional
+	public String addPreparedCompoundItem(CompoundCompositeItemBean objCompoundCompositeItemBean, HttpServletRequest request) {
+		// TODO Auto-generated method stub
+		String resultString=null;
+		PreparedCompoundItemBean objPreparedCompoundItemBean=objCompoundCompositeItemBean.getObjPreparedCompoundItemBean();
+		
+		if(preparedCompoundItemDao.isPreparedCompoundItemNameExist(objPreparedCompoundItemBean.getCompoundItem().getCompoundItemId(),objPreparedCompoundItemBean.getPreparedItemId())) {
+			return "NameAlreadyExist";
+		}
+
+		objPreparedCompoundItemBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfPreparedCompoundItemBean(objPreparedCompoundItemBean, "newFlag");
+		Long preparedItemId=preparedCompoundItemDao.addPreparedCompoundItemEntity(mapper.map(objPreparedCompoundItemBean, PreparedCompoundItemEntity.class));
+		if(preparedItemId!=null) {
+			resultString="ADDED";
+			objPreparedCompoundItemBean.setPreparedItemId(preparedItemId);
+			for(PreparedCompoundItemDetailBean objPreparedCompoundItemDetailBean:objCompoundCompositeItemBean.getObjPreparedCompoundItemDetailBean()) {
+				objPreparedCompoundItemDetailBean.setPreparedCompoundItem(objPreparedCompoundItemBean);
+				objPreparedCompoundItemDetailBean.setIpAddress(objPreparedCompoundItemBean.getIpAddress());
+				objPreparedCompoundItemDetailBean.setCreatedBy(objPreparedCompoundItemBean.getCreatedBy());
+				setAuditInfoOfPreparedCompoundItemBeanDetailBean(objPreparedCompoundItemDetailBean, "newFlag");
+				if(preparedCompoundItemDao.addPreparedCompoundItemDetailEntity(mapper.map(objPreparedCompoundItemDetailBean, PreparedCompoundItemDetailEntity.class))) {
+					resultString="ADDED";
+				}
+			}
+		}
+		return resultString;
+	}
+	
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> fetchItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return preparedCompoundItemDao.fetchItemDetailsToPreparedConfigureCompoundItem(payloadBean);
+	}
+	
+	
+	private void setAuditInfoOfPreparedCompoundItemBean(PreparedCompoundItemBean PreparedCompoundItemBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			PreparedCompoundItemBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			PreparedCompoundItemBean.setCreatedDate(new Date());
+		} else {
+			PreparedCompoundItemBean.setTransactionCount(PreparedCompoundItemBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			PreparedCompoundItemBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	private void setAuditInfoOfPreparedCompoundItemBeanDetailBean(PreparedCompoundItemDetailBean PreparedCompoundItemDetailBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			PreparedCompoundItemDetailBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemDetailBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			PreparedCompoundItemDetailBean.setCreatedDate(new Date());
+		} else {
+			PreparedCompoundItemDetailBean.setTransactionCount(PreparedCompoundItemDetailBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemDetailBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			PreparedCompoundItemDetailBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> fetchConfiguredCompoundItemdetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		StringJoiner stringJoiner=new StringJoiner(",");
+		List<CompoundItemEntityTO> objList=preparedCompoundItemDao.fetchConfiguredCompoundItemdetails(payloadBean);
+		for(CompoundItemEntityTO objCompoundItemEntityTO:objList) {
+			for(CompoundItemEntityTO infoCompoundItemEntityTO:preparedCompoundItemDao.fetchConfiguredCompoundItemDetailsByCompoundItemId(objCompoundItemEntityTO.getCompoundItemId())) {
+				StringJoiner internalJoiner=new StringJoiner("-");
+				internalJoiner.add(infoCompoundItemEntityTO.getItemName());
+				internalJoiner.add(infoCompoundItemEntityTO.getMixedQuantity().toString());
+				stringJoiner.add(internalJoiner.toString());
+			}
+			objCompoundItemEntityTO.setConfiguredMixedQuantities(stringJoiner.toString());
+			stringJoiner=new StringJoiner(",");
+		}
+		return objList;
+	}
+
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> fetchConfigureItemDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return preparedCompoundItemDao.fetchConfigureItemDetails(payloadBean);
+	}
+
+	
+	
+	/*@Override
+	@Transactional
+	public CompoundCompositeItemBean findCompoundItemBeanDetailsById(Long compoundItemId) {
+		// TODO Auto-generated method stub
+		CompoundCompositeItemBean objCompoundCompositeItemBean=new CompoundCompositeItemBean();
+		List<CompoundItemDetailBean> objCompoundItemDetailBeanList=new ArrayList<>();
+		CompoundItemBean objCompoundItemBean=mapper.map(compoundItemDao.findCompoundItemBeanDetailsById(compoundItemId),CompoundItemBean.class);
+		
+		ItemPackSizeBean objCompoundItemPackSizeBean=new ItemPackSizeBean();
+		objCompoundItemPackSizeBean.setPackSizeId(objCompoundItemBean.getItemPackSize().getPackSizeId());
+		objCompoundItemPackSizeBean.setPackSize(objCompoundItemBean.getItemPackSize().getPackSize());
+		objCompoundItemBean.setItemPackSize(objCompoundItemPackSizeBean);
+		System.out.println(objCompoundItemPackSizeBean.getPackSizeId());
+		for(CompoundItemDetailBean objCompoundItemDetailBean:objCompoundItemBean.getCompoundItemDetails()) {
+			objCompoundItemDetailBean.setItemName(objCompoundItemDetailBean.getItem().getItemName());
+			objCompoundItemDetailBean.setItemCode(objCompoundItemDetailBean.getItem().getItemCode());
+			
+			ItemPackSizeBean objItemPackSizeBean=new ItemPackSizeBean();
+			objItemPackSizeBean.setPackSizeId(objCompoundItemDetailBean.getItemPackSize().getPackSizeId());
+			objItemPackSizeBean.setPackSize(objCompoundItemDetailBean.getItemPackSize().getPackSize());
+			
+			objCompoundItemDetailBean.setPackSize(objCompoundItemDetailBean.getItemPackSize().getPackSize());
+			objCompoundItemDetailBean.setItemPackSize(objItemPackSizeBean);
+			objCompoundItemDetailBeanList.add(objCompoundItemDetailBean);
+		}
+		objCompoundItemBean.setCompoundItemDetails(null);
+		objCompoundCompositeItemBean.setObjCompoundItemBean(objCompoundItemBean);
+		objCompoundCompositeItemBean.setObjCompoundItemDetailBeanList(objCompoundItemDetailBeanList);
+		return objCompoundCompositeItemBean;
+	}
+
+	
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String updateCompoundItemDetails(CompoundCompositeItemBean CompoundCompositeItemBean,
+			HttpServletRequest request) throws TransactionFailedException {
+		String resultString=null;
+		CompoundItemBean objCompoundItemBean=CompoundCompositeItemBean.getObjCompoundItemBean();
+		
+		if(compoundItemDao.isCompoundItemNameExist(objCompoundItemBean.getItem().getItemId(),objCompoundItemBean.getCompoundItemId())) {
+			return "NameAlreadyExist";
+		}
+		TransactionData latestData = compoundItemDao.fetchTransactionDataById(objCompoundItemBean.getCompoundItemId());
+		if (latestData.getTransactionCount() > (objCompoundItemBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		objCompoundItemBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfCompoundItemBean(objCompoundItemBean, "editFlag");
+		if(compoundItemDao.updateCompoundItemEntity(mapper.map(objCompoundItemBean, CompoundItemEntity.class))) {
+			resultString="UPDATED";
+			for(CompoundItemDetailBean objCompoundItemDetailBean:CompoundCompositeItemBean.getObjCompoundItemDetailBeanList()) {
+				if(objCompoundItemDetailBean.getCompoundItemDetailId()==null) {
+					objCompoundItemDetailBean.setCompoundItem(objCompoundItemBean);
+					objCompoundItemDetailBean.setIpAddress(objCompoundItemBean.getIpAddress());
+					objCompoundItemDetailBean.setCreatedBy(objCompoundItemBean.getCreatedBy());
+					setAuditInfoOfCompoundItemDetailBean(objCompoundItemDetailBean, "newFlag");
+					if(compoundItemDao.addCompoundItemDetailEntity(mapper.map(objCompoundItemDetailBean, CompoundItemDetailEntity.class))) {
+						resultString="ADDED";
+					}
+				}
+				else {
+					TransactionData latestCompoundItemDetailData = compoundItemDao.fetchTransactionDataByCompoundItemDetailId(objCompoundItemDetailBean.getCompoundItemDetailId());
+					if (latestCompoundItemDetailData.getTransactionCount() > (objCompoundItemDetailBean.getTransactionCount())) {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+					}
+					if (latestData.getRecordType() == 'D') {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+					}
+					objCompoundItemDetailBean.setIpAddress(request.getRemoteAddr());
+					objCompoundItemDetailBean.setLastModifiedBy(objCompoundItemBean.getLastModifiedBy());
+					setAuditInfoOfCompoundItemDetailBean(objCompoundItemDetailBean, "editFlag");
+					if(compoundItemDao.updateCompoundItemDetailEntity(mapper.map(objCompoundItemDetailBean, CompoundItemDetailEntity.class))) {
+						resultString="UPDATED";
+					}
+				}
+				
+			}
+		}
+		
+		
+		return resultString;
+	}
+	
+	
+
+	@Override
+	@Transactional
+	public String deleteCompoundItemDetailsById(DeleteRecords deleteRecords) {
+		String resultOutput="";
+		if(compoundItemDao.deleteCompoundItemDetailsById(deleteRecords)) {
+			resultOutput="DELETED";
+		}
+		return resultOutput;
+	}
+*/
+	
+	
+	
+	
+	/*
+
+
+	@Override
+	@Transactional
+	public String deleteItemOrderDetailsById(DeleteRecords deleteRecords) {
+		String resultOutput="";
+		if(createOrderDao.deleteItemOrderDetailsById(deleteRecords)) {
+			resultOutput="DELETED";
+		}
+		return resultOutput;
+	}*/
+}

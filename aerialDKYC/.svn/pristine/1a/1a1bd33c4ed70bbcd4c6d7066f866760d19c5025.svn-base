@@ -1,0 +1,70 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.util.DateFormatter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class PatientPrescriptionEntityTO implements Serializable {
+
+	private static final long serialVersionUID = 6342094965674122373L;
+	
+	private Long patientId;
+	
+	private Long patientPrescriptionId;
+
+	private String prescriptionDateTime;
+
+	private String prescriptionStatus;
+	
+	private String previousPrescriptionStatus;
+
+	private Long transactionCount;
+	
+	//Precribed Item Detail
+	private Long prescribedItemId;
+
+	private String itemName;
+	
+	private String itemSig;
+	
+	private Long prescribedQuantity;
+	
+	private String prescribedStatus;
+	
+	//Dispensed Detail
+	
+	private Long dispensedItemId;
+	
+	private Long dispensedQuantity;
+	
+	private Long patientPrescriptionTransactionCount;
+	
+	private Long patientPrescriptionItemTransactionCount;
+	
+	private Long userId;
+	
+	DateFormatter formatter = new DateFormatter();
+
+	public void setPrescriptionDateTime(Date prescriptionDateTime) {
+		this.prescriptionDateTime=formatter.formaDate(prescriptionDateTime);
+	}
+	
+	private String robotDispensing;
+	
+	
+	
+}

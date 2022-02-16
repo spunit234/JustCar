@@ -1,0 +1,29 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.bean.WidgetBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class DashboardWidgetTO  implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private Long dashboardWidgetID;
+	private Long dashboardID;
+	private Long widgetID;
+	private String widgetName;
+	private Long widgetSequence;
+	private Long transactionCount;
+	
+}

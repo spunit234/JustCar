@@ -1,0 +1,185 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.entity.to.ApplicationParameterTO;
+import com.edios.cdf.entity.to.RoleEntityTO;
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.edios.cdf.entity.to.UserProfileTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.AdhocReportAccessRightEntity;
+import com.edios.pms.entity.AdhocReportEntity;
+import com.edios.pms.entity.AdhocReportFieldEntity;
+import com.edios.pms.entity.AdhocReportFilterEntity;
+import com.edios.pms.entity.AdhocReportParameterEntity;
+import com.edios.pms.entity.AdhocReportSortEntity;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.AdhocFilterTO;
+import com.edios.pms.entity.to.AdhocReportFieldTO;
+import com.edios.pms.entity.to.AdhocReportParameterTO;
+import com.edios.pms.entity.to.AdhocReportTO;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+
+public interface AdhocReportDao extends BaseDao<AdhocReportEntity> {
+	List<AdhocReportTO> getAdhocReportsDetails(PayloadBean payloadBean);
+	
+	boolean isAdhocReportNameExist(String reportName,Long adhocReportId);
+	
+	boolean addAdhocReport(AdhocReportEntity objAdhocReportEntity);
+	
+	AdhocReportEntity editAdhocReport(Long adhocReportId);
+	
+	List<DataSourceFieldTO> getDataSourceFieldsByDataSourceId(AdhocReportFieldTO payloadBean,List<Long> objIdsList) ;
+	
+	boolean addAdhocReportField(AdhocReportFieldEntity objAdhocReportFieldEntity);
+	
+	boolean updateAdhocReportField(Long fieldSequence,Long adhocReportFieldId);
+	
+	List<AdhocReportFieldTO> getAdhocReportField(AdhocReportFieldTO payloadBean);
+	
+	boolean deleteAdhocReportDataSourceField(Long adhocReportFieldId);
+	
+	TransactionData fetchTransactionDataById(Long adhocReportId);
+	
+	boolean updateAdhocReport(AdhocReportEntity objAdhocReportEntity);
+	
+	//Adhoc parameter functionality
+
+	List<AdhocReportParameterTO> fetchAdhocParameterDetail(@RequestBody AdhocReportFieldTO payloadBean);
+	
+	List<ApplicationParameterTO> fetchListTypeAppParameters();
+	
+	List<DataSourceFieldTO> fetchFixedListDynamicSQLDetailOfDataSourceField(long dataSourceId,Long cnt);
+	
+	boolean isAdhocReportParameterNameExist(String parameterName,Long adhocReportParameterId,Long adhocReportId);
+	
+	boolean addAdhocReportParameter(AdhocReportParameterEntity objAdhocReportParameterEntity);
+	
+	AdhocReportParameterEntity findAdhocReportParameterById(Long adhocReportParameterId);
+	
+	boolean updateAdhocReportParameter(AdhocReportParameterEntity objAdhocReportParameterEntity);
+	
+	boolean deleteAdhocReportParameter(Long adhocReportParameterId);
+	
+	
+	//End adhoc parameter functionality
+	
+	//Start of adhoc selection criteria
+	List<AdhocFilterTO> fetchAdhocSelectionCriteriaDetail(@RequestBody AdhocReportFieldTO payloadBean);
+	
+	boolean addAdhocReportSelectionCriteria(AdhocReportFilterEntity adhocReportFilterEntity);
+	
+	AdhocReportFilterEntity findAdhocReportSelectionCriteriaById(Long adhocReportFilterId);
+	
+	boolean updateAdhocReportSelectionCriteria(AdhocReportFilterEntity objAdhocReportFilterEntity);
+	
+	boolean deleteAdhocReportSelectionCriteria(Long adhocReportFilterId);
+	
+	//End of adhoc selection criteria
+	
+	// Start of adhoc sort criteria
+	
+	List<AdhocReportFieldTO> getAdhocReportSortingField(AdhocReportFieldTO payloadBean);
+	
+	boolean addAdhocReportSortField(AdhocReportSortEntity adhocReportSortEntity);
+	
+	boolean updateAdhocReportSortField(String sortCriteria,Long sortSequence,Long adhocReportSortingId);
+	
+	boolean deleteAdhocReportSortField(Long adhocReportSortingId);
+	
+	//End of adhoc sort criteria
+	
+	//Start of adhoc access right
+	
+	boolean addAdhocReportAccessRights(AdhocReportAccessRightEntity objAdhocReportAccessRightEntity);
+	
+	List<RoleEntityTO> fetchAdhocReportSelectedRoles(AdhocReportFieldTO payloadBean);
+	
+	List<RoleEntityTO> fetchRoleDetails(List<Long> objIdsList);
+	
+	boolean deleteAdhocReportRoleAccessRight(Long adhocReportRightId);
+	
+	boolean deleteAdhocReportRoleAccessRightByReportID(Long reportId);
+	
+	List<UserEntityTO> fetchAdhocReportSelectedUsers(AdhocReportFieldTO payloadBean);
+	
+	List<UserEntityTO> fetchUsersDetailsByRoleId(List<Long> objIdsList,Long roleID);
+	
+	boolean fetchAdhocReportSelectedSpecificUser(AdhocReportTO payloadBean);
+	
+	List<UserProfileTO> fetchAccountUserDetails(Long userID);
+	
+	List<AdhocReportFieldTO> selectionAdhocReportFields(AdhocReportFieldTO payloadBean);
+	
+	AdhocReportFieldTO fetchTablesAdhocReportSQL(AdhocReportFieldTO payloadBean);
+	
+	List<AdhocFilterTO> fetchAdhocSelectionCriteriaDetailOfSQL(AdhocReportFieldTO payloadBean);
+	
+	List <Object[]> executeAdhocReportNativeSQL(String sqlQuery);
+	
+	List  executeAdhocReportNativeSQL1(String sqlQuery);
+	
+	
+	List<AdhocReportFieldTO> adhocReportCols(AdhocReportFieldTO payloadBean);
+	
+	List<AdhocReportFieldTO> getAdhocReportSQLSortingField(AdhocReportFieldTO payloadBean);
+	//End of adhoc access right
+	
+	
+	
+	
+	
+	
+	
+	
+	List<String> getViewAndTableDetail(@RequestBody PayloadBean payloadBean);
+	
+	List<DataSourceFieldTO> getViewTableDescription(String name);
+	
+	boolean isDataSourceNameExist(String dataSourceName,Long dataSourceId);
+	
+	Long addDataSource(DataSourceEntity objDataSourceEntity);
+	
+	DataSourceEntity findDataSourceById(Long dataSourceID);
+	
+	DataSourceFieldEntity findDataSourceFieldById(Long dataSourceFieldID);
+	
+	TransactionData fetchTransactionDataByFieldId(Long dataSourceFieldId);
+	
+	boolean updateDataSource(DataSourceEntity objDataSourceEntity);
+	
+	boolean updateDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity);
+	
+	boolean addDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity);
+	
+	
+	
+	List<String> verifyDynamicSQL(PayloadBean payloadBean);
+	
+	
+	
+	boolean isAssignWorkStationCodeExist(Long workStationID,String workStationCode,Long siteID,Long pharmacyLocationID);
+	
+	boolean isAssignWorkStationIpAddressExist(String ipAddress,Long workStationId,Long siteID,Long pharmacyLocationID);
+	
+	boolean isAssignWorkStationMACAddressExist(String macAddress,Long workStationId,Long siteID,Long pharmacyLocationID);
+	
+	boolean addAssignWorkStation(WorksStationAssignmentEntity objWorksStationAssignmentEntity);
+	
+	WorksStationAssignmentEntity findWorkStationById(Long workStationID);
+	
+	
+	
+	boolean updateAssignWorkStation(WorksStationAssignmentEntity WorksStationAssignmentEntity);
+	
+	
+	
+	List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id);
+}

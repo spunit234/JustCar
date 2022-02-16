@@ -1,0 +1,29 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.ItemTransactionEntity;
+import com.edios.pms.entity.to.ItemOrderDetailEntityTO;
+
+public interface ReceiveOrderDao extends BaseDao<ItemOrderEntity> {
+	
+	List<ItemOrderDetailEntityTO> findReceivedItemOrderDetails(String listOfID);
+	
+	List<ItemOrderDetailEntityTO> getParticluarReceivedItemOrderDeatils(Long itemOrderDetailId);
+	
+	TransactionData fetchTransactionDataOfItemOrderProcessingEntityById(Long id);
+	
+	public boolean updateItemOrder(ItemOrderEntity ItemOrderEntity);
+	
+	boolean addItemStockDetails(ItemStockEntity ItemStockEntity);
+	
+	ItemTransactionEntity fetchLatestItemRecordForPharmacyLocation(Long pharmacy_location_id,Long itemId);
+	
+	boolean addItemTransactionEntityDetails(ItemTransactionEntity ItemTransactionEntity);
+	
+	boolean updateItemTransactionEntityDetails(ItemTransactionEntity ItemTransactionEntity);
+}

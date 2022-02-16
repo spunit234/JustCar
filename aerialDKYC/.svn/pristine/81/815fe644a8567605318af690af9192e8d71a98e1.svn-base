@@ -1,0 +1,54 @@
+package com.edios.pms.manager.impl;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.dao.CycleCountDao;
+import com.edios.pms.dao.ExportNonDashboardReportDao;
+import com.edios.pms.dao.PhysicalCountDao;
+import com.edios.pms.entity.InventoryCountEntity;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.manager.ExportNonDashBoardReportManager;
+
+@Service
+public class ExportNonDashboardReportManagerImpl extends AbstractManagerImpl<InventoryCountBean,InventoryCountEntity> implements ExportNonDashBoardReportManager{
+
+	@Autowired
+	ExportNonDashboardReportDao exportNonDashboardReportDao;
+	
+	@Autowired
+	PhysicalCountDao physicalCountDao;
+	
+	@Autowired 
+	CycleCountDao cycleCountDao;
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> fetchPhysicalCountDetails(PayloadBean payloadBean) {
+		Long locationID =  physicalCountDao.fetchPharmacyLocationID(payloadBean.getId());
+		 List<PhysicalCountEntityTo> physicalCountList = physicalCountDao.searchPhysicalCount(payloadBean,locationID);
+		 for(PhysicalCountEntityTo physicalCountEntityTo:physicalCountList) {
+			List<ReportsTO> invCountMismatchedList = exportNonDashboardReportDao.fetchInvMimatchedItems(physicalCountEntityTo.getInvCountId());
+			 physicalCountEntityTo.getInvCountMimatchList().addAll(invCountMismatchedList);
+		 }
+		 return physicalCountList;
+	}
+
+	@Override
+	@Transactional
+	public List<PhysicalCountEntityTo> fetchCycleCountDetails(PayloadBean payloadBean) {
+		Long locationID =  cycleCountDao.fetchPharmacyLocationID(payloadBean.getId());
+		 List<PhysicalCountEntityTo> cycleCountList = cycleCountDao.searchCycleCount(payloadBean,locationID);
+		 for(PhysicalCountEntityTo physicalCountEntityTo:cycleCountList) {
+				List<ReportsTO> invCountMismatchedList = exportNonDashboardReportDao.fetchInvMimatchedItems(physicalCountEntityTo.getInvCountId());
+				 physicalCountEntityTo.getInvCountMimatchList().addAll(invCountMismatchedList);
+			 }
+		 return cycleCountList;
+	}
+	
+}

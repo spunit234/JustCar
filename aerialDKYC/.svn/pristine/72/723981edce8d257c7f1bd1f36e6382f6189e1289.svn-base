@@ -1,0 +1,869 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.hibernate.type.StandardBasicTypes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.entity.to.ApplicationParameterTO;
+import com.edios.cdf.entity.to.RoleEntityTO;
+import com.edios.cdf.entity.to.UserEntityTO;
+import com.edios.cdf.entity.to.UserProfileTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.AdhocReportDao;
+import com.edios.pms.entity.AdhocReportAccessRightEntity;
+import com.edios.pms.entity.AdhocReportEntity;
+import com.edios.pms.entity.AdhocReportFieldEntity;
+import com.edios.pms.entity.AdhocReportFilterEntity;
+import com.edios.pms.entity.AdhocReportParameterEntity;
+import com.edios.pms.entity.AdhocReportSortEntity;
+import com.edios.pms.entity.DataSourceEntity;
+import com.edios.pms.entity.DataSourceFieldEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.AdhocFilterTO;
+import com.edios.pms.entity.to.AdhocReportFieldTO;
+import com.edios.pms.entity.to.AdhocReportParameterTO;
+import com.edios.pms.entity.to.AdhocReportTO;
+import com.edios.pms.entity.to.DataSourceFieldTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+
+@Repository
+public class AdhocReportDaoImpl extends BaseDaoImpl<AdhocReportEntity> implements AdhocReportDao {
+	@Autowired
+	MessageSource messageSource;
+
+	@Override
+	public List<AdhocReportTO> getAdhocReportsDetails(PayloadBean payloadBean) {
+
+		List<AdhocReportTO> objAdhocReportTOList = null;
+		String sqlQuery = "",whereClause="where dse.reportStatus = '"+payloadBean.getSearchParameter()+"' and dse.recordType<>'D' ";
+		if(payloadBean.getCustomParameter()!=null && !payloadBean.getCustomParameter().trim().equals("")) {
+			whereClause+=" and dse.dataSourceName = '"+payloadBean.getCustomParameter()+"'";
+		}
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select dse.adhocReportId as adhocReportId,dse.reportName as adhocReportName,dse.accessType as accessType,"
+					+ "dse.reportStatus as adhocReportStatus,concat(user.firstName,' ',coalesce(user.lastName, '')) as reportOwner"
+					+ ",dse.transactionCount as transactionCount,dse.accessTypeCategory as accessTypeCategory"
+					+ " from AdhocReportEntity dse inner join UserEntity user on dse.createdBy= user.userID "+whereClause+" order by dse.reportName";
+			objAdhocReportTOList = (List<AdhocReportTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportTO.class)).list();
+			
+			
+		
+		return objAdhocReportTOList;
+	
+	}
+	
+	@Override
+	public boolean isAdhocReportNameExist(String reportName, Long adhocReportId) {try {
+		return entityManager.createQuery(
+				"select table.reportName as reportName from AdhocReportEntity table where "
+						+ "table.reportName='"+reportName+"' and table.adhocReportId!="+adhocReportId)
+				.getSingleResult() == null ? false : true;
+	} catch (NoResultException ex) {
+		return false;
+	}}
+
+	@Override
+	public boolean addAdhocReport(AdhocReportEntity objAdhocReportEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objAdhocReportEntity);
+		return true;
+	}
+	
+	@Override
+	public AdhocReportEntity editAdhocReport(Long adhocReportId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(AdhocReportEntity.class, adhocReportId);
+	}
+	@Override
+	public List<DataSourceFieldTO> getDataSourceFieldsByDataSourceId(AdhocReportFieldTO payloadBean,List<Long> objIdsList){
+		List<DataSourceFieldTO> objDataSourceFieldTOList = null;
+		String sqlQuery = "",whereClause="";
+		if(payloadBean.getSearchParameter()!=null) {
+			whereClause="and dsfe.refrenceField=1";
+		}
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select dsfe.dataSourceFieldId As dataSourceFieldId,concat(dsfe.fieldDisplayName,' (',dsfe.fieldActualName,')') as fieldActualName"
+					+ ",dsfe.fieldDataType as fieldDataType"
+					+ " from  DataSourceFieldEntity dsfe"
+					+ " left join dsfe.dataSource ds"
+					+ " where ds.dataSourceId=:dataSourceId and dsfe.dataSourceFieldId not in:IdsList "+whereClause+" order by dsfe.dataSourceFieldId asc";
+			objDataSourceFieldTOList = (List<DataSourceFieldTO>) session.createQuery(sqlQuery)
+					.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameterList("IdsList", objIdsList)
+					.setResultTransformer(Transformers.aliasToBean(DataSourceFieldTO.class)).list();
+		return objDataSourceFieldTOList;
+	}
+	
+	
+	@Override
+	public boolean addAdhocReportField(AdhocReportFieldEntity objAdhocReportFieldEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objAdhocReportFieldEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean updateAdhocReportField(Long fieldSequence,Long adhocReportFieldId) {
+		// TODO Auto-generated method stub
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("update AdhocReportFieldEntity set fieldSequence="+fieldSequence+" where adhocReportFieldId="+adhocReportFieldId).executeUpdate();
+		return true;
+	}
+	
+	@Override
+	public List<AdhocReportFieldTO> getAdhocReportField(AdhocReportFieldTO payloadBean){
+		List<AdhocReportFieldTO> objAdhocReportFieldTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select ds.dataSourceId as dataSourceId,arfe.adhocReportFieldId As adhocReportFieldId,dsf.dataSourceFieldId as dataSourceFieldId, concat(dsf.fieldDisplayName,' (',dsf.fieldActualName,')') as fieldActualName"
+					+ " from  AdhocReportFieldEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSource ds"
+					+ " left join arfe.dataSourceField dsf"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.fieldSequence asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objAdhocReportFieldTOList = (List<AdhocReportFieldTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportFieldTO.class)).list();
+		return objAdhocReportFieldTOList;
+	}
+	
+	@Override
+	public boolean deleteAdhocReportDataSourceField(Long adhocReportFieldId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from AdhocReportFieldEntity where adhocReportFieldId="+adhocReportFieldId).executeUpdate();
+		return true;
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataById(Long adhocReportId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  AdhocReportEntity table where table.adhocReportId=:adhocReportId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("adhocReportId", adhocReportId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+	
+	@Override
+	public boolean updateAdhocReport(AdhocReportEntity objAdhocReportEntity) {
+		// TODO Auto-generated method stub
+		Session session = (Session) entityManager.getDelegate();
+		session.update(objAdhocReportEntity);
+		return true;
+	}
+	
+	//Adhoc parameter functionality
+
+	@Override
+	public List<AdhocReportParameterTO> fetchAdhocParameterDetail(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<AdhocReportParameterTO> objAdhocReportParameterTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select arpe.adhocReportParameterId As adhocReportParameterId,arpe.parameterName as parameterName,arpe.parameterType as parameterType"
+					+ ",arpe.parameterSequence as parameterSequence,arpe.displaySize as displaySize,arpe.mandatory as mandatory"
+					+ ",coalesce(par.parameterName,asf.fieldDisplayName) as listName,par.parameterCode as appParaCode"
+					+ " from  AdhocReportParameterEntity arpe"
+					+ " left join arpe.adhocReport ar"
+					+ " left join arpe.parameterID as par"
+					+ " left join arpe.dataSourceField asf"
+					+ " where ar.adhocReportId=:adhocReportId order by arpe.adhocReportParameterId asc";
+			objAdhocReportParameterTOList = (List<AdhocReportParameterTO>) session.createQuery(sqlQuery)
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportParameterTO.class)).list();
+		return objAdhocReportParameterTOList;
+	}
+	
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public List<ApplicationParameterTO> fetchListTypeAppParameters() {
+		List<ApplicationParameterTO> applicationParameterTO = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select apl.parameterID As parameterID , apl.parameterName As parameterName , apl.parameterCode As parameterCode"
+					+ " from  ApplicationParameterEntity apl "
+					+ " where apl.recordType<>'D' and apl.parameterStatus=:parameterStatus and apl.parameterDataType='List' order by apl.parameterName asc";
+
+			applicationParameterTO = (List<ApplicationParameterTO>) session.createQuery(sqlQuery)
+					.setParameter("parameterStatus", "Active")
+					.setResultTransformer(Transformers.aliasToBean(ApplicationParameterTO.class)).list();
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return applicationParameterTO;
+	}
+	
+	@Override
+	public List<DataSourceFieldTO> fetchFixedListDynamicSQLDetailOfDataSourceField(long dataSourceId, Long cnt) {
+		List<DataSourceFieldTO> objDataSourceFieldTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select dsfe.dataSourceFieldId As dataSourceFieldId,concat('DS"+cnt+"',':',dsfe.fieldDisplayName) as fieldDisplayName,"
+					+ "dsfe.fixList as fixList,dsfe.dynamicSQL as dynamicSQL"
+					+ " from  DataSourceFieldEntity dsfe"
+					+ " left join dsfe.dataSource ds"
+					+ " where ds.dataSourceId=:dataSourceId and (dsfe.fixList is not null or dsfe.dynamicSQL is not null) order by dsfe.dataSourceFieldId asc";
+			objDataSourceFieldTOList = (List<DataSourceFieldTO>) session.createQuery(sqlQuery)
+					.setParameter("dataSourceId", dataSourceId)
+					.setResultTransformer(Transformers.aliasToBean(DataSourceFieldTO.class)).list();
+		return objDataSourceFieldTOList;
+	}
+
+	@Override
+	public boolean isAdhocReportParameterNameExist(String parameterName, Long adhocReportId,Long adhocReportParameterId) {
+		try {
+		return entityManager.createQuery(
+				"select table.parameterName as parameterName from AdhocReportParameterEntity table where "
+						+ "table.parameterName='"+parameterName+"' and table.adhocReportParameterId!="+adhocReportParameterId+" and table.adhocReport.adhocReportId="+adhocReportId)
+				.getSingleResult() == null ? false : true;
+	} catch (NoResultException ex) {
+		return false;
+	}}
+
+	@Override
+	public boolean addAdhocReportParameter(AdhocReportParameterEntity objAdhocReportParameterEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objAdhocReportParameterEntity);
+		return true;
+	}
+	
+	@Override
+	public AdhocReportParameterEntity findAdhocReportParameterById(Long adhocReportParameterId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(AdhocReportParameterEntity.class, adhocReportParameterId);
+	}
+	
+	@Override
+	public boolean updateAdhocReportParameter(AdhocReportParameterEntity objAdhocReportParameterEntity) {
+		// TODO Auto-generated method stub
+		Session session = (Session) entityManager.getDelegate();
+		session.update(objAdhocReportParameterEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean deleteAdhocReportParameter(Long adhocReportParameterId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from AdhocReportParameterEntity where adhocReportParameterId="+adhocReportParameterId).executeUpdate();
+		return true;
+	}
+	//end adhoc parameter functionality
+	
+	//Start of adhoc selection criteria
+	@Override
+	public List<AdhocFilterTO> fetchAdhocSelectionCriteriaDetail(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<AdhocFilterTO> objAdhocFilterTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select arfe.adhocReportFilterId As adhocReportFilterId,arfe.startBracketFlag as startBracketFlag,arfe.endBracketFlag as endBracketFlag,"
+					+ "arfe.andOrOperator as andOrOperator,arfe.staticValue as staticValue,arfe.filterCriteria as filterCriteria,arp.parameterName as parameterName,"
+					+ "ds.dataSourceName as dataSourceName,dsf.fieldActualName as fieldActualName"
+					+ " from  AdhocReportFilterEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSourceField dsf"
+					+ " left join dsf.dataSource ds"
+					+ " left join arfe.adhocReportParameter arp"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.adhocReportFilterId asc";
+			objAdhocFilterTOList = (List<AdhocFilterTO>) session.createQuery(sqlQuery)
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocFilterTO.class)).list();
+		return objAdhocFilterTOList;
+	}
+	
+	@Override
+	public boolean addAdhocReportSelectionCriteria(AdhocReportFilterEntity objAdhocReportFilterEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objAdhocReportFilterEntity);
+		return true;
+	}
+	
+	@Override
+	public AdhocReportFilterEntity findAdhocReportSelectionCriteriaById(Long adhocReportFilterId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(AdhocReportFilterEntity.class, adhocReportFilterId);
+	}
+	
+	@Override
+	public boolean updateAdhocReportSelectionCriteria(AdhocReportFilterEntity objAdhocReportFilterEntity) {
+		// TODO Auto-generated method stub
+		Session session = (Session) entityManager.getDelegate();
+		session.update(objAdhocReportFilterEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean deleteAdhocReportSelectionCriteria(Long adhocReportFilterId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from AdhocReportFilterEntity where adhocReportFilterId="+adhocReportFilterId).executeUpdate();
+		return true;
+	}
+	//End of selection criteria
+	
+	//Start of Sorting criteria
+	
+	@Override
+	public List<AdhocReportFieldTO> getAdhocReportSortingField(AdhocReportFieldTO payloadBean){
+		List<AdhocReportFieldTO> objAdhocReportFieldTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select ds.dataSourceId as dataSourceId,arfe.sortCriteria as sortCriteria,arfe.adhocReportSortingId As adhocReportSortingId,dsf.dataSourceFieldId as dataSourceFieldId, concat(dsf.fieldDisplayName,' (',dsf.fieldActualName,')') as fieldActualName"
+					+ " from  AdhocReportSortEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSourceField dsf"
+					+ " left join dsf.dataSource ds"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.sortSequence asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objAdhocReportFieldTOList = (List<AdhocReportFieldTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportFieldTO.class)).list();
+		return objAdhocReportFieldTOList;
+	}
+	
+	@Override
+	public boolean addAdhocReportSortField(AdhocReportSortEntity objAdhocReportSortEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objAdhocReportSortEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean updateAdhocReportSortField(String sortCriteria,Long sortSequence,Long adhocReportSortingId) {
+		// TODO Auto-generated method stub
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("update AdhocReportSortEntity set sortSequence="+sortSequence+" , sortCriteria='"+sortCriteria+"' where adhocReportSortingId="+adhocReportSortingId).executeUpdate();
+		return true;
+	}
+	
+	@Override
+	public boolean deleteAdhocReportSortField(Long adhocReportSortingId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from AdhocReportSortEntity where adhocReportSortingId="+adhocReportSortingId).executeUpdate();
+		return true;
+	}
+	//End of Sorting criteria
+	
+	//Start of adhoc access right
+	
+	@Override
+	public List<RoleEntityTO> fetchAdhocReportSelectedRoles(AdhocReportFieldTO payloadBean){
+		List<RoleEntityTO> objRoleEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select arfe.adhocReportRightId As transactionCount,role.roleID as roleID, role.roleName as roleName"
+					+ " from  AdhocReportAccessRightEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.role role"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.adhocReportRightId asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objRoleEntityTOList = (List<RoleEntityTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(RoleEntityTO.class)).list();
+		return objRoleEntityTOList;
+	}	
+	
+	@Override
+	public List<RoleEntityTO> fetchRoleDetails(List<Long> objIdsList){
+		List<RoleEntityTO> RoleEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+				sqlQuery = "select ro.roleID As roleID , ro.roleName As roleName"
+						+ " from  RoleEntity ro  " 
+						+ " where ro.recordType<>'D' and ro.roleStatus=:roleStatus and ro.roleID not in:IdsList"
+						+ " order by ro.roleName asc";
+				RoleEntityTOList = (List<RoleEntityTO>) session.createQuery(sqlQuery)
+						.setParameter("roleStatus", "Active")
+						.setParameterList("IdsList", objIdsList)
+						.setResultTransformer(Transformers.aliasToBean(RoleEntityTO.class)).list();
+			
+		return RoleEntityTOList;
+	}	
+	
+	@Override
+	public boolean addAdhocReportAccessRights(AdhocReportAccessRightEntity objAdhocReportAccessRightEntity) {
+		entityManager.persist(objAdhocReportAccessRightEntity);
+		return true;
+	}
+		
+	@Override
+	public boolean deleteAdhocReportRoleAccessRight(Long adhocReportRightId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from AdhocReportAccessRightEntity where adhocReportRightId="+adhocReportRightId).executeUpdate();
+		return true;
+	}
+	
+	@Override
+	public boolean deleteAdhocReportRoleAccessRightByReportID(Long reportId) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createNativeQuery("delete from ADHOC_REPORT_RIGHTS where ADHOC_REPORT_ID="+reportId).executeUpdate();
+		return true;
+	}
+	
+	@Override
+	public List<UserEntityTO> fetchAdhocReportSelectedUsers(AdhocReportFieldTO payloadBean){
+		List<UserEntityTO> objUserEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select arfe.adhocReportRightId As transactionCount,user.userID as userID, user.loginName as loginName,role.roleID as _id"
+					+ " from  AdhocReportAccessRightEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.user user"
+					+ " left join arfe.role role"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.adhocReportRightId asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objUserEntityTOList = (List<UserEntityTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(UserEntityTO.class)).list();
+		return objUserEntityTOList;
+	}	
+	
+	@Override
+	public List<UserEntityTO> fetchUsersDetailsByRoleId(List<Long> objIdsList,Long roleID){
+		List<UserEntityTO> objUserEntityTOList = null;
+		String sqlQuery = "";
+		Session session = (Session) entityManager.getDelegate();
+				sqlQuery = "select user.userID As userID , user.loginName As loginName"
+						+ " from  AccountUserEntity aue"
+						+ " left join aue.roleID role"
+						+ " left join aue.userID user" 
+						+ " where aue.recordType<>'D' and role.roleID=:roleID and user.userID not in:IdsList"
+						+ " order by role.roleName asc";
+				objUserEntityTOList = (List<UserEntityTO>) session.createQuery(sqlQuery)
+						.setParameter("roleID", roleID)
+						.setParameterList("IdsList", objIdsList)
+						.setResultTransformer(Transformers.aliasToBean(UserEntityTO.class)).list();
+			
+		return objUserEntityTOList;
+	}	
+	
+		//End of adhoc access right
+	
+	@Override
+	public boolean fetchAdhocReportSelectedSpecificUser(AdhocReportTO payloadBean){
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			try {
+				sqlQuery = "select arfe.adhocReportRightId As transactionCount,user.userID as userID, user.loginName as loginName,role.roleID as _id"
+						+ " from  AdhocReportAccessRightEntity arfe"
+						+ " left join arfe.adhocReport ar"
+						+ " left join arfe.user user"
+						+ " left join arfe.role role"
+						+ " where ar.adhocReportId=:adhocReportId and user.userID=:userId order by arfe.adhocReportRightId asc";
+						//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+				return session.createQuery(sqlQuery)
+						//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+						.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+						.setParameter("userId", payloadBean.getUserId())
+						.getSingleResult() == null ? false : true;
+			}catch(NoResultException exception) {
+				return false;
+			}
+			
+	}	
+	
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	@Override
+	public List<UserProfileTO> fetchAccountUserDetails(Long userID) {
+		List<UserProfileTO> userProfileTO = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select accountUser.roleID.roleID as roleID"
+					+ "	from AccountUserEntity accountUser where  accountUser.userID.userID=:userID";
+
+			userProfileTO = (List<UserProfileTO>) session.createQuery(sqlQuery).setParameter("userID", userID)
+					.setResultTransformer(Transformers.aliasToBean(UserProfileTO.class)).list();
+		
+		return userProfileTO;
+	}
+	
+	
+	@Override
+	public List<AdhocReportFieldTO> selectionAdhocReportFields(AdhocReportFieldTO payloadBean){
+		List<AdhocReportFieldTO> objAdhocReportFieldTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select concat(ds.dataSourceName,'.',dsf.fieldActualName) as fieldActualName,dsf.fieldDataType as fieldDataType"
+					+ " from  AdhocReportFieldEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSource ds"
+					+ " left join arfe.dataSourceField dsf"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.fieldSequence asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objAdhocReportFieldTOList = (List<AdhocReportFieldTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportFieldTO.class)).list();
+		return objAdhocReportFieldTOList;
+	}
+	
+	@Override
+	public AdhocReportFieldTO fetchTablesAdhocReportSQL(AdhocReportFieldTO payloadBean){
+		List<AdhocReportFieldTO> objAdhocReportFieldTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select concat(ds1.viewName,' ',ds1.dataSourceName) as viewTableName1,concat(ds2.viewName,' ',ds2.dataSourceName) as viewTableName2"
+					+ " from  AdhocReportEntity are"
+					+ " left join are.dataSource1 ds1"
+					+ " left join are.dataSource2 ds2"
+					+ " where are.adhocReportId=:adhocReportId";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objAdhocReportFieldTOList = (List<AdhocReportFieldTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportFieldTO.class)).list();
+		return objAdhocReportFieldTOList.get(0);
+	}
+	
+	@Override
+	public List<AdhocFilterTO> fetchAdhocSelectionCriteriaDetailOfSQL(@RequestBody AdhocReportFieldTO payloadBean) {
+		List<AdhocFilterTO> objAdhocFilterTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select arfe.startBracketFlag as startBracketFlag,arfe.endBracketFlag as endBracketFlag,"
+					+ "arfe.andOrOperator as andOrOperator,arfe.staticValue as staticValue,arfe.filterCriteria as filterCriteria,"
+					+ "concat(ds.dataSourceName,'.',dsf.fieldActualName) as fieldActualName"
+					+ " from  AdhocReportFilterEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSourceField dsf"
+					+ " left join dsf.dataSource ds"
+					+ " left join arfe.adhocReportParameter arp"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.adhocReportFilterId asc";
+			objAdhocFilterTOList = (List<AdhocFilterTO>) session.createQuery(sqlQuery)
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocFilterTO.class)).list();
+		return objAdhocFilterTOList;
+	}
+	
+	@Override
+	public List <Object[]> executeAdhocReportNativeSQL(String sqlQuery) {
+			Session session = (Session) entityManager.getDelegate();
+			List <Object[]>listOfResultSet = session.createNativeQuery(sqlQuery).list();
+		return listOfResultSet;
+	}
+	
+	@Override
+	public List  executeAdhocReportNativeSQL1(String sqlQuery) {
+			Session session = (Session) entityManager.getDelegate();
+			List listOfResultSet = session.createNativeQuery(sqlQuery).list();
+		return listOfResultSet;
+	}
+	
+	@Override
+	public List<AdhocReportFieldTO> adhocReportCols(AdhocReportFieldTO payloadBean){
+		List<AdhocReportFieldTO> objAdhocReportFieldTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select dsf.fieldDisplayName as fieldActualName"
+					+ " from  AdhocReportFieldEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSource ds"
+					+ " left join arfe.dataSourceField dsf"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.fieldSequence asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objAdhocReportFieldTOList = (List<AdhocReportFieldTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportFieldTO.class)).list();
+		return objAdhocReportFieldTOList;
+	}
+	
+	@Override
+	public List<AdhocReportFieldTO> getAdhocReportSQLSortingField(AdhocReportFieldTO payloadBean){
+		List<AdhocReportFieldTO> objAdhocReportFieldTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select concat(ds.dataSourceName,'.',dsf.fieldActualName,' ',arfe.sortCriteria) as fieldActualName"
+					+ " from  AdhocReportSortEntity arfe"
+					+ " left join arfe.adhocReport ar"
+					+ " left join arfe.dataSourceField dsf"
+					+ " left join dsf.dataSource ds"
+					+ " where ar.adhocReportId=:adhocReportId order by arfe.sortSequence asc";
+					//+ " where ds.dataSourceId=:dataSourceId and ar.adhocReportId=:adhocReportId order by arfe.adhocReportFieldId asc";
+			objAdhocReportFieldTOList = (List<AdhocReportFieldTO>) session.createQuery(sqlQuery)
+					//.setParameter("dataSourceId", payloadBean.getDataSourceId())
+					.setParameter("adhocReportId", payloadBean.getAdhocReportId())
+					.setResultTransformer(Transformers.aliasToBean(AdhocReportFieldTO.class)).list();
+		return objAdhocReportFieldTOList;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	@Override
+	public List<String> getViewAndTableDetail(PayloadBean payloadBean){
+		List<String> siteEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "SELECT upper(table_name) FROM INFORMATION_SCHEMA.TABLES" + 
+					" WHERE TABLE_TYPE =:table_type order by table_name asc";
+			siteEntityTOList = (List<String>) session.createNativeQuery(sqlQuery).setParameter("table_type", payloadBean.getCustomParameter()).list();
+		return siteEntityTOList;
+	}
+
+
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<DataSourceFieldTO> getViewTableDescription(String name) {
+
+		List<DataSourceFieldTO> PharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select upper(column_name) As fieldActualName,upper(column_name) As fieldDisplayName,data_type as fieldDataType,character_maximum_length as fieldLength,"
+					+ "ordinal_position as ordinalPostion"
+					+ " from  INFORMATION_SCHEMA.COLUMNS"
+					+ " where table_name=:name order by column_name asc";
+			PharmacyLocationEntityTOList = (List<DataSourceFieldTO>) session.createNativeQuery(sqlQuery)
+					.addScalar("fieldActualName", StandardBasicTypes.STRING)
+					.addScalar("fieldDisplayName", StandardBasicTypes.STRING)
+					.addScalar("fieldDataType", StandardBasicTypes.STRING)
+					.addScalar("fieldLength", StandardBasicTypes.LONG)
+					.addScalar("ordinalPostion", StandardBasicTypes.LONG)
+					.setParameter("name", name)
+					.setResultTransformer(Transformers.aliasToBean(DataSourceFieldTO.class)).list();
+		return PharmacyLocationEntityTOList;
+	
+	}
+
+
+
+	@Override
+	public boolean isDataSourceNameExist(String dataSourceName,Long dataSourceId) {
+		try {
+			return entityManager.createQuery(
+					"select table.dataSourceName as dataSourceName from DataSourceEntity table where "
+							+ "table.dataSourceName='"+dataSourceName+"' and table.dataSourceId!="+dataSourceId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		}
+	
+	}
+
+	@Override
+	public Long addDataSource(DataSourceEntity objDataSourceEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objDataSourceEntity);
+		return objDataSourceEntity.getDataSourceId();
+	}
+	
+	@Override
+	public boolean addDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objDataSourceFieldEntity);
+		return true;
+	}
+
+	
+	@Override
+	public DataSourceEntity findDataSourceById(Long dataSourceId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(DataSourceEntity.class, dataSourceId);
+	}
+	
+	@Override
+	public DataSourceFieldEntity findDataSourceFieldById(Long dataSourceFieldId) {
+		// TODO Auto-generated method stub
+		return entityManager.find(DataSourceFieldEntity.class, dataSourceFieldId);
+	}
+	
+	
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataByFieldId(Long dataSourceFieldId) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  DataSourceFieldEntity table where table.dataSourceFieldId=:dataSourceFieldId";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("dataSourceFieldId", dataSourceFieldId)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+
+	@Override
+	public boolean updateDataSource(DataSourceEntity objDataSourceEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(objDataSourceEntity);
+		return true;
+	}
+	
+	@Override
+	public boolean updateDataSourceField(DataSourceFieldEntity objDataSourceFieldEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.merge(objDataSourceFieldEntity);
+		return true;
+	}
+	
+	
+	@Override
+	public List<String> verifyDynamicSQL(PayloadBean payloadBean){
+		List<String> siteEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = payloadBean.getSearchParameter();
+			try {
+				siteEntityTOList = (List<String>) session.createNativeQuery(sqlQuery).list();
+			}catch(Exception exception) {
+				return null;
+			}
+			
+		return siteEntityTOList;
+	}
+	
+	@Override
+	public boolean isAssignWorkStationCodeExist(Long workStationID, String workStationCode, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationCode as workStationCode from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationCode='"+workStationCode+"' and table.workStationID!="+workStationID)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean addAssignWorkStation(WorksStationAssignmentEntity objWorksStationAssignmentEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objWorksStationAssignmentEntity);
+		return true;
+	}
+
+
+
+	@Override
+	public WorksStationAssignmentEntity findWorkStationById(Long workStationID) {
+		// TODO Auto-generated method stub
+		return entityManager.find(WorksStationAssignmentEntity.class, workStationID);
+	}
+
+	
+
+
+
+	
+	
+	@Override
+	public List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id) {
+		List<PharmacyLocationRobotEntityTO> pharmacyLocationRobotEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "SELECT robot.robotName AS robotName,robot.robotId AS robotId FROM  PharmacyLocationRobotEntity robot WHERE robot.pharmacyLocation ="+id+" "
+					+ " AND robot.robotStatus='Active'  Order by robot.robotName";
+			pharmacyLocationRobotEntityTOList = (List<PharmacyLocationRobotEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationRobotEntityTO.class)).list();
+		return pharmacyLocationRobotEntityTOList;
+	}
+
+
+
+	@Override
+	public boolean isAssignWorkStationIpAddressExist(String ipAddress, Long workStationId, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationName as workStationName from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationIpAdd='"+ipAddress+"' and table.workStationID!="+workStationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean isAssignWorkStationMACAddressExist(String macAddress, Long workStationId, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationName as workStationName from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationMacAdd='"+macAddress+"' and table.workStationID!="+workStationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean updateAssignWorkStation(WorksStationAssignmentEntity WorksStationAssignmentEntity) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	
+
+
+
+	
+}

@@ -1,0 +1,199 @@
+package com.edios.pms.manager.impl;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ClassificationItemsBean;
+import com.edios.pms.bean.FinalizeClassificationItemBean;
+import com.edios.pms.dao.ClassificationItemsDao;
+import com.edios.pms.entity.ClassificationItemDetailsEntity;
+import com.edios.pms.entity.ClassificationItemsEntity;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.to.ClassificationItemDetailsEntityTO;
+import com.edios.pms.entity.to.ClassificationItemsEntityTO;
+import com.edios.pms.manager.ClassificationItemsManager;
+
+@Service
+public class ClassificationItemsManagerImpl  extends AbstractManagerImpl<ClassificationItemsBean, ClassificationItemsEntity>
+implements ClassificationItemsManager{
+
+	@Autowired
+	ClassificationItemsDao classificationItemsDao; 
+	
+	@Override
+	@Transactional
+	public List<ClassificationItemsEntityTO> fetchClassificationItems(PayloadBean payloadBean) {
+		
+		return classificationItemsDao.fetchClassificationItems(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List <ClassificationItemDetailsEntity> addClassificationItem(ClassificationItemsBean classificationItemsBean, HttpServletRequest request) {
+		List <ClassificationItemDetailsEntity> classificationItemDetailsEntityList=new ArrayList<ClassificationItemDetailsEntity>();
+		boolean resultFlag = false;
+		Map<Long,ClassificationItemDetailsEntityTO> newItemsList=new HashMap<>();
+		resultFlag = classificationItemsDao.isClassificationNameExist(classificationItemsBean.getClassificationId(),classificationItemsBean.getClassificationName());
+		if (resultFlag) {
+			ClassificationItemDetailsEntity classificationItemDetailsEntity=new ClassificationItemDetailsEntity();
+			classificationItemDetailsEntity.setOldItemClass("NameAlreadyExist");
+			classificationItemDetailsEntityList.add(classificationItemDetailsEntity);
+			return classificationItemDetailsEntityList;	
+		}setAuditInfo(classificationItemsBean, "newFlag");
+		classificationItemsBean.setIpAddress(request.getRemoteAddr());
+		ClassificationItemsEntity classificationItemsEntity = mapper.map(classificationItemsBean,ClassificationItemsEntity.class);
+		resultFlag = classificationItemsDao.addClassificationItem(classificationItemsEntity);
+		List<ClassificationItemDetailsEntityTO> itemsList=classificationItemsDao.getItem(classificationItemsEntity);
+		for(ClassificationItemDetailsEntityTO objClassificationItemDetailsEntityTO:itemsList) {
+			if(newItemsList.containsKey(objClassificationItemDetailsEntityTO.getItemId())) {
+				ClassificationItemDetailsEntityTO updateClassificationItemDetailsEntityTO=newItemsList.get(objClassificationItemDetailsEntityTO.getItemId());
+				updateClassificationItemDetailsEntityTO.setDispensedQuantity(updateClassificationItemDetailsEntityTO.getDispensedQuantity()+objClassificationItemDetailsEntityTO.getDispensedQuantity());
+				updateClassificationItemDetailsEntityTO.setDispensedCost(updateClassificationItemDetailsEntityTO.getDispensedCost()+objClassificationItemDetailsEntityTO.getDispensedCost());
+			}
+			else {
+				newItemsList.put(objClassificationItemDetailsEntityTO.getItemId(), objClassificationItemDetailsEntityTO);
+			}
+		}
+		if (resultFlag) {
+			Double totalcost=newItemsList.values().stream().map(e-> e.getDispensedCost()).reduce(0d, (x, y) -> x + y);
+			Double cumulative=0d;
+			List<ClassificationItemDetailsEntityTO> allClassificationPercentage= new ArrayList<>();
+		for(ClassificationItemDetailsEntityTO classificationItemDetailsEntityTO :newItemsList.values()) {
+			if(classificationItemDetailsEntityTO.getDispensedCost()>0) {
+				classificationItemDetailsEntityTO.setClassificationPercentage((classificationItemDetailsEntityTO.getDispensedCost()/totalcost)*100);
+				allClassificationPercentage.add(classificationItemDetailsEntityTO);
+			}else {
+				classificationItemDetailsEntityTO.setClassificationPercentage(0d);
+				allClassificationPercentage.add(classificationItemDetailsEntityTO);
+			}	
+		}
+		Collections.sort(allClassificationPercentage);
+		for(ClassificationItemDetailsEntityTO classificationItemDetailsEntityTO :allClassificationPercentage) {		
+			ClassificationItemDetailsEntity classificationItemDetailsEntity=new ClassificationItemDetailsEntity();
+			classificationItemDetailsEntity.setClassificationItems(classificationItemsEntity);
+			if(classificationItemDetailsEntityTO.getDispensedCost()>0) {
+				classificationItemDetailsEntity.setClassificationPercentage(classificationItemDetailsEntityTO.getClassificationPercentage());
+				cumulative=	classificationItemDetailsEntity.getClassificationPercentage()+cumulative;
+				classificationItemDetailsEntity.setCumulativePercentage(cumulative);
+				if(classificationItemDetailsEntity.getCumulativePercentage()>=0 && classificationItemDetailsEntity.getCumulativePercentage()<=80) {
+					classificationItemDetailsEntity.setNewItemClass("Class A");
+				}else if(classificationItemDetailsEntity.getCumulativePercentage()>80 && classificationItemDetailsEntity.getCumulativePercentage()<=95) {
+					classificationItemDetailsEntity.setNewItemClass("Class B");
+				}else if(classificationItemDetailsEntity.getCumulativePercentage()>95 && classificationItemDetailsEntity.getCumulativePercentage()<=100) {
+					classificationItemDetailsEntity.setNewItemClass("Class C");
+				}
+			}else {
+				classificationItemDetailsEntity.setClassificationPercentage(classificationItemDetailsEntityTO.getClassificationPercentage());
+				classificationItemDetailsEntity.setCumulativePercentage(0d);
+				classificationItemDetailsEntity.setNewItemClass("Class C");
+			}
+			ItemEntity itemEntity=new ItemEntity();
+			itemEntity.setItemId(classificationItemDetailsEntityTO.getItemId());
+			classificationItemDetailsEntity.setItemName(classificationItemDetailsEntityTO.getItemName());
+			classificationItemDetailsEntity.setItemCode(classificationItemDetailsEntityTO.getItemCode());
+			classificationItemDetailsEntity.setItem(itemEntity);
+			classificationItemDetailsEntity.setItemId(classificationItemDetailsEntityTO.getItemId());
+			classificationItemDetailsEntity.setDispensedQuantity(classificationItemDetailsEntityTO.getDispensedQuantity());
+			classificationItemDetailsEntity.setDispensedCost(classificationItemDetailsEntityTO.getDispensedCost());
+			classificationItemDetailsEntity.setCreatedBy(classificationItemsEntity.getCreatedBy());
+			setAuditInfo(classificationItemDetailsEntity, "newFlag");
+			classificationItemDetailsEntity.setLocationID(classificationItemsEntity.getPharmacyLocation().getPharmacyLocationId());
+			classificationItemDetailsEntityList.add(classificationItemsDao.insertClassificationItemDetails(classificationItemDetailsEntity));
+			}
+		}
+		return classificationItemDetailsEntityList;
+	}
+	private void setAuditInfo(ClassificationItemDetailsEntity ClassificationItemDetailsEntity, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			ClassificationItemDetailsEntity.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			ClassificationItemDetailsEntity.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			ClassificationItemDetailsEntity.setCreatedDate(new Date());
+		} else {
+			ClassificationItemDetailsEntity.setTransactionCount(ClassificationItemDetailsEntity.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			ClassificationItemDetailsEntity.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			ClassificationItemDetailsEntity.setLastModifiedDate(new Date());
+		}
+
+	}
+	private void setAuditInfo(ClassificationItemsBean classificationItemsBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			classificationItemsBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			classificationItemsBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			classificationItemsBean.setCreatedDate(new Date());
+		} else {
+			classificationItemsBean.setTransactionCount(classificationItemsBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			classificationItemsBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			classificationItemsBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	@Override
+	@Transactional
+	public ClassificationItemsBean getClassificationItem(PayloadBean payloadBean) {
+		ClassificationItemsBean ClassificationItemsBean=null;
+		ClassificationItemsBean=mapper.map(classificationItemsDao.getClassificationItem(payloadBean), ClassificationItemsBean.class);
+		return ClassificationItemsBean;
+	}
+
+	@Override
+	@Transactional
+	public List<ClassificationItemDetailsEntityTO> getClassificationListItem(PayloadBean payloadBean) {
+		return classificationItemsDao.getClassificationListItem(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public String discardClassification(PayloadBean payloadBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag=classificationItemsDao.discardClassification(payloadBean);
+		if(resultFlag) {
+			resultString="DELETED";
+		}else {
+			resultString="TransactionFailed";
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String finalizeClassification(FinalizeClassificationItemBean finalizeClassificationItemBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag=classificationItemsDao.finalizeClassification(finalizeClassificationItemBean);
+		if(resultFlag) {
+			resultString="FINALIZED";
+		}else {
+			resultString="TransactionFailed";
+		}
+		return resultString;
+	}
+
+	@Override
+	@Transactional
+	public String saveToDraft(PayloadBean payloadBean) {
+		String resultString = "";
+		boolean resultFlag = false;
+		resultFlag=classificationItemsDao.saveToDraft(payloadBean);
+		if(resultFlag) {
+			resultString="UPDATED";
+		}else {
+			resultString="TransactionFailed";
+		}
+		return resultString;
+	}
+	
+}

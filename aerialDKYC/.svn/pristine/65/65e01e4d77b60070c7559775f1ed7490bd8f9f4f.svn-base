@@ -1,0 +1,263 @@
+package com.edios.pms.controller;
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.InventoryCountBean;
+import com.edios.pms.bean.InventoryCountItemsBean;
+import com.edios.pms.entity.to.PhysicalCountEntityTo;
+import com.edios.pms.manager.CycleCountManager;
+
+@RestController
+public class CycleCountController extends AbstractController{
+	
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	CycleCountManager cycleCountManager;
+ 
+	@PostMapping("/fetch-itemCountAndLocation-classRelated")
+	 public ResponseEntity<PhysicalCountEntityTo> fetchPhysicalCountItemsAndLocation(@RequestBody PayloadBean payloadBean){
+		 PhysicalCountEntityTo physicalCountEntityTo=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			physicalCountEntityTo=cycleCountManager.fetchPhysicalCountItemsAndLocation(payloadBean);
+			}
+		return new ResponseEntity<PhysicalCountEntityTo>(physicalCountEntityTo, HttpStatus.OK);
+	 }
+	
+	@PostMapping("/add-cycle-Count")
+	public Long addCycleCount(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		inventoryCountBean.setIpAddress(request.getRemoteAddr());
+		try {
+			return cycleCountManager.addCycleCount(inventoryCountBean);
+		}catch(Exception e) {
+			e.printStackTrace();
+			return 0L;
+	}
+	}
+	
+	@PostMapping("/fetch-cycle-count-items")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchCycleCountItems(@RequestBody PhysicalCountEntityTo physicalCountEntityTo){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=null;
+			physicalCountEntityToList=cycleCountManager.fetchCycleCountItems(physicalCountEntityTo);
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	
+	@PostMapping("/update-cycle-count-item-row")
+	public BaseResponse updateCycleCount(@RequestBody InventoryCountItemsBean inventoryCountItemsBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			inventoryCountItemsBean.setIpAddress(request.getRemoteAddr());	
+			
+		String resultString = cycleCountManager.updateCycleCount(inventoryCountItemsBean);
+		if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+		}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		return baseResponse;
+	}catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+					exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+	}
+	
+	@PostMapping("/update-all-inventoryCountItems")
+	public BaseResponse updateAllCycleCountItems(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			inventoryCountBean.setIpAddress(request.getRemoteAddr());	
+			
+		String resultString = cycleCountManager.updateAllCycleCountItems(inventoryCountBean);
+		if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+		}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		return baseResponse;
+	}
+		catch(TransactionFailedException ex) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			return baseResponse;
+		}
+		catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+	}
+	
+	@PostMapping("/fetch-countStock-item")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchStockItems(@RequestBody PhysicalCountEntityTo physicalCountEntityTo){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=cycleCountManager.fetchStockItems(physicalCountEntityTo);	
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	
+	@PostMapping("/update-inventoryItem-and-add-mismatchItem")
+	public BaseResponse updateInventoryItemAndAddMismatchItem(@RequestBody InventoryCountItemsBean inventoryCountItemsBean, HttpServletRequest request) {
+	BaseResponse baseResponse = null;
+	System.out.println("helelo");
+	inventoryCountItemsBean.setIpAddress(request.getRemoteAddr());
+	try {
+		String resultString = cycleCountManager.updateInventoryItemAndAddMismatchItem(inventoryCountItemsBean);
+		if (resultString.equalsIgnoreCase("ADDED")||resultString.equalsIgnoreCase("")) {
+			System.out.println("yo");
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		return baseResponse;
+	}catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+}
+}
+	
+	@PostMapping("/fetch-cycleStock-item-on-edit")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchStockItemsOnEdit(@RequestBody PhysicalCountEntityTo physicalCountEntityTo){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=cycleCountManager.fetchStockItemsOnEdit(physicalCountEntityTo);	
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	
+	 @PostMapping("/search-cycle-count")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> searchPhysicalCount(@RequestBody PayloadBean payloadBean){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			physicalCountEntityToList=cycleCountManager.searchCycleCount(payloadBean);
+			
+			}
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	 
+	 @PostMapping("/search-cycle-count-by-ID")
+	 public ResponseEntity<InventoryCountBean> searchCycleCountById(@RequestBody PayloadBean payloadBean){
+
+		 InventoryCountBean inventoryCountBean=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null,"", Locale.US)))	{
+			inventoryCountBean=cycleCountManager.searchCycleCountById(payloadBean);
+			return new ResponseEntity <InventoryCountBean>(inventoryCountBean, HttpStatus.OK);
+			}
+		
+		else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	 }
+	 
+	 @PostMapping("/update-cycle-count")
+		public BaseResponse updateCycleCount(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			inventoryCountBean.setIpAddress(request.getRemoteAddr());	
+		String resultString = cycleCountManager.updateInvCycleCount(inventoryCountBean);
+		if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+		}  else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		return baseResponse;
+		}catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+		}
+	 
+	 @PostMapping("/finalize-cycle-Counts")
+		public BaseResponse finalizeCycleCount(@RequestBody InventoryCountBean inventoryCountBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			inventoryCountBean.setIpAddress(request.getRemoteAddr());	
+		String resultString = cycleCountManager.finalizeCycleCount(inventoryCountBean);
+		if (resultString.equalsIgnoreCase("ADDED")||resultString.equalsIgnoreCase("")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		}
+		else if (resultString.equalsIgnoreCase("PENDING")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "PENDING", "Can't Finalize As Counted Quantity For Some Items Is Pending. ");
+		}
+		else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+		}
+		else if (resultString.equalsIgnoreCase("recordDeleted")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+		}
+		else {
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+		return baseResponse;
+	}
+		catch(Exception exception) {
+		exception.printStackTrace();
+		if(exception instanceof TransactionFailedException) {
+			return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+			exception.getMessage());
+		}
+		else
+		return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+	}
+		}
+	
+	
+	 @PostMapping("/fetch-cycle-count")
+	 public ResponseEntity<InventoryCountBean> fetchCycleCount(@RequestBody PayloadBean payloadBean){
+			InventoryCountBean inventoryCountBean=cycleCountManager.fetchCycleCount(payloadBean);
+		return new ResponseEntity<InventoryCountBean>(inventoryCountBean, HttpStatus.OK);
+	 }
+	 
+	 @PostMapping("/fetch-finalized-cycle-count-items")
+	 public ResponseEntity<List<PhysicalCountEntityTo>> fetchFinalizedCycleCountItems(@RequestBody PhysicalCountEntityTo physicalCountEntityTo){
+		 List<PhysicalCountEntityTo> physicalCountEntityToList=cycleCountManager.fetchFinalizedCycleCountItems(physicalCountEntityTo);
+		return new ResponseEntity<List<PhysicalCountEntityTo>>(physicalCountEntityToList, HttpStatus.OK);
+	 }
+	 
+	@PostMapping("/check-pending-items")
+	public Long checkPendingItems(@RequestBody PayloadBean payloadBean) {
+		try {
+			return cycleCountManager.checkPendingItems(payloadBean);
+		}catch(Exception e) {
+			e.printStackTrace();
+			return 0L;
+	}
+	}
+	 
+	
+}
+
+	
+

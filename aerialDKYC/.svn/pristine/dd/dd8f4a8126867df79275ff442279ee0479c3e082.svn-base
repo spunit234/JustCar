@@ -1,0 +1,29 @@
+package com.edios.pms.bean;
+
+import java.sql.Date;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class AdminReportSearchParameterBean extends AbstractBean{
+	private static final long serialVersionUID = 1L;
+	public String userName;
+	public String screenName;
+	public String activityName;
+	public Date  fromDateTime;
+	public Date toDateTime;
+	public Character actionType;
+	public String tableName;
+	public String  columnName;
+	public String oldValue;
+	public String newValue;
+	
+}

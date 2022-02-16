@@ -1,0 +1,156 @@
+
+package com.edios.pms.manager.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.ItemBean;
+import com.edios.pms.dao.ReportDao;
+import com.edios.pms.entity.ItemEntity;
+import com.edios.pms.entity.to.ItemOrderProcessingTO;
+import com.edios.pms.entity.to.ItemStockAdjustmentEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.ReportsTO;
+import com.edios.pms.manager.ReportManager;
+
+@Service("reportManager")
+public class ReportManagerImpl extends AbstractManagerImpl<ItemBean, ItemEntity> implements ReportManager {
+
+	@Autowired
+	ReportDao reportDao;
+	
+	
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchExpiredItemDetails(PayloadBean payloadBean) {
+		return reportDao.fetchExpiredItemDetails(payloadBean);
+	}
+
+
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchOutOfStockItemDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return reportDao.fetchOutOfStockItemDetails(payloadBean);
+	}
+
+
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchMinimumQuantityItemDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		List<ReportsTO> objModifiedList=new ArrayList<ReportsTO>();
+		List<ReportsTO> objDataList=reportDao.fetchMinimumQuantityItemDetails(payloadBean);
+		for(ReportsTO objReportsTO:objDataList) {
+			if(objReportsTO.getAoMinQuantity()>=objReportsTO.getQuantityOnHand())
+				objModifiedList.add(objReportsTO);
+		}
+		return objModifiedList;
+	}
+
+
+	@Override
+	@Transactional
+	public PharmacyLocationEntityTO getUserPharmacyLocation(Long userID) {
+		// TODO Auto-generated method stub
+		return reportDao.getUserPharmacyLocation(userID);
+	}
+
+
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchProcessedOrderDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return reportDao.fetchProcessedOrderDetails(payloadBean);
+	}
+
+
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchProcessedOrderItemDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		/*StringBuilder itemOrderDetailId=new StringBuilder();
+		List<ReportsTO> itemOrderDetailIDList=reportDao.fetchProcessedItemOrderIdDetails(payloadBean);
+		for(ReportsTO objReportsTO:itemOrderDetailIDList) {
+			itemOrderDetailId.append(objReportsTO.getItemOrderDetailId());
+			itemOrderDetailId.append(",");
+		}
+		
+		return reportDao.fetchProcessedItemOrderDetails(itemOrderDetailId.toString().substring(0,itemOrderDetailId.toString().length()-1));*/
+		return reportDao.fetchProcessedItemOrderDetails(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<ItemStockEntityTO> getRecevicedConsumed(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return reportDao.getRecevicedConsumed(payloadBean);
+	}
+	
+
+	@Override
+	@Transactional
+	public List<ReportsTO> fetchQuantityOnHandDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return reportDao.fetchQuantityOnHandDetails(payloadBean);
+	}
+	
+	
+	/*@Override
+	@Transactional
+	public List<AssetSubCategoryTO> subCategoryAutoLookUp() {
+		return reportDao.subCategoryAutoLookUp();
+	}
+
+
+	@Override
+	@Transactional
+	public List<AssetSubCategoryItemTO> itemsAutoLookUp() {
+		return reportDao.itemsAutoLookUp();
+	}
+
+
+	@Override
+	@Transactional
+	public List<StokeItemReportTO> getStokeItemsReport(ReportCriteria reportCriteria) {
+		return reportDao.getStokeItemsReport(reportCriteria);
+	}
+
+
+	@Override
+	@Transactional
+	public List<StokeItemReportTO> getIssuedReturnedReport(ReportCriteria reportCriteria) {
+		return reportDao.getIssuedReturnedReport(reportCriteria);
+	}
+*/
+
+	@Override
+	@Transactional
+	public List<ItemStockAdjustmentEntityTO> getAdjustedList(PayloadBean payloadBean) {
+		return reportDao.getAdjustedList(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<PatientEntityTO> getPatientList(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return reportDao.getPatientList(payloadBean);
+	}
+
+	@Override
+	@Transactional
+	public List<ItemOrderProcessingTO> getOrderList(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return reportDao.getOrderList(payloadBean);
+	}
+
+}

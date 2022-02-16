@@ -1,0 +1,91 @@
+package com.edios.pms.entity;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.entity.AbstractEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="patient_prescribed_items")
+@Setter
+@Getter
+@NoArgsConstructor
+public class PatientPrescribedItemEntity extends AbstractEntity {
+	
+	private static final long serialVersionUID = -8014468495298684253L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name="PRESCRIBED_ITEM_ID")
+	private Long prescribedItemId;
+
+	@Column(name="CREATED_BY")
+	private Long createdBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="CREATED_DATE")
+	private Date createdDate;
+
+	@Column(name="IP_ADDRESS")
+	private String ipAddress;
+
+	@Column(name="ITEM_SIG")
+	private String itemSig;
+
+	@Column(name="LAST_MODIFIED_BY")
+	private Long lastModifiedBy;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name="LAST_MODIFIED_DATE")
+	private Date lastModifiedDate;
+
+	@Column(name="NOTES")
+	private String notes;
+
+	@Column(name="PRESCRIBED_QUANTITY")
+	private Long prescribedQuantity;
+
+	@Column(name="PRESCRIBED_STATUS")
+	private String prescribedStatus;
+
+	@Column(name="RECORD_TYPE")
+	private Character recordType;
+
+	@Column(name="TRANSACTION_COUNT")
+	private Long transactionCount;
+
+	@Column(name="USER_ACTIVITY_ID")
+	private Long userActivityId;
+
+	//bi-directional many-to-one association to PatientDispensedItem
+	@OneToMany(mappedBy="patientPrescribedItem")
+	private List<PatientDispensedItemEntity> patientDispensedItems;
+
+	//bi-directional many-to-one association to PatientPrescription
+	@ManyToOne
+	@JoinColumn(name="PATIENT_PRESCRIPTION_ID")
+	private PatientPrescriptionEntity patientPrescription;
+
+	//bi-directional many-to-one association to Item
+	@ManyToOne
+	@JoinColumn(name="ITEM_ID")
+	private ItemEntity item;
+
+
+}

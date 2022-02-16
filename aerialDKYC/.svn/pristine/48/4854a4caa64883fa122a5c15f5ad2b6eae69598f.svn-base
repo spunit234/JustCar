@@ -1,0 +1,39 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyLocationRobotEntity;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+public interface PhamacyLocationsDao extends BaseDao<PharmacyLocationEntity> {
+
+	List<PharmacyLocationEntityTO> fetchPharmacyLocations(String searchParameter);
+
+	TransactionData fetchTransactionDataById(Long id);
+
+	boolean deletePharmacyLocation(Long id, Integer modifiedBy, String ipAddress);
+
+	boolean checkLocationCode(String pharmacyLocationCode,Long locationId);
+	
+	boolean checkLocationName(String pharmacyLocationName,Long locationId);
+
+	boolean addPharmacyLocation(PharmacyLocationEntity pharmacyLocationEntity);
+
+	PharmacyLocationEntity findPharmacyById(Long id);
+
+	boolean updatePharmacyLocations(PharmacyLocationEntity pharmacyLocationEntity);
+
+	boolean addPharmacyLocationRobot(PharmacyLocationRobotEntity pharmacyLocationRobotEntity);
+
+	List<PharmacyLocationRobotEntity> fetchPharmacyLocationRobots(Long id);
+
+	boolean checkRobotName(String searchParameter,Long id);
+
+	boolean checkRobotCode(String customParameter,Long id);
+
+	boolean updatePharmacyLocationRobot(PharmacyLocationRobotEntity pharmacyLocationRobotEntity);
+}

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="WelcomeReport" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="70" bottomMargin="20" uuid="20dcaaa9-54f8-4a73-9de8-1e19b85cd72a">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="935"/>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="address" class="java.lang.String"/>
+	<field name="contactNo" class="java.lang.String"/>
+	<field name="amount" class="java.lang.String"/>
+	<field name="installment" class="java.lang.String"/>
+	<field name="emiDay" class="java.lang.String"/>
+	<field name="bankName" class="java.lang.String"/>
+	<field name="loanDuration" class="java.lang.String"/>
+	<field name="emiYear" class="java.lang.String"/>
+	<field name="emiMonth" class="java.lang.String"/>
+	<background>
+		<band height="500" splitType="Stretch">
+			<staticText>
+				<reportElement x="100" y="235" width="404" height="72" forecolor="#EFEFEF" uuid="8915afb9-22fc-4f85-a159-930b634c87d7"/>
+				<textElement>
+					<font size="48"/>
+				</textElement>
+				<text><![CDATA[www.justacar.in]]></text>
+			</staticText>
+		</band>
+	</background>
+	<title>
+		<band height="108" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="20" uuid="0215a836-093f-4de0-9422-111239ac5cf3"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[To,]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="20" width="200" height="27" uuid="bc1a5f8e-34af-4f01-a356-a56c78acfc30"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{customerName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="47" width="303" height="22" uuid="30b45456-91ab-4c0c-9a08-c548b65d4121"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{address}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="48" y="69" width="100" height="20" uuid="941fba5e-b4f5-409f-8a25-b80c92fc37f2"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{contactNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="89" width="44" height="19" uuid="4f0ec559-7e12-4ea5-9281-6c712edc41e9"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Dear]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="44" y="89" width="211" height="19" uuid="8c1caf74-3b75-441a-bcea-a147a7b57a81"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{customerName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="69" width="48" height="20" uuid="5f901864-19aa-4813-9bb2-bb3a19cd5e81"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Mob:-]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="600" splitType="Stretch">
+			<staticText>
+				<reportElement x="4" y="0" width="539" height="74" uuid="ca653bc3-bfb3-4462-8022-399d02856ea6"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[                      We at Shree Balaji Enterprises, 34, Old Grain market Jagraon-142026 Thank you very much for choosing us your facilitator for getting the loan from the Bank. We feel that your work is done in a hassle free manner and more than your expectations]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="4" y="74" width="551" height="29" uuid="b4e1b720-47a6-4ab8-97d6-86e36778bd3d"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[We are glad to inform you that your Loan amount has been disbursed as per follows]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="103" width="131" height="31" uuid="a74de514-e017-4f25-98fa-cc9e44ac4319"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement>
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Loan Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="131" y="103" width="146" height="31" uuid="01c18cf0-aafa-4c72-9238-12e753424fc4"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement>
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tenure/Installment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="103" width="141" height="31" uuid="00b4436e-b0cb-4959-8002-3cdfa1b801fb"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement>
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Emi Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="103" width="133" height="31" uuid="aa314b21-2c42-4ee9-85ea-3d1b7120cc1a"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement>
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bank Name]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="0" y="134" width="131" height="41" isPrintWhenDetailOverflows="true" uuid="0a6e4102-78e7-47c8-bd5f-d632ec2295df"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="131" y="134" width="146" height="41" isPrintInFirstWholeBand="true" uuid="ccff9323-107f-4441-b0e2-1677cc69c750"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textFieldExpression><![CDATA[$F{loanDuration}+"/"+$F{installment}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="277" y="134" width="141" height="41" isPrintWhenDetailOverflows="true" uuid="220a2f9d-45fa-4d76-8985-290647fc67d2"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textFieldExpression><![CDATA[$F{emiDay}+"TH of every month starting "+$F{emiMonth}+" "+$F{emiYear}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="418" y="134" width="133" height="41" isPrintWhenDetailOverflows="true" uuid="7480a24e-9be7-4dc3-bb82-1a47152a87df"/>
+				<box topPadding="1" leftPadding="1" bottomPadding="1" rightPadding="1">
+					<pen lineWidth="0.5"/>
+					<topPen lineWidth="0.5"/>
+					<leftPen lineWidth="0.5"/>
+					<bottomPen lineWidth="0.5"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textFieldExpression><![CDATA[$F{bankName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="4" y="175" width="551" height="31" uuid="4608d722-0eb9-46e8-8b1b-0a0b9abf55f0"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[The schedule For the Loan is attached herewith]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="4" y="206" width="551" height="45" uuid="92950dd9-d7a9-4500-a880-54fdd3668fe6"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Would you have any query/Clarification regarding the Loan, Please feel free to contact us]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="4" y="251" width="504" height="21" uuid="fad4d000-ba6c-4158-a8a5-9f4051d1f3b0"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[We value your views on improving our services, if any]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="272" width="504" height="25" uuid="2a035165-c76c-4e53-ad4f-389af5ab709e"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Apart from car loan following services are also available]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="17" y="297" width="183" height="24" uuid="11a58865-f04b-46c6-b3a9-d1c33e999ec1"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[1.Home loan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="17" y="321" width="183" height="20" uuid="fdb104ca-7f24-42f5-9227-17b63365883e"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[2.Education loan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="17" y="341" width="183" height="22" uuid="6fa3d000-7377-4127-8b6c-316667e51e39"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[3.working capital limits]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="17" y="363" width="183" height="24" uuid="d0c1f5e2-aae0-4038-b416-86cdc71e9072"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[4.General Insurance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="17" y="387" width="183" height="23" uuid="99eaea66-3b4e-49a5-86e5-ae04a5b331fd"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[5.Personal loan/Business loan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="4" y="410" width="551" height="28" uuid="302688f7-7c26-448f-930e-66265b73315b"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[If you have any query, Please feel free to contact at any of the following nos]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="448" width="100" height="20" uuid="df8565b6-6fe0-4248-a79c-c8e7d586f7ba"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Insurance-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="448" width="133" height="20" uuid="a09d98af-9202-4f4b-96b0-9a4e16a209a1"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[01624-222822]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="468" width="100" height="20" uuid="d196d318-2dae-456a-a98f-52e5d7a54d3a"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Car loan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="488" width="251" height="20" uuid="28f42c2a-f9e6-4649-af30-966622876127"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Home loan/Education loan/Agri limit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="510" width="241" height="20" uuid="1dd20903-f72e-469a-89ec-9f55039c9160"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[For any complaint/Suggestion]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="468" width="133" height="20" uuid="8b396fcb-3f46-4715-8404-9a5d94fa0610"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[92165-21712]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="488" width="133" height="22" uuid="02020d68-ed12-49d1-919c-08d430b370d6"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[94175-21709]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="510" width="133" height="20" uuid="99da14dc-57ec-491f-868c-daf7f1d4b9ee"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[92165-21710]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="540" width="100" height="20" uuid="be0e9e68-e565-4cdc-8dcc-c981c8bbe083"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Thanking you]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="540" width="133" height="20" uuid="9eb696e0-5395-4eca-bb35-c1bd39dd6df9"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Your’s faithfully,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="560" width="133" height="20" uuid="e0ccffee-19d4-45bb-9644-71784852c6ea"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[Pankaj Goel]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="162" y="580" width="157" height="20" uuid="3ed4b208-6616-4176-825e-f2f4945a59b5"/>
+				<textElement>
+					<font size="14"/>
+				</textElement>
+				<text><![CDATA[https://www.justacar.in]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

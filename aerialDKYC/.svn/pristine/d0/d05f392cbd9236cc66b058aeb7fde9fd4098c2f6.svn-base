@@ -1,0 +1,312 @@
+package com.edios.pms.controller;
+
+
+
+import java.util.List;
+import java.util.Locale;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.edios.cdf.controller.AbstractController;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.cdf.validator.BaseResponse;
+import com.edios.pms.bean.ItemOrderBean;
+import com.edios.pms.bean.ItemOrderDetailBean;
+import com.edios.pms.entity.to.ItemOrderEntityTO;
+import com.edios.pms.entity.to.ItemStockEntityTO;
+import com.edios.pms.manager.DistributeOrderManager;
+
+
+@RestController
+public class DistributeOrderController extends AbstractController {
+	@Autowired
+	MessageSource messageSource;
+
+	@Autowired
+	DistributeOrderManager distributeOrderManager;
+	
+	@PostMapping("/get-distribute-item-order-detail")
+	public ResponseEntity<List<ItemOrderEntityTO>> getItemOrderDetails(@RequestBody PayloadBean payloadBean) {
+		List<ItemOrderEntityTO> objItemOrderEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objItemOrderEntityTOList = distributeOrderManager.getItemDistributeOrderDetails(payloadBean);
+			return new ResponseEntity<List<ItemOrderEntityTO>>(objItemOrderEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/get-instock-item-detail")
+	public ResponseEntity<List<ItemStockEntityTO>> getInStockItemDetails(@RequestBody ItemStockEntityTO payloadBean) {
+		List<ItemStockEntityTO> objItemOrderEntityTOList=null;
+			objItemOrderEntityTOList = distributeOrderManager.getInStockItemDetails(payloadBean);
+			return new ResponseEntity<List<ItemStockEntityTO>>(objItemOrderEntityTOList, HttpStatus.OK);
+		
+	}
+	@PostMapping("/add-distribute-item-order")
+	public BaseResponse addDistributeItemOrder(@RequestBody List<ItemStockEntityTO> payloadBeanList, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = distributeOrderManager.addDistributeItemOrder(payloadBeanList,request);
+		if (resultString.equalsIgnoreCase("UPDATED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+		}
+		return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	@PutMapping("/update-distribute-item-order")
+	public BaseResponse updateDistributeItemOrder(@RequestBody List<ItemStockEntityTO> payloadBeanList, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = distributeOrderManager.updateDistributeItemOrder(payloadBeanList,request);
+			if (resultString.equalsIgnoreCase("UPDATED")||resultString.equalsIgnoreCase("")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			if(exception instanceof TransactionFailedException) {
+				return new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						exception.getMessage());
+			}
+			else
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	@PostMapping("/delete-item-order-processing-record")
+	public BaseResponse deleteItemOrderProcessingRecord(@RequestBody DeleteRecords deleteRecords, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = distributeOrderManager.deleteItemOrderProcessingRecord(deleteRecords,request);
+			if (resultString.equalsIgnoreCase("DELETED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "DELETED", "");
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	
+	@PutMapping("/update-item-order-status-distribution")
+	public BaseResponse updateItemOrderDetails(@RequestBody ItemOrderBean ItemOrderBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			ItemOrderBean.setIpAddress(request.getRemoteAddr());
+			String resultString = distributeOrderManager.updateItemOrderDetails(ItemOrderBean);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	@PutMapping("/validate-distribute-order-before-finalize/{userID}")
+	public BaseResponse validateDistributeOrderBeforeFinalize(@RequestBody List<ItemOrderDetailBean> objItemOrderDetailBeanList,@PathVariable("userID") Long userID) {
+		BaseResponse baseResponse = null;
+		try {
+			String resultString = distributeOrderManager.validateDistributeOrderBeforeFinalize(objItemOrderDetailBeanList,userID);
+			//if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, resultString, "");
+//			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+//				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+//						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+//			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+//				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+//						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+//			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+//				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+//						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+//			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+//				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+//						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+//			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}
+	/*@PostMapping("/get-user-pharmacy-location")
+	public ResponseEntity<PharmacyLocationEntityTO> getUserPharmacyLocation(@RequestBody PayloadBean payloadBean) {
+		PharmacyLocationEntityTO objPharmacyLocationEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPharmacyLocationEntityTO = createOrderManager.getUserPharmacyLocation(payloadBean.getId());
+			return new ResponseEntity<PharmacyLocationEntityTO>(objPharmacyLocationEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	@PostMapping("/get-user-corresponding-pharmacy-location")
+	public ResponseEntity<List<PharmacyLocationEntityTO>> getUserCorrespondingPharmacyLocation(@RequestBody PayloadBean payloadBean) {
+		List<PharmacyLocationEntityTO> objPharmacyLocationEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPharmacyLocationEntityTO = createOrderManager.getUserCorrespondingPharmacyLocation(payloadBean.getId());
+			return new ResponseEntity<List<PharmacyLocationEntityTO>>(objPharmacyLocationEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	@PostMapping("/get-user-pharmacy-store")
+	public ResponseEntity<List<PharmacyStoreEntityTO>> getUserPharmacyStore(@RequestBody PayloadBean payloadBean) {
+		List<PharmacyStoreEntityTO> objPharmacyLocationEntityTO=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objPharmacyLocationEntityTO = createOrderManager.getUserPharmacyStore(payloadBean.getId());
+			return new ResponseEntity<List<PharmacyStoreEntityTO>>(objPharmacyLocationEntityTO, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	@PostMapping("/get-item-details")
+	public ResponseEntity<List<ItemEntityTO>> getItemDetails(@RequestBody PayloadBean payloadBean) {
+		List<ItemEntityTO> objItemEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objItemEntityTOList = createOrderManager.getItemDetails(payloadBean);
+			return new ResponseEntity<List<ItemEntityTO>>(objItemEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	@PostMapping("/get-item-pack-size-detail")
+	public ResponseEntity<List<ItemPackSizeEntityTO>> getItemPackSizeDetails(@RequestBody PayloadBean payloadBean) {
+		List<ItemPackSizeEntityTO> objItemPackSizeEntityTOList=null;
+		if(payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			objItemPackSizeEntityTOList = createOrderManager.getItemPackSizeDetails(payloadBean);
+			return new ResponseEntity<List<ItemPackSizeEntityTO>>(objItemPackSizeEntityTOList, HttpStatus.OK);
+		}else{
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PostMapping("/fetch-item-quantity-on-hand")
+	public ResponseEntity<ItemStockEntityTO> fetchItemQuantityOnHandDetail(@RequestBody ItemStockEntityTO itemStockEntityTO) {
+		ItemStockEntityTO objItemStockEntityTO=null;
+			objItemStockEntityTO = createOrderManager.fetchItemQuantityOnHandDetail(itemStockEntityTO);
+			return new ResponseEntity<ItemStockEntityTO>(objItemStockEntityTO, HttpStatus.OK);
+		
+	}
+	
+	@PostMapping("/create-order")
+	public BaseResponse createOrder(@RequestBody CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		String resultString ;
+		try {
+		 resultString = createOrderManager.createOrder(CreateOrderCompositeBean,request);
+		if (resultString.equalsIgnoreCase("ADDED")) {
+			baseResponse = new BaseResponse(HttpStatus.OK, "ADDED", "");
+		} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+		} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+			baseResponse = new BaseResponse(HttpStatus.ALREADY_REPORTED, "ALREADY_REPORTED",
+					messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+		}
+		return baseResponse;
+		}catch(Exception exception) {
+			exception.printStackTrace();
+			return baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}*/
+	
+	
+	
+	/*@PostMapping("/edit-item-order")
+	public ResponseEntity<CreateOrderCompositeBean> findItemOrderDetailsById(@RequestBody PayloadBean payloadBean) {
+		if (payloadBean.getSignatureKey().equals(messageSource.getMessage("signatureKey", null, "", Locale.US))) {
+			CreateOrderCompositeBean CreateOrderCompositeBean = createOrderManager.findItemOrderDetailsById(payloadBean.getId());
+			return new ResponseEntity<CreateOrderCompositeBean>(CreateOrderCompositeBean, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.OK);
+		}
+	}
+	
+	@PutMapping("/update-item-order")
+	public BaseResponse updateItemOrderDetails(@RequestBody CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request) {
+		BaseResponse baseResponse = null;
+		try {
+			//siteBean.setIpAddress(request.getRemoteAddr());
+			String resultString = createOrderManager.updateItemOrderDetails(CreateOrderCompositeBean,request);
+			if (resultString.equalsIgnoreCase("UPDATED")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "UPDATED", "");
+			} else if (resultString.equalsIgnoreCase("NameAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Name" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("CodeAlreadyExist")) {
+				baseResponse = new BaseResponse(HttpStatus.CONFLICT, "CONFLICT",
+						messageSource.getMessage("duplicateFieldMessage", new Object[] { "Site Code" }, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("TransactionFailed")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+			} else if (resultString.equalsIgnoreCase("recordDeleted")) {
+				baseResponse = new BaseResponse(HttpStatus.OK, "TRANSACTION_FAILED",
+						messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+			}
+			return baseResponse;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return  baseResponse = new BaseResponse(HttpStatus.OK, "EXCEPTION", "Some Thing went wrong! please try later.");
+		}
+	}*/
+}

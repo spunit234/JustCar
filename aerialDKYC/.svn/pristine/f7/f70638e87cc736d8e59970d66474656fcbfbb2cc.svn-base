@@ -1,0 +1,50 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.dao.BaseDao;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.entity.CompoundItemDetailEntity;
+import com.edios.pms.entity.CompoundItemEntity;
+import com.edios.pms.entity.PreparedCompoundItemDetailEntity;
+import com.edios.pms.entity.PreparedCompoundItemEntity;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+
+public interface PreparedCompoundItemDao extends BaseDao<PreparedCompoundItemEntity> {
+	
+	
+	boolean isPreparedCompoundItemNameExist(Long compoundItemId,Long preparedItemId);
+	
+	Long addPreparedCompoundItemEntity(PreparedCompoundItemEntity objPreparedCompoundItemEntity);
+	
+	boolean addPreparedCompoundItemDetailEntity(PreparedCompoundItemDetailEntity objPreparedCompoundItemDetailEntity);
+	
+	List<CompoundItemEntityTO> fetchConfiguredCompoundItemdetails(PayloadBean payloadBean);
+	
+	List<CompoundItemEntityTO> fetchConfiguredCompoundItemDetailsByCompoundItemId(Long compounItemId);
+	
+	List<CompoundItemEntityTO> fetchItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean);
+	
+	List<CompoundItemEntityTO> fetchConfigureItemDetails(PayloadBean payloadBean);
+	
+	
+	/*List<CompoundItemEntityTO> getCompoundItemDetails(ConfigureCompoundItemsTO payloadBean);
+	
+	CompoundItemEntity findCompoundItemBeanDetailsById(Long compoundItemId);
+	
+	TransactionData fetchTransactionDataById(Long id);
+	
+	TransactionData fetchTransactionDataByCompoundItemDetailId(Long id);
+	
+	boolean updateCompoundItemEntity(CompoundItemEntity objCompoundItemEntity);
+	
+	boolean updateCompoundItemDetailEntity(CompoundItemDetailEntity objCompoundItemDetailEntity);
+	
+	boolean deleteCompoundItemDetailsById(DeleteRecords deleteRecords);*/
+	
+	
+}

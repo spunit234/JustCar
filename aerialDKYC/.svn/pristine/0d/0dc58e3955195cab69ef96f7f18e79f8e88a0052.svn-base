@@ -1,0 +1,35 @@
+package com.edios.pms.entity.to;
+
+import java.io.Serializable;
+
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Setter
+@Getter
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class ItemInventorySettingsTo implements Serializable {/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6569243680744999562L;
+	
+	
+	private Long pharmacyLocationId;
+	private Long inventorySettingId;
+	private String pharmacyLocationName;
+	private String pharmacyLocationCode;
+	private String shelfLocations;	
+	private String defaultShelfLocations;
+	private Long quantityOnHand;
+	private Long dailyConsumption;
+	private Long monthlyValue;
+	private Long itemId;
+	
+	private Double totalQuantityCost;
+
+}

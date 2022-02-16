@@ -1,0 +1,32 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.PharmacyLocationBean;
+import com.edios.pms.bean.PharmacyLocationRobotBean;
+import com.edios.pms.bean.PharmacyStoreBean;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+public interface PharmacyLocationsManager extends AbstractManager {
+
+	List<PharmacyLocationEntityTO> fetchPharmacyLocations(PayloadBean payloadBean);
+
+	String deletePharmacy(DeleteRecords deleteRecords, String string);
+
+	boolean checkLocationCode(String pharmacyLocationCode,Long locationId);
+
+	String addPharmacyLocation(PharmacyLocationBean pharmacyLocationBean);
+
+	PharmacyLocationBean findPharmacyLocationById(PayloadBean payloadBean);
+
+	String updatePharmacyLocations(PharmacyLocationBean pharmacyLocationBean);
+	
+
+	List<PharmacyLocationRobotBean> fetchPharmacyLocationRobots(Long id);
+
+	String RobotValidation(PayloadBean payloadBean);
+
+}

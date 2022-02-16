@@ -1,0 +1,74 @@
+package com.edios.pms.bean;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+import com.edios.cdf.bean.AbstractBean;
+import com.edios.pms.entity.ItemOrderProcessingEntity;
+import com.edios.pms.entity.ItemStockAdjustmentEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+
+/**
+ * The persistent class for the item_transactions database table.
+ * 
+ */
+@Setter
+@Getter
+@NoArgsConstructor
+public class ItemTransactionBean extends AbstractBean {
+	private static final long serialVersionUID = 1L;
+
+	private Long itemTransactionId;
+
+	private Long balanceQuantity;
+
+	private Double balanceQuantityCost;
+
+	private Long createdBy;
+
+	private Date createdDate;
+
+	private String ipAddress;
+
+	private Long lastModifiedBy;
+
+	private Date lastModifiedDate;
+
+	private Character recordType;
+
+	private Long transactionCount;
+
+	private Date transactionDate;
+
+	private String transactionNotes;
+
+	private Long transactionQuantity;
+
+	private Double transactionQuantityCost;
+
+	private String transactionType;
+
+	private Long userActivityId;
+
+	private PharmacyLocationBean pharmacyLocation;
+
+	private ItemBean item;
+
+	private ItemOrderProcessingBean itemProcessingDetail;
+	
+	private ItemStockAdjustmentBean itemStockAdjustmentDetail;
+
+}

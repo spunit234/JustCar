@@ -1,0 +1,218 @@
+package com.edios.pms.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.NoResultException;
+import javax.persistence.TemporalType;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.PhamacyLocationsDao;
+import com.edios.pms.entity.PharmacyLocationEntity;
+import com.edios.pms.entity.PharmacyLocationRobotEntity;
+import com.edios.pms.entity.PharmacyStoreEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyStoreTO;
+
+@Repository
+public class PharmacyLocationsDaoImpl extends BaseDaoImpl<PharmacyLocationEntity> implements PhamacyLocationsDao {
+
+	@Autowired
+	MessageSource messageSource;
+	
+	@SuppressWarnings({ "deprecation", "unchecked" })
+	@Override
+	public List<PharmacyLocationEntityTO> fetchPharmacyLocations(String searchParameter) {
+		List<PharmacyLocationEntityTO> pharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="select pharmacyLocation.pharmacyLocationId as pharmacyLocationId,pharmacyLocation.pharmacyLocationName as pharmacyLocationName,pharmacyLocation.pharmacyLocationCode as pharmacyLocationCode,"
+					+ "pharmacyLocation.contactPersonName as contactPersonName,pharmacyLocation.contactPersonPhone as contactPersonPhone,pharmacyLocation.pharmacyLocationStatus as pharmacyLocationStatus,site.siteName as siteName,"
+					+ "pharmacyLocation.transactionCount as transactionCount from PharmacyLocationEntity pharmacyLocation left join pharmacyLocation.siteId as site where pharmacyLocation.pharmacyLocationStatus='"+searchParameter+"' and pharmacyLocation.recordType<>'D'";
+					 
+			pharmacyLocationEntityTOList = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+			for(PharmacyLocationEntityTO abc:pharmacyLocationEntityTOList) {
+				System.out.println(abc.getSiteName());
+			}
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}		
+		return pharmacyLocationEntityTOList;
+	}
+
+	@Override
+	public TransactionData fetchTransactionDataById(Long id) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  PharmacyLocationEntity table where table.pharmacyLocationId="+id+"";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setResultTransformer(Transformers.aliasToBean(TransactionData.class)).getSingleResult();
+			System.out.println(transactionData.getTransactionCount()+" count");
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+	@Override
+	public boolean deletePharmacyLocation(Long id, Integer modifiedBy, String ipAddress) {
+		boolean result = true;
+		try {
+			String hql = "update PharmacyLocationEntity le set le.lastModifiedDate=:lastModifiedDate"
+					+ " , le.recordType='D' , le.lastModifiedBy="+modifiedBy+",ipAddress='"+ipAddress+"'"
+					+ " WHERE le.pharmacyLocationId="+id+"";
+			Session session = (Session) entityManager.getDelegate();
+			 session.createQuery(hql).setParameter("lastModifiedDate", new Date(), TemporalType.TIMESTAMP).executeUpdate();		
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean checkLocationCode(String pharmacyLocationCode,Long locationId) {
+		try {
+			return entityManager.createQuery(
+					"select table.pharmacyLocationCode as pharmacyLocationCode from PharmacyLocationEntity table where "
+							+ " table.pharmacyLocationCode='" + pharmacyLocationCode+"' and table.pharmacyLocationId!="+locationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+	@Override
+	public boolean addPharmacyLocation(PharmacyLocationEntity pharmacyLocationEntity) {
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.save(pharmacyLocationEntity);				
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public PharmacyLocationEntity findPharmacyById(Long id) {
+		return entityManager.find(PharmacyLocationEntity.class, id);
+	}
+
+	@Override
+	public boolean updatePharmacyLocations(PharmacyLocationEntity pharmacyLocationEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(pharmacyLocationEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+	@Override
+	public boolean checkLocationName(String pharmacyLocationName, Long locationId) {
+		try {
+			return entityManager.createQuery(
+					"select table.pharmacyLocationName as pharmacyLocationName from PharmacyLocationEntity table where "
+							+ " table.pharmacyLocationName='" + pharmacyLocationName+"' and table.pharmacyLocationId!="+locationId)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+	
+
+	@Override
+	public boolean addPharmacyLocationRobot(PharmacyLocationRobotEntity pharmacyLocationRobotEntity) {
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.save(pharmacyLocationRobotEntity);				
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<PharmacyLocationRobotEntity> fetchPharmacyLocationRobots(Long id) {
+		List<PharmacyLocationRobotEntity> pharmacyLocationRobotEntityList = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery ="From PharmacyLocationRobotEntity robot where robot.pharmacyLocation ="+id+"";
+			pharmacyLocationRobotEntityList = (List<PharmacyLocationRobotEntity>) session.createQuery(sqlQuery).list();
+		}catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}		
+		return pharmacyLocationRobotEntityList;
+	}
+
+	@Override
+	public boolean checkRobotName(String searchParameter,Long id) {
+		try {
+			return entityManager.createQuery(
+					"select table.robotName as robotName from PharmacyLocationRobotEntity table where "
+							+ " table.robotName='"+searchParameter+"' AND table.robotId !="+id+"")
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	}
+
+	@Override
+	public boolean checkRobotCode(String customParameter,Long id) {
+		try {
+			return entityManager.createQuery(
+					"select table.robotCode as robotCode from PharmacyLocationRobotEntity table where "
+							+ " table.robotCode='"+customParameter+"' AND table.robotId !="+id+"")
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	}
+
+	@Override
+	public boolean updatePharmacyLocationRobot(PharmacyLocationRobotEntity pharmacyLocationRobotEntity) {
+		boolean result = true;
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			session.update(pharmacyLocationRobotEntity);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+
+}

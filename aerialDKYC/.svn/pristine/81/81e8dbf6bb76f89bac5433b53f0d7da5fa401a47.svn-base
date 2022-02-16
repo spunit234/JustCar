@@ -1,0 +1,63 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.common.ApplicationParameterEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="ADHOC_REPORT_FILTERS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class AdhocReportFilterEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ADHOC_REPORT_FILTER_ID")
+	private Long adhocReportFilterId;
+	
+	@ManyToOne
+	@JoinColumn(name="ADHOC_REPORT_ID")
+	private AdhocReportEntity adhocReport;
+	
+	@Column(name="START_BRACKET_FLAG")
+	private boolean startBracketFlag;
+
+	@ManyToOne
+	@JoinColumn(name="DATA_SOURCE_FIELD_ID")
+	private DataSourceFieldEntity dataSourceField;
+	
+	@Column(name="FILTER_CRITERIA")
+	private String filterCriteria;
+	
+	@Column(name="STATIC_VALUE")
+	private Long staticValue;
+	
+	@ManyToOne
+	@JoinColumn(name = "ADHOC_REPORT_PARAMETER_ID")
+	private AdhocReportParameterEntity adhocReportParameter;
+	
+	@Column(name="END_BRACKET_FLAG")
+	private boolean endBracketFlag;
+	
+	@Column(name="AND_OR_OPERATOR")
+	private String andOrOperator;
+	
+
+}

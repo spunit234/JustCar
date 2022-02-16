@@ -1,0 +1,46 @@
+package com.edios.pms.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import com.edios.cdf.entity.AbstractEntity;
+import com.edios.cdf.entity.security.RoleEntity;
+import com.edios.cdf.entity.security.UserEntity;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name="ADHOC_REPORT_RIGHTS")
+@Setter
+@Getter
+@NoArgsConstructor
+public class AdhocReportAccessRightEntity extends AbstractEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ADHOC_REPORT_RIGHT_ID")
+	private Long adhocReportRightId;
+	
+	@ManyToOne
+	@JoinColumn(name="ADHOC_REPORT_ID")
+	private AdhocReportEntity adhocReport;
+	
+	@ManyToOne
+	@JoinColumn(name="ROLE_ID")
+	private RoleEntity role;
+	
+	@ManyToOne
+	@JoinColumn(name="USER_ID")
+	private UserEntity user;
+}

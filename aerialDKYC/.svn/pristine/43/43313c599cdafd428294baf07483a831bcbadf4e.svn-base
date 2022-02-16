@@ -1,0 +1,53 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CompoundCompositeItemBean;
+import com.edios.pms.bean.PreparedCompoundItemBean;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.ItemEntityTO;
+import com.edios.pms.entity.to.PreparedCompoundItemEntityTO;
+
+public interface PreparedCompoundItemManager extends AbstractManager {
+	
+	
+	
+	Long addPreparedCompoundItem(CompoundCompositeItemBean objCompoundCompositeItemBean, HttpServletRequest request);
+	
+	List<CompoundItemEntityTO> fetchConfiguredCompoundItemdetails(PayloadBean payloadBean);
+	
+	List<CompoundItemEntityTO> fetchItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean);
+	
+	List<CompoundItemEntityTO> fetchConfigureItemDetails(PayloadBean payloadBean);
+	
+	CompoundCompositeItemBean findPreparedCompoundItemBeanDetailsById(Long preparedItemId);
+	
+	List<PreparedCompoundItemEntityTO> getPreparedCompoundItemDetails(ConfigureCompoundItemsTO payloadBean) ;
+	
+	List<CompoundItemEntityTO> editItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean);
+	
+	String deletePreparedCompoundItemDetailsById(DeleteRecords deleteRecords);
+	
+	String updatePreparedCompoundItemDetails(CompoundCompositeItemBean CompoundCompositeItemBean, HttpServletRequest request) throws TransactionFailedException;
+	
+	String checkLotNoExistenceForItemInUserPharmacyLocation(PayloadBean payloadBean) ;
+	
+	String addPreparedCompoundItemWithStatus(PreparedCompoundItemBean  objPreparedCompoundItemBean, HttpServletRequest request);
+	
+	String validatePreparedCompoundItemBeforeFinalization(List<CompoundItemEntityTO> objCompoundItemEntityTOList,Long preparedItemId);
+	/*CompoundCompositeItemBean findCompoundItemBeanDetailsById(Long compoundItemId);
+	
+	String deleteCompoundItemDetailsById(DeleteRecords deleteRecords);*/
+	
+	
+}

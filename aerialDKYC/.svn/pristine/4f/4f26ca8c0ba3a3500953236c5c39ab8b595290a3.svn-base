@@ -1,0 +1,84 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.PatientMedicalPrescriptionDetailBean;
+import com.edios.pms.entity.to.DispenseMedicationsTO;
+import com.edios.pms.entity.to.PatientDispensedItemsTO;
+import com.edios.pms.entity.to.PatientEntityTO;
+import com.edios.pms.entity.to.PatientPrescriptionEntityTO;
+
+public interface PatientDispensingManager extends AbstractManager {
+	
+	/*PharmacyLocationEntityTO getUserPharmacyLocation(Long userID);
+	
+	List<PharmacyLocationEntityTO> getUserCorrespondingPharmacyLocation(Long userID);
+	
+	List<PharmacyStoreEntityTO> getUserPharmacyStore(Long userID);*/
+	
+	List<PatientEntityTO> getPatientDetails(PatientEntityTO payloadBean);
+	
+	PatientMedicalPrescriptionDetailBean getPatientDetailsById(PayloadBean payloadBean);
+	
+	List<PatientPrescriptionEntityTO> getPatientPatientPrescribedDetailsByEncounterId(PayloadBean payloadBean);
+	
+	List<PatientDispensedItemsTO> getPerscribedItemsToBeDispensed(PatientDispensedItemsTO payloadBean);
+	
+	String dispenseMedicineToPatient(PatientDispensedItemsTO objPatientDispensedItemsTO, HttpServletRequest request) throws TransactionFailedException;
+	
+	/*List<ItemPackSizeEntityTO> getItemPackSizeDetails(PayloadBean payloadBean);
+	
+	ItemStockEntityTO fetchItemQuantityOnHandDetail( ItemStockEntityTO itemStockEntityTO);
+	
+	String createOrder(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request); 
+	
+	List<ItemOrderEntityTO> getItemOrderDetails(PayloadBean payloadBean);
+	
+	CreateOrderCompositeBean findItemOrderDetailsById(Long itemOrderId);
+	
+	String updateItemOrderDetails(CreateOrderCompositeBean CreateOrderCompositeBean, HttpServletRequest request);*/
+	
+	String getGenderDetailOfWorkStation(PayloadBean PayloadBean, HttpServletRequest request);
+	
+	String checkRobotDispensingForWorkStation(PayloadBean PayloadBean, HttpServletRequest request);
+	
+	List<DispenseMedicationsTO> getPendingSavedDraftPetientDetails(PayloadBean payloadBean) ;
+	
+	List<PatientEntityTO> getPatientDetailsByPrescriptionStatus(PayloadBean payloadBean);
+	
+	List<PatientEntityTO> getPatientDetailsUnderProccesing( PayloadBean payloadBean) ;
+	
+	List<PatientEntityTO> getPatientDetailsReadyToVerified( PayloadBean payloadBean);
+	
+	List<PatientEntityTO> getPatientDetailsReadyToDispensed( PayloadBean payloadBean);
+	
+	List<PatientEntityTO> getTroubledPatientDetails(PayloadBean payloadBean) ;
+	
+	String deleteDispensedItemDetailsById(PatientDispensedItemsTO deleteRecords) throws TransactionFailedException;
+	
+	PatientPrescriptionEntityTO getPatientPatientPrescribedDetailsByPrescribedItemId(Long prescribedItemId);
+	
+	String fetchPrescribedItemsStatus(Long prescribedId);
+	
+	String verfiedDispensedItems(PatientDispensedItemsTO payloadBean) throws  TransactionFailedException;
+	
+	PatientEntityTO getPatientAndPrescribedDetailsByEncounterId(Long encounterId);
+	
+	List<PatientDispensedItemsTO> getCompletedItemsDetailOfProcessedPatientPrescriptions(PayloadBean payloadBean);
+	
+	String dispenseVerifiedMedicationsToPatient(PatientEntityTO objPatientEntityTO, HttpServletRequest request);
+	
+	String troublePatientPrescription(PatientEntityTO objPatientEntityTO, HttpServletRequest request);
+	
+}

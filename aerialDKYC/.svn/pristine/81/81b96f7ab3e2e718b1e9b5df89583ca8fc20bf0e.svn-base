@@ -1,0 +1,26 @@
+package com.edios.pms.manager;
+
+import java.util.List;
+
+import com.edios.cdf.manager.AbstractManager;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AssignPharmacyLocationScreenBean;
+import com.edios.pms.bean.DashboardBean;
+import com.edios.pms.bean.UserDashboardBean;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+
+public interface AssignDashboardNameManager extends AbstractManager {
+
+	List<PharmacyLocationEntityTO> searchDashboardName(PayloadBean payloadBean);
+
+	List<DashboardBean> dashboardNamesAutolookup(PayloadBean payloadBean);
+
+	List<PharmacyLocationEntityTO> searchDashboardCode(PayloadBean payloadBean);
+
+	String updateDashboardUser(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean);
+
+	String addDashboardUser(AssignPharmacyLocationScreenBean assignPharmacyLocationScreenBean);
+
+	String deleteDashboardUser(UserDashboardBean userDashboardBean);
+
+}

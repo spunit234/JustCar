@@ -1,0 +1,25 @@
+package com.edios.pms.dao;
+
+import java.util.List;
+
+import com.edios.cdf.entity.to.UserActivityLogEntityTO;
+import com.edios.cdf.entity.to.UserLoginLogDetailRespEntityTO;
+import com.edios.cdf.entity.to.UserLoginLogResponseEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.pms.bean.AdminReportSearchParameterBean;
+
+public interface AdminReportDao {
+
+	List<UserActivityLogEntityTO> fetchUserActivityLog(AdminReportSearchParameterBean adminReportSearchParameterBean);
+
+	List<UserActivityLogEntityTO> fetchSavedClickedUserActivityLog(PayloadBean payloadBean);
+
+	UserActivityLogEntityTO fetchSearchedUserActivityLog(PayloadBean payloadBean);
+
+	List<UserActivityLogEntityTO> fetchUserAuditLog(AdminReportSearchParameterBean adminReportSearchParameterBean);
+	
+	List<UserLoginLogResponseEntityTO> getUserLoginLogs(AdminReportSearchParameterBean payload);
+
+	List<UserLoginLogDetailRespEntityTO> getUserLoginLogDetails(PayloadBean payload);
+
+}

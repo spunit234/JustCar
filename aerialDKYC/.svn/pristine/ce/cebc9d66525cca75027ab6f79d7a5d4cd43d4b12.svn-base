@@ -1,0 +1,402 @@
+package com.edios.pms.manager.impl;
+
+
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.StringJoiner;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.edios.cdf.manager.impl.AbstractManagerImpl;
+import com.edios.cdf.util.AppConstants;
+import com.edios.cdf.util.DeleteRecords;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.cdf.util.TransactionFailedException;
+import com.edios.pms.bean.CompoundCompositeItemBean;
+import com.edios.pms.bean.ItemStockBean;
+import com.edios.pms.bean.PreparedCompoundItemBean;
+import com.edios.pms.bean.PreparedCompoundItemDetailBean;
+import com.edios.pms.dao.DistributeOrderDao;
+import com.edios.pms.dao.PreparedCompoundItemDao;
+import com.edios.pms.dao.ReceiveOrderDao;
+import com.edios.pms.entity.ItemStockEntity;
+import com.edios.pms.entity.PreparedCompoundItemDetailEntity;
+import com.edios.pms.entity.PreparedCompoundItemEntity;
+import com.edios.pms.entity.to.CompoundItemEntityTO;
+import com.edios.pms.entity.to.ConfigureCompoundItemsTO;
+import com.edios.pms.entity.to.PreparedCompoundItemEntityTO;
+import com.edios.pms.manager.PreparedCompoundItemManager;
+
+@Service("preparedCompoundItemManagerImpl")
+public class PreparedCompoundItemManagerImpl extends AbstractManagerImpl<PreparedCompoundItemBean,PreparedCompoundItemEntity > implements PreparedCompoundItemManager {
+
+	@Autowired
+	PreparedCompoundItemDao preparedCompoundItemDao;
+	
+	@Autowired
+	DistributeOrderDao distributeOrderDao;
+	
+	@Autowired
+	ReceiveOrderDao receiveOrderDao;
+	
+	@Autowired
+	MessageSource messageSource;
+	
+	
+	@Override
+	@Transactional
+	public Long addPreparedCompoundItem(CompoundCompositeItemBean objCompoundCompositeItemBean, HttpServletRequest request) {
+		// TODO Auto-generated method stub
+		String resultString=null;
+		PreparedCompoundItemBean objPreparedCompoundItemBean=objCompoundCompositeItemBean.getObjPreparedCompoundItemBean();
+		
+		/*if(preparedCompoundItemDao.isPreparedCompoundItemNameExist(objPreparedCompoundItemBean.getCompoundItem().getCompoundItemId(),objPreparedCompoundItemBean.getPreparedItemId())) {
+			return "NameAlreadyExist";
+		}*/
+
+		objPreparedCompoundItemBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfPreparedCompoundItemBean(objPreparedCompoundItemBean, "newFlag");
+		Long preparedItemId=preparedCompoundItemDao.addPreparedCompoundItemEntity(mapper.map(objPreparedCompoundItemBean, PreparedCompoundItemEntity.class));
+		if(preparedItemId!=null) {
+			resultString="ADDED";
+			objPreparedCompoundItemBean.setPreparedItemId(preparedItemId);
+			for(CompoundItemEntityTO objCompoundItemEntityTO:objCompoundCompositeItemBean.getObjCompoundItemEntityTOList()) {
+				PreparedCompoundItemDetailBean objPreparedCompoundItemDetailBean=new PreparedCompoundItemDetailBean();
+				
+				objPreparedCompoundItemDetailBean.setPreparedCompoundItem(objPreparedCompoundItemBean);
+				ItemStockBean objItemStockBean=new ItemStockBean();
+				objItemStockBean.setItemStockId(objCompoundItemEntityTO.getItemStockId());
+				objPreparedCompoundItemDetailBean.setItemStock(objItemStockBean);
+				objPreparedCompoundItemDetailBean.setUnitMixedQuantity(objCompoundItemEntityTO.getMixedQuantity());
+				objPreparedCompoundItemDetailBean.setPreparedMixedQuantity(objCompoundItemEntityTO.getRequiredQuantity());
+				objPreparedCompoundItemDetailBean.setIpAddress(objPreparedCompoundItemBean.getIpAddress());
+				objPreparedCompoundItemDetailBean.setCreatedBy(objPreparedCompoundItemBean.getCreatedBy());
+				setAuditInfoOfPreparedCompoundItemBeanDetailBean(objPreparedCompoundItemDetailBean, "newFlag");
+				if(preparedCompoundItemDao.addPreparedCompoundItemDetailEntity(mapper.map(objPreparedCompoundItemDetailBean, PreparedCompoundItemDetailEntity.class))) {
+					resultString="ADDED";
+				}
+			}
+		}
+		return preparedItemId;
+	}
+	
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> fetchItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return preparedCompoundItemDao.fetchItemDetailsToPreparedConfigureCompoundItem(payloadBean);
+	}
+	
+	
+	private void setAuditInfoOfPreparedCompoundItemBean(PreparedCompoundItemBean PreparedCompoundItemBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			PreparedCompoundItemBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			PreparedCompoundItemBean.setCreatedDate(new Date());
+		} else {
+			PreparedCompoundItemBean.setTransactionCount(PreparedCompoundItemBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			PreparedCompoundItemBean.setLastModifiedDate(new Date());
+		}
+
+	}
+	private void setAuditInfoOfPreparedCompoundItemBeanDetailBean(PreparedCompoundItemDetailBean PreparedCompoundItemDetailBean, String string) {
+		if (string.equalsIgnoreCase("newFlag")) {
+			PreparedCompoundItemDetailBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemDetailBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+			PreparedCompoundItemDetailBean.setCreatedDate(new Date());
+		} else {
+			PreparedCompoundItemDetailBean.setTransactionCount(PreparedCompoundItemDetailBean.getTransactionCount() + AppConstants.TRANSACTION_BEGIN);
+			PreparedCompoundItemDetailBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+			PreparedCompoundItemDetailBean.setLastModifiedDate(new Date());
+		}
+
+	}
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> fetchConfiguredCompoundItemdetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		StringJoiner stringJoiner=new StringJoiner(",");
+		List<CompoundItemEntityTO> objList=preparedCompoundItemDao.fetchConfiguredCompoundItemdetails(payloadBean);
+		for(CompoundItemEntityTO objCompoundItemEntityTO:objList) {
+			for(CompoundItemEntityTO infoCompoundItemEntityTO:preparedCompoundItemDao.fetchConfiguredCompoundItemDetailsByCompoundItemId(objCompoundItemEntityTO.getCompoundItemId())) {
+				StringJoiner internalJoiner=new StringJoiner("-");
+				internalJoiner.add(infoCompoundItemEntityTO.getItemName());
+				internalJoiner.add(infoCompoundItemEntityTO.getMixedQuantity().toString());
+				stringJoiner.add(internalJoiner.toString());
+			}
+			objCompoundItemEntityTO.setConfiguredMixedQuantities(stringJoiner.toString());
+			stringJoiner=new StringJoiner(",");
+		}
+		return objList;
+	}
+
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> fetchConfigureItemDetails(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		return preparedCompoundItemDao.fetchConfigureItemDetails(payloadBean);
+	}
+
+
+	@Override
+	@Transactional
+	public CompoundCompositeItemBean findPreparedCompoundItemBeanDetailsById(Long preparedItemId) {
+		// TODO Auto-generated method stub
+		CompoundCompositeItemBean objCompoundCompositeItemBean=new CompoundCompositeItemBean();
+		objCompoundCompositeItemBean.setObjPreparedCompoundItemBean(mapper.map(preparedCompoundItemDao.findPreparedCompoundItemBeanDetailsById(preparedItemId), PreparedCompoundItemBean.class));
+		objCompoundCompositeItemBean.getObjPreparedCompoundItemBean().setPreparedItemDetails(null);
+		objCompoundCompositeItemBean.getObjPreparedCompoundItemBean().setCompoundItemId(objCompoundCompositeItemBean.getObjPreparedCompoundItemBean().getCompoundItem().getCompoundItemId());
+		objCompoundCompositeItemBean.getObjPreparedCompoundItemBean().setCompoundQuantity(objCompoundCompositeItemBean.getObjPreparedCompoundItemBean().getCompoundItem().getCompoundQuantity());
+		objCompoundCompositeItemBean.getObjPreparedCompoundItemBean().setCompoundItem(null);
+		return objCompoundCompositeItemBean;
+	}
+
+
+	@Override
+	@Transactional
+	public List<PreparedCompoundItemEntityTO> getPreparedCompoundItemDetails(ConfigureCompoundItemsTO payloadBean) {
+		// TODO Auto-generated method stub
+		return preparedCompoundItemDao.getPreparedCompoundItemDetails(payloadBean);
+	}
+
+
+	@Override
+	@Transactional
+	public List<CompoundItemEntityTO> editItemDetailsToPreparedConfigureCompoundItem(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		List<CompoundItemEntityTO> wholeList=preparedCompoundItemDao.fetchItemDetailsToPreparedConfigureCompoundItem(payloadBean);
+		List<CompoundItemEntityTO> savedList=preparedCompoundItemDao.editItemDetailsToPreparedConfigureCompoundItem(Long.parseLong(payloadBean.getSearchParameter()),Long.parseLong(payloadBean.getCustomParameter()));
+		for(CompoundItemEntityTO saveCompoundItemEntityTO:savedList) {
+			for(CompoundItemEntityTO wholeCompoundItemEntityTO:wholeList) {
+				if(saveCompoundItemEntityTO.getItemStockId().equals(wholeCompoundItemEntityTO.getItemStockId())) {
+					System.out.println("Item Stock Id is ::::: "+saveCompoundItemEntityTO.getItemStockId());
+					wholeCompoundItemEntityTO.setPreparedItemDetailId(saveCompoundItemEntityTO.getPreparedItemDetailId());
+					wholeCompoundItemEntityTO.setMixedQuantity(saveCompoundItemEntityTO.getMixedQuantity());
+					wholeCompoundItemEntityTO.setRequiredQuantity(saveCompoundItemEntityTO.getRequiredQuantity());
+					wholeCompoundItemEntityTO.setPreItemDetailtransactionCount(saveCompoundItemEntityTO.getPreItemDetailtransactionCount());
+					wholeCompoundItemEntityTO.setEditFlag(false);
+					//wholeCompoundItemEntityTO=saveCompoundItemEntityTO;
+					System.out.println("Item Stock Id is ::::: "+wholeCompoundItemEntityTO.getPreparedItemDetailId());
+					break;
+				}
+			}
+		}
+		//System.out.println(wholeList.get(0).getPreparedItemDetailId());
+		return wholeList;
+	}
+
+
+	@Override
+	@Transactional
+	public String deletePreparedCompoundItemDetailsById(DeleteRecords deleteRecords) {
+		String resultOutput="";
+		if(preparedCompoundItemDao.deletePreparedCompoundItemDetailsById(deleteRecords)) {
+			resultOutput="DELETED";
+		}
+		return resultOutput;
+	}
+
+	@Override
+	@Transactional(rollbackFor = TransactionFailedException.class)
+	public String updatePreparedCompoundItemDetails(CompoundCompositeItemBean CompoundCompositeItemBean,
+			HttpServletRequest request) throws TransactionFailedException {
+		String resultString=null;
+		PreparedCompoundItemBean objPreparedCompoundItemBean=CompoundCompositeItemBean.getObjPreparedCompoundItemBean();
+		
+		TransactionData latestData = preparedCompoundItemDao.fetchTransactionDataById(objPreparedCompoundItemBean.getPreparedItemId());
+		if (latestData.getTransactionCount() > (objPreparedCompoundItemBean.getTransactionCount())) {
+			return "TransactionFailed";
+		}
+		if (latestData.getRecordType() == 'D') {
+			return "recordDeleted";
+		}
+		objPreparedCompoundItemBean.setIpAddress(request.getRemoteAddr());
+		setAuditInfoOfPreparedCompoundItemBean(objPreparedCompoundItemBean, "editFlag");
+		if(preparedCompoundItemDao.updatePreparedCompoundItemEntity(mapper.map(objPreparedCompoundItemBean, PreparedCompoundItemEntity.class))) {
+			resultString="UPDATED";
+			for(CompoundItemEntityTO objCompoundItemEntityTO:CompoundCompositeItemBean.getObjCompoundItemEntityTOList()) {
+				if(objCompoundItemEntityTO.getPreparedItemDetailId()==null) {
+					PreparedCompoundItemDetailBean objPreparedCompoundItemDetailBean=new PreparedCompoundItemDetailBean();
+					
+					objPreparedCompoundItemDetailBean.setPreparedCompoundItem(objPreparedCompoundItemBean);
+					ItemStockBean objItemStockBean=new ItemStockBean();
+					objItemStockBean.setItemStockId(objCompoundItemEntityTO.getItemStockId());
+					objPreparedCompoundItemDetailBean.setItemStock(objItemStockBean);
+					objPreparedCompoundItemDetailBean.setUnitMixedQuantity(objCompoundItemEntityTO.getMixedQuantity());
+					objPreparedCompoundItemDetailBean.setPreparedMixedQuantity(objCompoundItemEntityTO.getRequiredQuantity());
+					objPreparedCompoundItemDetailBean.setIpAddress(objPreparedCompoundItemBean.getIpAddress());
+					objPreparedCompoundItemDetailBean.setCreatedBy(objPreparedCompoundItemBean.getCreatedBy());
+					setAuditInfoOfPreparedCompoundItemBeanDetailBean(objPreparedCompoundItemDetailBean, "newFlag");
+					if(preparedCompoundItemDao.addPreparedCompoundItemDetailEntity(mapper.map(objPreparedCompoundItemDetailBean, PreparedCompoundItemDetailEntity.class))) {
+						resultString="ADDED";
+					}
+				}
+				else {
+					PreparedCompoundItemDetailBean updatePreparedCompoundItemDetailBean=mapper.map(preparedCompoundItemDao.findPreparedCompoundItemDetailEntityDetailsById(objCompoundItemEntityTO.getPreparedItemDetailId()),PreparedCompoundItemDetailBean.class);
+					if (objCompoundItemEntityTO.getPreItemDetailtransactionCount() > (updatePreparedCompoundItemDetailBean.getTransactionCount())) {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedUpdateMessage", null, "", Locale.US));
+					}
+					if (latestData.getRecordType() == 'D') {
+						throw new TransactionFailedException(messageSource.getMessage("transactionFailedDeleteMessage", null, "", Locale.US));
+					}
+					updatePreparedCompoundItemDetailBean.setIpAddress(request.getRemoteAddr());
+					updatePreparedCompoundItemDetailBean.setPreparedMixedQuantity(objCompoundItemEntityTO.getRequiredQuantity());
+					updatePreparedCompoundItemDetailBean.setLastModifiedBy(objPreparedCompoundItemBean.getLastModifiedBy());
+					setAuditInfoOfPreparedCompoundItemBeanDetailBean(updatePreparedCompoundItemDetailBean, "editFlag");
+					if(preparedCompoundItemDao.updatePreparedCompoundItemDetailEntity(mapper.map(updatePreparedCompoundItemDetailBean, PreparedCompoundItemDetailEntity.class))) {
+						resultString="UPDATED";
+					}
+				}
+				
+			}
+		}
+		
+		
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public String checkLotNoExistenceForItemInUserPharmacyLocation(PayloadBean payloadBean) {
+		// TODO Auto-generated method stub
+		if(preparedCompoundItemDao.checkLotNoExistenceForItemInUserPharmacyLocation(payloadBean)) {
+			return "NameAlreadyExist";
+		}
+		else {
+			return "NameNotExist";
+		}
+	}
+
+
+	@Override
+	@Transactional
+	public String addPreparedCompoundItemWithStatus(PreparedCompoundItemBean objPreparedCompoundItemBean,
+			HttpServletRequest request) {
+		String resultString=null;
+		// TODO Auto-generated method stub
+		if(objPreparedCompoundItemBean.getPreparedItemId()==null) {
+			/*if(objPreparedCompoundItemBean.getPreparedItemStatus().equals("Finalized")) {
+				
+			}
+			else {*/
+				objPreparedCompoundItemBean.setIpAddress(request.getRemoteAddr());
+				setAuditInfoOfPreparedCompoundItemBean(objPreparedCompoundItemBean, "newFlag");
+				if(preparedCompoundItemDao.addPreparedCompoundItemEntity(mapper.map(objPreparedCompoundItemBean, PreparedCompoundItemEntity.class))!=null) {
+					resultString="ADDED";
+				}
+				
+			//}
+		}
+		else {
+			if(objPreparedCompoundItemBean.getPreparedItemStatus().equals("Finalized")) {
+				PreparedCompoundItemBean updatePreparedCompoundItemBean=mapper.map(preparedCompoundItemDao.findPreparedCompoundItemBeanDetailsById(objPreparedCompoundItemBean.getPreparedItemId()), PreparedCompoundItemBean.class);
+				
+				if (updatePreparedCompoundItemBean.getTransactionCount() > (objPreparedCompoundItemBean.getTransactionCount())) {
+					return "TransactionFailed";
+				}
+				if (updatePreparedCompoundItemBean.getRecordType() == 'D') {
+					return "recordDeleted";
+				}
+				updatePreparedCompoundItemBean.setPreparedItemStatus(objPreparedCompoundItemBean.getPreparedItemStatus());
+				updatePreparedCompoundItemBean.setLotNo(objPreparedCompoundItemBean.getLotNo());
+				updatePreparedCompoundItemBean.setExpiryDate(objPreparedCompoundItemBean.getExpiryDate());
+				updatePreparedCompoundItemBean.setIpAddress(request.getRemoteAddr());
+				updatePreparedCompoundItemBean.setLastModifiedBy(objPreparedCompoundItemBean.getLastModifiedBy());
+				setAuditInfoOfPreparedCompoundItemBean(updatePreparedCompoundItemBean, "editFlag");
+				if(preparedCompoundItemDao.mergePreparedCompoundItemEntity(mapper.map(updatePreparedCompoundItemBean, PreparedCompoundItemEntity.class)))
+				resultString="UPDATED";
+				
+				
+				if(resultString.equals("UPDATED") || resultString.equals("ADDED")) {
+					List<PreparedCompoundItemDetailBean> objPreparedCompoundItemDetailBeanList=updatePreparedCompoundItemBean.getPreparedItemDetails();
+					for(PreparedCompoundItemDetailBean objPreparedCompoundItemDetailBean:objPreparedCompoundItemDetailBeanList) {
+						ItemStockBean updateItemStockBean=objPreparedCompoundItemDetailBean.getItemStock();
+						
+						updateItemStockBean.setQuantityOnHand(updateItemStockBean.getQuantityOnHand()-objPreparedCompoundItemDetailBean.getPreparedMixedQuantity().longValue());
+						updateItemStockBean.setQuantityMixed(updateItemStockBean.getQuantityMixed()+objPreparedCompoundItemDetailBean.getPreparedMixedQuantity().longValue());
+						updateItemStockBean.setIpAddress(request.getRemoteAddr());
+						updateItemStockBean.setLastModifiedBy(objPreparedCompoundItemBean.getLastModifiedBy());
+						updateItemStockBean.setLastModifiedDate(new Date());
+						updateItemStockBean.setRecordType(AppConstants.RECORDTYPE_UPDATE);
+						updateItemStockBean.setTransactionCount(updateItemStockBean.getTransactionCount()+AppConstants.TRANSACTION_BEGIN);
+						if(distributeOrderDao.updateItemStockEnitity(mapper.map(updateItemStockBean, ItemStockEntity.class))) {
+							resultString="UPDATED";
+						}
+					}
+					ItemStockBean insertCompoundtItemStockBean=new ItemStockBean();
+					insertCompoundtItemStockBean.setPharmacyLocation(objPreparedCompoundItemDetailBeanList.get(0).getItemStock().getPharmacyLocation());
+					insertCompoundtItemStockBean.setItem(updatePreparedCompoundItemBean.getCompoundItem().getItem());
+					insertCompoundtItemStockBean.setLotNo(updatePreparedCompoundItemBean.getLotNo());
+					insertCompoundtItemStockBean.setExpiryDate(updatePreparedCompoundItemBean.getExpiryDate());
+					insertCompoundtItemStockBean.setItemPackSize(updatePreparedCompoundItemBean.getItemPackSize());
+					insertCompoundtItemStockBean.setQuantityInStock(updatePreparedCompoundItemBean.getPreparedCompoundItemQuantity().longValue());
+					insertCompoundtItemStockBean.setUnitCost(updatePreparedCompoundItemBean.getUnitCost());
+					insertCompoundtItemStockBean.setTotalCost(Math.ceil((double)insertCompoundtItemStockBean.getQuantityInStock()/updatePreparedCompoundItemBean.getItemPackSize().getPackSize())*updatePreparedCompoundItemBean.getUnitCost());
+					insertCompoundtItemStockBean.setQuantityOnHand(updatePreparedCompoundItemBean.getPreparedCompoundItemQuantity().longValue());
+					insertCompoundtItemStockBean.setQuantityBlocked(0L);
+					insertCompoundtItemStockBean.setQuantityRobot(0L);
+					insertCompoundtItemStockBean.setQuantityReturned(0L);
+					insertCompoundtItemStockBean.setQuantityMixed(0L);
+					insertCompoundtItemStockBean.setItemStockStatus("InStock");
+					insertCompoundtItemStockBean.setCreatedBy(updatePreparedCompoundItemBean.getLastModifiedBy());
+					insertCompoundtItemStockBean.setCreatedDate(new Date());
+					insertCompoundtItemStockBean.setRecordType(AppConstants.RECORDTYPE_INSERT);
+					insertCompoundtItemStockBean.setTransactionCount(AppConstants.TRANSACTION_BEGIN);
+					
+					if(receiveOrderDao.addItemStockDetails(mapper.map(insertCompoundtItemStockBean, ItemStockEntity.class)))
+						resultString="ADDED";
+				}
+				
+			}
+			else {
+				TransactionData latestData = preparedCompoundItemDao.fetchTransactionDataById(objPreparedCompoundItemBean.getPreparedItemId());
+				if (latestData.getTransactionCount() > (objPreparedCompoundItemBean.getTransactionCount())) {
+					return "TransactionFailed";
+				}
+				if (latestData.getRecordType() == 'D') {
+					return "recordDeleted";
+				}
+				objPreparedCompoundItemBean.setIpAddress(request.getRemoteAddr());
+				setAuditInfoOfPreparedCompoundItemBean(objPreparedCompoundItemBean, "editFlag");
+				if(preparedCompoundItemDao.updatePreparedCompoundItemEntity(mapper.map(objPreparedCompoundItemBean, PreparedCompoundItemEntity.class)))
+				resultString="UPDATED";
+			}
+		}
+		return resultString;
+	}
+
+
+	@Override
+	@Transactional
+	public String validatePreparedCompoundItemBeforeFinalization(List<CompoundItemEntityTO> objCompoundItemEntityTOList,Long preparedItemId) {
+		// TODO Auto-generated method stub
+		for(CompoundItemEntityTO checkCompoundItemEntityTO:objCompoundItemEntityTOList) {
+			List<CompoundItemEntityTO> recoredList=preparedCompoundItemDao.editItemDetailsToPreparedConfigureCompoundItem(preparedItemId,checkCompoundItemEntityTO.getItemId());
+			if(recoredList.isEmpty()) {
+				return "NotProcessed";
+			}
+			else {
+				for(CompoundItemEntityTO validateCompoundItemEntityTO:recoredList) {
+					if(validateCompoundItemEntityTO.getRequiredQuantity()>validateCompoundItemEntityTO.getQuantityOnHand()) {
+						return "Quantity on Hand for Item \""+validateCompoundItemEntityTO.getItemName()+"(Lot No.-"+validateCompoundItemEntityTO.getLotNo()
+						+",Pack Size-"+validateCompoundItemEntityTO.getPackSize()+",Expiry Date-"+validateCompoundItemEntityTO.getExpiryDate()+")\" is less then Eneterd Quantity.";
+					}
+				}
+			}
+		}
+		return "Processed";
+	}
+	
+}

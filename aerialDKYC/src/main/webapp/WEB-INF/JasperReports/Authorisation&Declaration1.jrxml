@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Authorisation&amp;Declaration1" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="60" bottomMargin="20" uuid="af7fd92f-6c24-4fce-8f0c-66a9fc7fb2e7">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\30-06-2021justACar\\justACar\\aerialDKYC\\src\\main\\webapp\\WEB-INF\\JasperReports\\"]]></defaultValueExpression>
+	</parameter>
+	<field name="customerName" class="java.lang.String"/>
+	<field name="address" class="java.lang.String"/>
+	<field name="partnershipDate" class="java.lang.String"/>
+	<field name="bankName" class="java.lang.String"/>
+	<field name="modelName" class="java.lang.String"/>
+	<field name="amount" class="java.lang.String"/>
+	<field name="loanAmountinWords" class="java.lang.String"/>
+	<field name="authorisation1subPath" class="java.lang.String"/>
+	<field name="partnerList" class="java.util.List"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="40" splitType="Stretch">
+			<textField>
+				<reportElement x="539" y="0" width="263" height="20" uuid="271b91d1-01c2-4d1f-a94f-78b8ab605460"/>
+				<textElement markup="html"/>
+				<textFieldExpression><![CDATA["Date -<b>"+new SimpleDateFormat("dd-MMMM-yyyy").format(new Date())+"</b>"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="255" y="0" width="253" height="20" uuid="5892192d-9212-497e-a23b-d030d8393cce"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[    AUTHORISATION & DECLARATION]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="460" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="15" width="802" height="80" uuid="5ac58661-f6d8-4895-970f-c899d6c1c90b"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["The undersigned carrying on business of a Partnership Firm in the name and style of "+$F{customerName}+" having its office at " + $F{address}+" do hereby declare that our partnership is formed by Partnership Deed dated "+$F{partnershipDate} +".Notwithstanding anything contrary contained in the aforesaid Partnership Deed we hereby agree to stand as a Borrower in respect of the Loan proposed to be taken by us from "+ $F{bankName}+" and we authorise Mr Rajesh Goyal Partner to do the acts and things mentioned below on behalf of the firm:"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="95" width="802" height="40" uuid="e4d836f7-c1c0-4aef-ba8f-589b51d37620"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["a) 	Apply to "+$F{bankName}+" (hereinafter referred to as the “Bank”) to be a Borrower for the " + $F{modelName} + "  +" +$F{amount} + "/-(" + $F{loanAmountinWords} + ") proposed to be taken in the name of " +$F{customerName} +" from the Bank."]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="135" width="652" height="20" uuid="74428475-32e3-46b3-ae34-9b292f0a4fdd"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[b) 	To accept and agree with the terms and conditions as may be offered by the Bank for the above agreement.]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="155" width="802" height="55" uuid="b6944a7e-a2f9-4573-9f58-7c2851c2e8f6"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["c)      To sign/execute necessary Loan Application, Composite Agreement for "+$F{modelName}+ "+ Loan, Promissory Note, Irrevocable Power of Attorney authorising the Bank to do such acts and things as may be required by it and all other documents and papers as may be necessary and requested by the Bank"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="210" width="802" height="41" uuid="ae6fe98c-3cab-4da1-896a-b95ac00b898c"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[d) 	To secure the loan to be granted by HDFC Bank Ltd by hypothecating the vehicle to be acquired with such loan / owned by the firm (In case of Secured Loan)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="262" width="761" height="24" uuid="69951476-9bb3-4531-9aad-3a2348d03398"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[e) 	Generally do all such acts and things that may be required for giving effect to this resolution.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="286" width="802" height="45" uuid="12efc3ac-c088-4e75-b8a0-b9747c47bbea"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[f)	 We also state that the Composite Agreement for Auto Loan shall be deemed to have been signed by us and we shall be jointly and severally liable for the repayment of the loan and all charges that may arise due to execution of the Loan agreement.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="344" width="118" height="27" uuid="8b54416a-dda8-4016-b66b-23f4247f49ea"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[  Name of Partner]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="344" width="131" height="20" uuid="a807f045-f3bb-4dda-a768-105a0b1c11b4"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature / Stamp]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="611" y="344" width="100" height="20" uuid="6922af11-2c88-4ffe-8c92-539bee1e0810"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<subreport>
+				<reportElement x="0" y="364" width="761" height="42" uuid="a45ae5ac-8ed7-4f52-a528-9f74c289c0c7"/>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($F{partnerList})]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Authorisation1_sub.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<summary>
+		<band height="95" splitType="Stretch"/>
+	</summary>
+</jasperReport>

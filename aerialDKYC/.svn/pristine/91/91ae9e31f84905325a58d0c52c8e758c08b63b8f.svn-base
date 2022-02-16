@@ -1,0 +1,191 @@
+package com.edios.pms.dao.impl;
+
+import java.util.List;
+
+import javax.persistence.NoResultException;
+
+import org.hibernate.Session;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.stereotype.Repository;
+
+import com.edios.cdf.dao.impl.BaseDaoImpl;
+import com.edios.cdf.entity.to.SiteEntityTO;
+import com.edios.cdf.util.PayloadBean;
+import com.edios.cdf.util.TransactionData;
+import com.edios.pms.dao.WorksStationAssignmentDao;
+import com.edios.pms.entity.ItemOrderEntity;
+import com.edios.pms.entity.WorksStationAssignmentEntity;
+import com.edios.pms.entity.to.PharmacyLocationEntityTO;
+import com.edios.pms.entity.to.PharmacyLocationRobotEntityTO;
+import com.edios.pms.entity.to.WorksStationAssignmentTO;
+
+@Repository
+public class WorksStationAssignmentDaoImpl extends BaseDaoImpl<WorksStationAssignmentEntity> implements WorksStationAssignmentDao {
+	@Autowired
+	MessageSource messageSource;
+	
+	
+
+	@Override
+	public List<WorksStationAssignmentTO> getWorkStationAssigmentDetails(PayloadBean payloadBean) {
+
+		List<WorksStationAssignmentTO> objWorksStationAssignmentTOList = null;
+		String sqlQuery = "",whereClause="";
+			Session session = (Session) entityManager.getDelegate();
+			if(payloadBean.getSearchParameter().equals("Active")||payloadBean.getSearchParameter().equals("Inactive")) {
+				whereClause="where wsae.workStationStatus='"+payloadBean.getSearchParameter()+"'";
+			}
+			sqlQuery ="select wsae.workStationID as workStationID,wsae.workStationName as workStationName,wsae.workStationCode as workStationCode,wsae.workStationStatus as workStationStatus"
+					+ ",wsae.transactionCount as transactionCount,siteDetail.siteName as siteName,pharmacyLocationDetail.pharmacyLocationName as pharmacyLocationName"
+					+ " from WorksStationAssignmentEntity wsae left join wsae.site siteDetail left join wsae.pharmacyLocation pharmacyLocationDetail "+whereClause;
+			objWorksStationAssignmentTOList = (List<WorksStationAssignmentTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(WorksStationAssignmentTO.class)).list();
+			
+			
+		
+		return objWorksStationAssignmentTOList;
+	
+	}
+
+
+
+	@Override
+	public List<SiteEntityTO> fetchSiteDetails() {
+		List<SiteEntityTO> siteEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select se.siteID As siteID , se.siteName As siteName , se.siteCode As siteCode ,"
+					+ " se.siteStatus As siteStatus ,se.transactionCount as transactionCount"
+					+ " from  SiteEntity se"
+					+ " where se.recordType<>'D' and se.siteStatus=:siteStatus "
+					+ " order by se.siteName asc";
+			siteEntityTOList = (List<SiteEntityTO>) session.createQuery(sqlQuery).setParameter("siteStatus", "Active")
+					
+					.setResultTransformer(Transformers.aliasToBean(SiteEntityTO.class)).list();
+		return siteEntityTOList;
+	}
+
+
+
+	@Override
+	public List<PharmacyLocationEntityTO> fetchPharmacyLocationForSiteDetails(Long siteID) {
+
+		List<PharmacyLocationEntityTO> PharmacyLocationEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select pharmacyLoc.pharmacyLocationId As pharmacyLocationId , pharmacyLoc.pharmacyLocationName As pharmacyLocationName"
+					+ " from  PharmacyLocationEntity pharmacyLoc"
+					+ " where pharmacyLoc.recordType<>'D' and pharmacyLoc.pharmacyLocationStatus='Active' and pharmacyLoc.siteId.siteID=:siteID "
+					+ " order by pharmacyLocationName asc";
+			PharmacyLocationEntityTOList = (List<PharmacyLocationEntityTO>) session.createQuery(sqlQuery).setParameter("siteID", siteID)
+					
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationEntityTO.class)).list();
+		return PharmacyLocationEntityTOList;
+	
+	}
+
+
+
+	@Override
+	public boolean isAssignWorkStationNameExist(Long workStationID, String workStationName, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationName as workStationName from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationName='"+workStationName+"' and table.workStationID!="+workStationID)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean isAssignWorkStationCodeExist(Long workStationID, String workStationCode, Long siteID,
+			Long pharmacyLocationID) {
+		try {
+			return entityManager.createQuery(
+					"select table.workStationCode as workStationCode from WorksStationAssignmentEntity table where "
+							+ " table.site.siteID=" + siteID+" and table.pharmacyLocation.pharmacyLocationId="+pharmacyLocationID+" and table.workStationCode='"+workStationCode+"' and table.workStationID!="+workStationID)
+					.getSingleResult() == null ? false : true;
+		} catch (NoResultException ex) {
+			return false;
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return true;
+		}
+	
+	}
+
+
+
+	@Override
+	public boolean addAssignWorkStation(WorksStationAssignmentEntity objWorksStationAssignmentEntity) {
+		// TODO Auto-generated method stub
+		entityManager.persist(objWorksStationAssignmentEntity);
+		return true;
+	}
+
+
+
+	@Override
+	public WorksStationAssignmentEntity findWorkStationById(Long workStationID) {
+		// TODO Auto-generated method stub
+		return entityManager.find(WorksStationAssignmentEntity.class, workStationID);
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public TransactionData fetchTransactionDataById(Long workStationID) {
+		TransactionData transactionData = null;
+		String sqlQuery = "";
+		try {
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "select table.transactionCount as transactionCount,table.recordType as recordType "
+					+ " from  WorksStationAssignmentEntity table where table.workStationID=:workStationID";
+			transactionData = (TransactionData) session.createQuery(sqlQuery).setParameter("workStationID", workStationID)
+					.setResultTransformer(Transformers.aliasToBean(TransactionData.class)).list().get(0);
+		} catch (Exception exception) {
+			exception.printStackTrace();
+			return null;
+		}
+		return transactionData;
+	}
+
+
+
+	@Override
+	public boolean updateAssignWorkStation(WorksStationAssignmentEntity WorksStationAssignmentEntity) {
+		Session session = (Session) entityManager.getDelegate();
+		session.update(WorksStationAssignmentEntity);
+		return true;
+	}
+
+
+
+	@Override
+	public boolean deleteAssignWorkStation(Long workStationID) {
+		Session session = (Session) entityManager.getDelegate();
+		session.createQuery("delete from WorksStationAssignmentEntity where workStationID="+workStationID).executeUpdate();
+		return true;
+	}
+	
+	@Override
+	public List<PharmacyLocationRobotEntityTO> fetchPharmacyLocationRobots(Long id) {
+		List<PharmacyLocationRobotEntityTO> pharmacyLocationRobotEntityTOList = null;
+		String sqlQuery = "";
+			Session session = (Session) entityManager.getDelegate();
+			sqlQuery = "SELECT robot.robotName AS robotName,robot.robotId AS robotId FROM  PharmacyLocationRobotEntity robot WHERE robot.pharmacyLocation ="+id+" "
+					+ " AND robot.robotStatus='Active'  Order by robot.robotName";
+			pharmacyLocationRobotEntityTOList = (List<PharmacyLocationRobotEntityTO>) session.createQuery(sqlQuery)
+					.setResultTransformer(Transformers.aliasToBean(PharmacyLocationRobotEntityTO.class)).list();
+		return pharmacyLocationRobotEntityTOList;
+	}
+}
